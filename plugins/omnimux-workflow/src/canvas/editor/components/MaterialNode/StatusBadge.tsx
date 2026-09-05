@@ -16,6 +16,7 @@ export interface StatusBadgeProps {
   status?: MaterialStatus;
   isDegraded?: boolean;
   degradedWarning?: string;
+  simulated?: boolean;
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({
@@ -23,9 +24,20 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
   status,
   isDegraded,
   degradedWarning,
+  simulated,
 }) => {
   const t = useT();
   const badge = useMemo(() => {
+    if (simulated && executionStatus === 'completed') {
+      return (
+        <span
+          className="wf-material-node__badge wf-material-node__badge--simulated"
+          title={t('node.simulatedResult')}
+        >
+          {t('node.simulatedResult')}
+        </span>
+      );
+    }
     switch (executionStatus) {
       case 'running':
         return <span className="wf-material-node__badge wf-material-node__badge--running wf-material-node__badge--spin" />;
@@ -68,7 +80,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
     }
 
     return null;
-  }, [executionStatus, status, isDegraded, degradedWarning, t]);
+  }, [executionStatus, status, isDegraded, degradedWarning, simulated, t]);
 
   return badge;
 };

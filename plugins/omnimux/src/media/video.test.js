@@ -47,7 +47,13 @@ describe('omnimux video helpers', () => {
 
   it('refuses to execute without a key', async () => {
     await assert.rejects(
-      () => executeOmnimuxVideo({ prompt: 'x', dest: '/tmp/no.mp4', env: {} }),
+      () => executeOmnimuxVideo({
+        prompt: 'x',
+        dest: '/tmp/no.mp4',
+        model: 'seedance-2-0-fast',
+        operation: 'text_to_video',
+        env: {},
+      }),
       (error) => error instanceof OmnimuxError && error.code === 'needs-omnimux',
     )
   })
@@ -58,6 +64,8 @@ describe('omnimux video helpers', () => {
     const result = await executeOmnimuxVideo({
       prompt: 'a wall with pat',
       dest,
+      model: 'seedance-2-0-fast',
+      operation: 'text_to_video',
       duration: 4,
       env: {},
       store: {
@@ -89,6 +97,8 @@ describe('omnimux video helpers', () => {
     const result = await executeOmnimuxVideo({
       prompt: 'a wall at night',
       dest,
+      model: 'seedance-2-0-fast',
+      operation: 'text_to_video',
       duration: 4,
       env: { OMNIMUX_API_KEY: 'sk-video-auth' },
       runtime: {
@@ -117,6 +127,8 @@ describe('omnimux video helpers', () => {
     const result = await executeOmnimuxVideo({
       prompt: 'a wall at night',
       dest,
+      model: 'seedance-2-0-fast',
+      operation: 'text_to_video',
       duration: 4,
       env: { OMNIMUX_API_KEY: 'sk-test' },
       runtime: {
@@ -144,6 +156,8 @@ describe('omnimux video helpers', () => {
     const result = await executeOmnimuxVideo({
       prompt: 'a wall at night',
       dest,
+      model: 'seedance-2-0-fast',
+      operation: 'text_to_video',
       wait: false,
       env: { OMNIMUX_API_KEY: 'sk-test' },
       runtime: {
@@ -388,6 +402,60 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.equal('reference_images' in input, false)
     assert.equal('images' in input, false)
     assert.equal('references' in input, false)
+  })
+
+  it('end_frame only-last maps image_tail without inventing image (#567 M1/M2/M3)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'end-frame only',
+      model: 'minimax-h3',
+      references: [
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
+      ],
+    })
+    assert.equal(input.image_tail, 'https://example.com/end-only.png')
+    assert.equal('image' in input, false, 'must not invent first/image for end-only')
+    assert.equal('reference_images' in input, false)
+    assert.equal('images' in input, false)
+    assert.equal('references' in input, false)
+    assert.notEqual(input.image_tail, input.image)
+  })
+
+  it('executeOmnimuxVideo submits canonical H3 end-frame through the offline runtime', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-endframe-'))
+    const dest = join(dir, 'out.mp4')
+    let runtimeCalls = 0
+    const result = await executeOmnimuxVideo({
+      prompt: 'end frame only',
+      dest,
+      model: 'minimax-h3',
+      operation: 'end_frame',
+      references: [
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
+      ],
+      wait: false,
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      runtime: {
+        async execute(request) {
+          runtimeCalls += 1
+          assert.deepEqual(request.input.image_with_roles, [
+            { url: 'https://example.com/end-only.png', role: 'last_frame' },
+          ])
+          return { taskId: 'task-h3-end-frame', outputs: [] }
+        },
+      },
+      fetcher: async (url) => {
+        assert.equal(String(url), 'https://example.com/end-only.png')
+        return {
+          ok: true,
+          status: 200,
+          headers: { get() { return 'image/png' } },
+          arrayBuffer: async () => Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        }
+      },
+    })
+    assert.equal(result.mode, 'submitted')
+    assert.equal(runtimeCalls, 1)
+    rmSync(dir, { recursive: true, force: true })
   })
 
   it('falls back to request.image when there are no usable references', () => {

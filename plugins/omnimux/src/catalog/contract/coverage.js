@@ -5,7 +5,7 @@
  * H2 changes vs H1:
  * - Runtime ids derive from the contract universe (model.id + declared wire
  *   aliases) — the old hardcoded JS tables were strangled into facades, so the
- *   43-row dispositions.json pins the known runtime set (D1/D5 mirror lock).
+ *   45-row dispositions.json pins the known runtime set (D1/D5 mirror lock).
  * - coverage_missing only fires for runtime ids whose disposition requires a
  *   contract (canonical/draft or absent row); alias/unavailable/quarantine/
  *   deprecated ids legitimately lack a model.id row.

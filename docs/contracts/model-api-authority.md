@@ -14,6 +14,8 @@ superseded_by: null
 related:
   - "docs/contracts/model-capabilities-matrix.md"
   - "docs/contracts/hub.md"
+  - "docs/specs/2026-09-05-video-phase-one-scope.md"
+  - "docs/references/evolink-video-channel.md"
 ---
 
 # 模型接口准据：渠道官方 API 文档
@@ -28,6 +30,8 @@ related:
 | APIMart | [apimart.ai](https://apimart.ai/) | [API 文档](https://docs.apimart.ai/) |
 
 以上是项目主要渠道，由用户指定；文档入口于 2026-09-05 核对。入口只用于发现页面，具体约束必须引用该渠道对应模型、版本、端点的参数页或官方 schema。记录最终页面 URL、核对日期及适用条件。
+
+当前七款视频模型批次固定使用 APIMart，不做自动切换。产品模型 ID 与 APIMart `model` 字段的精确映射见 [阶段一范围规格](../specs/2026-09-05-video-phase-one-scope.md)。EvoLink 只在 [独立渠道记录](../references/evolink-video-channel.md) 中维护，本批不得引用其字段、限制或价格补 APIMart 的缺项。
 
 - 同名模型在不同渠道分别建账。不得把 EvoLink 的字段、数量或格式限制套到 APIMart，反之亦然。
 - 渠道文档是该渠道接入规范的准据；原厂资料、营销首页、模型名后缀、仓内旧摘要、测试结果都不能覆盖它。
@@ -70,8 +74,8 @@ related:
 
 ## 5. 与当前目录实现的关系
 
-现有 `computeOperationListed` 仍检查 operation 的 `research.status=verified`、`execution.status=live`、兼容 profile 及 gate；这是当前实现事实，不是官方接口准据，也不授权为满足枚举而发请求。本次规范修订不会自动改变 listed 集合。
+`computeOperationListed` 将渠道文档确认与实现就绪作为目录准入条件，并继续检查兼容 profile 与 gate；`execution.live` 只保留历史真实执行事实，不再是上架前提。这一拆分不授权真实请求，也不能把离线 fixture 标成真实执行。
 
-后续接入应依据官方文档和离线实现证据调整目录准入表达，将实现覆盖与历史真实执行分开。不得为了绕过旧门槛伪造 `execution.live`、批量标绿或仅改文档宣称模式已可用；保留 schema、mapper、profile 相容和提交前校验要求。
+后续接入应依据官方文档和离线实现证据调整目录准入表达，将实现覆盖与历史真实执行分开。不得伪造 `execution.live`、批量标绿或仅改文档宣称模式已可用；保留 schema、mapper、profile 相容和提交前校验要求。
 
 本合同取代旧方案中「真实请求补证、探测输入上限、按实测样本收窄官方能力」的方法要求。旧证据和阶段快照只作历史记录；当前执行规则统一指向本文。

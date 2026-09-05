@@ -8,6 +8,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   RESEARCH_STATUS_SET,
+  IMPLEMENTATION_STATUS_SET,
   EXECUTION_STATUS_SET,
   researchHasEvidence,
   adapterProfileCompatible,
@@ -22,6 +23,13 @@ const LIMIT_KINDS = new Set(['official_docs', 'measured', 'policy_conservative']
 const SLOT_SOURCES = new Set(['user', 'upstream_edge', 'node_field']);
 const PROMPT_POLICIES = new Set(['required', 'optional', 'none']);
 const PROFILE_STATUSES = new Set(['live', 'stub', 'unavailable']);
+
+/**
+ * Canonical operation count lock (registry SSOT).
+ * Historical MCC first batch = 17; end_frame + extend + document/page inputs → 21.
+ * Prefer this constant over scattered magic numbers in tests/admission.
+ */
+export const EXPECTED_OPERATION_COUNT = 21;
 
 /** @type {object|null} */
 let cachedRegistry = null;
@@ -240,7 +248,7 @@ function validateSlotMinMax(min, max, path, modelId, file) {
       }),
     );
   }
-  if (typeof max !== 'number' || !Number.isFinite(max) || max < 0 || !Number.isInteger(max)) {
+  if (max !== null && (typeof max !== 'number' || !Number.isFinite(max) || max < 0 || !Number.isInteger(max))) {
     out.push(
       issue('slot_minmax_invalid', `slot.max must be a nonnegative integer at ${path}`, {
         modelId,
@@ -251,6 +259,7 @@ function validateSlotMinMax(min, max, path, modelId, file) {
   }
   if (
     typeof min === 'number' &&
+    max !== null &&
     typeof max === 'number' &&
     Number.isFinite(min) &&
     Number.isFinite(max) &&
@@ -372,7 +381,8 @@ function validateSlot(slot, basePath, modelId, file) {
   }
   const s = /** @type {Record<string, unknown>} */ (slot);
   for (const key of ['slot', 'type', 'role', 'min', 'max']) {
-    if (s[key] === undefined || s[key] === null || s[key] === '') {
+    const missing = s[key] === undefined || s[key] === '' || (key !== 'max' && s[key] === null);
+    if (missing) {
       out.push(
         issue('slot_field_missing', `input slot missing ${key} at ${basePath}`, {
           modelId,
@@ -388,28 +398,53 @@ function validateSlot(slot, basePath, modelId, file) {
   if (s.source != null && (typeof s.source !== 'string' || !SLOT_SOURCES.has(s.source))) {
     out.push(issue('schema_invalid', `invalid slot source ${s.source}`, { modelId, path: `${basePath}.source`, file }));
   }
-  if (s.min !== undefined && s.min !== null && s.max !== undefined && s.max !== null) {
+  if (s.min !== undefined && s.min !== null && Object.prototype.hasOwnProperty.call(s, 'max')) {
     out.push(...validateSlotMinMax(s.min, s.max, basePath, modelId, file));
   }
   if (s.allowedMimes != null) {
     out.push(...validateAllowedMimes(s.allowedMimes, `${basePath}.allowedMimes`, modelId, file));
   }
   const hasSize = s.maxSizeMb != null;
-  const hasDur = s.maxDurationSec != null;
+  const durationFields = [
+    'minDurationSec',
+    'maxDurationSec',
+    'totalMinDurationSec',
+    'totalMaxDurationSec',
+    'combinedOutputMaxDurationSec',
+  ];
+  const hasDur = durationFields.some((field) => s[field] != null);
   if (hasSize) {
     if (typeof s.maxSizeMb !== 'number' || !Number.isFinite(s.maxSizeMb) || s.maxSizeMb < 0) {
       out.push(issue('schema_invalid', `invalid maxSizeMb at ${basePath}`, { modelId, path: `${basePath}.maxSizeMb`, file }));
     }
   }
+  if (s.maxSizeExclusive != null && typeof s.maxSizeExclusive !== 'boolean') {
+    out.push(issue('schema_invalid', `invalid maxSizeExclusive at ${basePath}`, {
+      modelId,
+      path: `${basePath}.maxSizeExclusive`,
+      file,
+    }));
+  }
   if (hasDur) {
-    if (typeof s.maxDurationSec !== 'number' || !Number.isFinite(s.maxDurationSec) || s.maxDurationSec < 0) {
-      out.push(
-        issue('schema_invalid', `invalid maxDurationSec at ${basePath}`, {
+    for (const field of durationFields) {
+      const value = s[field];
+      if (value == null) continue;
+      if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+        out.push(issue('schema_invalid', `invalid ${field} at ${basePath}`, {
           modelId,
-          path: `${basePath}.maxDurationSec`,
+          path: `${basePath}.${field}`,
           file,
-        }),
-      );
+        }));
+      }
+    }
+    for (const field of ['totalMinExclusive', 'totalMaxExclusive']) {
+      if (s[field] != null && typeof s[field] !== 'boolean') {
+        out.push(issue('schema_invalid', `invalid ${field} at ${basePath}`, {
+          modelId,
+          path: `${basePath}.${field}`,
+          file,
+        }));
+      }
     }
   }
   if (hasSize || hasDur) {
@@ -514,26 +549,7 @@ function validateExecution(execution, op, path, modelId, file, profiles, isNorma
       );
       return out;
     }
-    // Full compatibility only when we have op id + output (normalized or complete raw op)
-    if (isNormalizedOp || (op && op.id && op.output?.type)) {
-      const synthetic = {
-        id: op.id,
-        output: op.output,
-        inputs: op.inputs ?? [],
-        execution: e,
-      };
-      const compat = adapterProfileCompatible(synthetic, profiles);
-      if (!compat.ok) {
-        out.push(
-          issue('profile_incompatible', compat.reason ?? 'profile incompatible', {
-            modelId,
-            path: `${path}.profileId`,
-            file,
-            operationId: op?.id,
-          }),
-        );
-      }
-    } else if (hit.status !== 'live') {
+    if (hit.status !== 'live') {
       out.push(
         issue('profile_unknown', `execution.profileId "${profileId}" is not live`, {
           modelId,
@@ -555,6 +571,73 @@ function validateExecution(execution, op, path, modelId, file, profiles, isNorma
         }),
       );
     }
+  }
+  return out;
+}
+
+/** Validate adapter readiness and its profile compatibility. */
+function validateImplementation(implementation, op, path, modelId, file, profiles, isNormalizedOp = false) {
+  /** @type {object[]} */
+  const out = [];
+  if (implementation == null) return out;
+  if (typeof implementation !== 'object' || Array.isArray(implementation)) {
+    out.push(issue('schema_invalid', `implementation must be object at ${path}`, { modelId, path, file }));
+    return out;
+  }
+  const value = /** @type {Record<string, unknown>} */ (implementation);
+  if (typeof value.status !== 'string' || !IMPLEMENTATION_STATUS_SET.has(value.status)) {
+    out.push(issue('schema_invalid', `invalid implementation.status "${value.status}" at ${path}`, {
+      modelId,
+      path: `${path}.status`,
+      file,
+      operationId: op?.id,
+    }));
+    return out;
+  }
+  const profileId = typeof value.profileId === 'string' ? value.profileId : undefined;
+  if (value.status === 'ready') {
+    if (!profileId) {
+      out.push(issue('profile_unknown', 'implementation.ready requires profileId', {
+        modelId,
+        path: `${path}.profileId`,
+        file,
+        operationId: op?.id,
+      }));
+      return out;
+    }
+    const hit = getAdapterProfile(profiles, profileId);
+    if (!hit || hit.status !== 'live') {
+      out.push(issue('profile_unknown', `implementation.profileId "${profileId}" is not a live profile`, {
+        modelId,
+        path: `${path}.profileId`,
+        file,
+        operationId: op?.id,
+      }));
+      return out;
+    }
+    if (isNormalizedOp || (op && op.id && op.output?.type)) {
+      const compat = adapterProfileCompatible({
+        id: op.id,
+        output: op.output,
+        inputs: op.inputs ?? [],
+        implementation: value,
+      }, profiles);
+      if (!compat.ok) {
+        out.push(issue('profile_incompatible', compat.reason ?? 'profile incompatible', {
+          modelId,
+          path: `${path}.profileId`,
+          file,
+          operationId: op?.id,
+        }));
+      }
+    }
+  } else if (profileId && !getAdapterProfile(profiles, profileId)) {
+    out.push(issue('profile_unknown', `unknown implementation.profileId "${profileId}"`, {
+      modelId,
+      path: `${path}.profileId`,
+      file,
+      operationId: op?.id,
+    }));
   }
   return out;
 }
@@ -672,8 +755,73 @@ function validateOperation(op, opIndex, modelId, opIds, registry, profiles, file
     }
   }
 
+  if (o.inputGroups != null) {
+    if (!Array.isArray(o.inputGroups)) {
+      out.push(issue('schema_invalid', `inputGroups must be array at ${base}`, {
+        modelId,
+        path: `${base}.inputGroups`,
+        file,
+        operationId: opId,
+      }));
+    } else {
+      const declaredSlots = new Set(Array.isArray(o.inputs) ? o.inputs.map((slot) => slot?.slot).filter(Boolean) : []);
+      o.inputGroups.forEach((rawGroup, groupIndex) => {
+        const groupPath = `${base}.inputGroups[${groupIndex}]`;
+        if (!rawGroup || typeof rawGroup !== 'object' || Array.isArray(rawGroup)) {
+          out.push(issue('schema_invalid', `input group must be object at ${groupPath}`, {
+            modelId,
+            path: groupPath,
+            file,
+            operationId: opId,
+          }));
+          return;
+        }
+        const group = /** @type {Record<string, unknown>} */ (rawGroup);
+        if (!Array.isArray(group.slots) || group.slots.length === 0) {
+          out.push(issue('schema_invalid', `input group slots required at ${groupPath}`, {
+            modelId,
+            path: `${groupPath}.slots`,
+            file,
+            operationId: opId,
+          }));
+        } else {
+          for (const slotName of group.slots) {
+            if (typeof slotName !== 'string' || !declaredSlots.has(slotName)) {
+              out.push(issue('schema_invalid', `input group references unknown slot "${slotName}"`, {
+                modelId,
+                path: `${groupPath}.slots`,
+                file,
+                operationId: opId,
+              }));
+            }
+          }
+        }
+        if (typeof group.min !== 'number' || !Number.isInteger(group.min) || group.min < 0) {
+          out.push(issue('schema_invalid', `input group min must be a nonnegative integer at ${groupPath}`, {
+            modelId,
+            path: `${groupPath}.min`,
+            file,
+            operationId: opId,
+          }));
+        }
+      });
+    }
+  }
+
   out.push(...validateAliasesArray(o.aliases, `${base}.aliases`, modelId, file));
   out.push(...validateResearch(o.research, `${base}.research`, modelId, file, opId));
+
+  if (o.implementation != null) {
+    out.push(...validateImplementation(
+      o.implementation,
+      { id: opId, output: o.output, inputs: o.inputs },
+      `${base}.implementation`,
+      modelId,
+      file,
+      profiles,
+      true,
+    ));
+  }
 
   // execution on op: full profile compatibility when live
   if (o.execution != null) {
@@ -844,8 +992,15 @@ export function validateOperationRegistry(registry = loadOperationRegistry()) {
       out.push(issue('schema_invalid', `registry operation "${op.id}" invalid defaultOutputType`));
     }
   }
-  if (seen.size !== 17) {
-    out.push(issue('schema_invalid', `operation registry must have exactly 17 ops, got ${seen.size}`));
+  // Registry length is the machine SSOT. Keep a single lock constant so tests
+  // and admission share one expected count.
+  if (seen.size !== EXPECTED_OPERATION_COUNT) {
+    out.push(
+      issue(
+        'schema_invalid',
+        `operation registry must have exactly ${EXPECTED_OPERATION_COUNT} ops, got ${seen.size}`,
+      ),
+    );
   }
   return out;
 }
@@ -907,14 +1062,37 @@ export function validateModel(model, opts = {}) {
     });
   }
 
-  // model-level research/execution are defaults only
+  // model-level status blocks are defaults only
   out.push(...validateResearch(m.research, 'research', modelId, file));
+  if (m.implementation != null) {
+    out.push(...validateImplementation(m.implementation, {}, 'implementation', modelId, file, profiles, false));
+  }
   if (m.execution != null) {
     // model-level: only shape + profile exists; full op compatibility is per-op
     out.push(...validateExecution(m.execution, {}, 'execution', modelId, file, profiles, false));
   }
 
   out.push(...validateAliasesArray(m.aliases, 'aliases', modelId, file));
+
+  if (m.routing != null) {
+    if (typeof m.routing !== 'object' || Array.isArray(m.routing)) {
+      out.push(issue('schema_invalid', 'routing must be object', { modelId, path: 'routing', file }));
+    } else {
+      const routing = /** @type {Record<string, unknown>} */ (m.routing);
+      for (const field of ['channel', 'wireModel', 'endpoint']) {
+        if (typeof routing[field] !== 'string' || !routing[field]) {
+          out.push(issue('schema_invalid', `routing.${field} required`, { modelId, path: `routing.${field}`, file }));
+        }
+      }
+      if (routing.automaticFallback != null && typeof routing.automaticFallback !== 'boolean') {
+        out.push(issue('schema_invalid', 'routing.automaticFallback must be boolean', {
+          modelId,
+          path: 'routing.automaticFallback',
+          file,
+        }));
+      }
+    }
+  }
 
   return out;
 }
@@ -994,10 +1172,12 @@ export function validateDoc(doc, opts = {}) {
       } else if (
         iss.path?.startsWith('operations') ||
         iss.path?.startsWith('research') ||
+        iss.path?.startsWith('implementation') ||
         iss.path?.startsWith('execution') ||
         iss.path?.startsWith('label') ||
         iss.path?.startsWith('modes') ||
-        iss.path?.startsWith('aliases')
+        iss.path?.startsWith('aliases') ||
+        iss.path?.startsWith('routing')
       ) {
         iss.path = `models[${i}].${iss.path}`;
       }

@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { planCanvasInputMutation } from './canvasInputMutationGateway.ts';
+import { buildCanvasUpstreamFingerprint, planCanvasInputMutation } from './canvasInputMutationGateway.ts';
 import { mutateWorkspaceGraph } from '../../workflow/graph/GraphMutator.ts';
 import { createWorkspaceStore } from '../../workflow/workspace/WorkspaceStore.ts';
 import { createCompatTestCatalog } from '../validation/compatTestCatalog.ts';
@@ -121,32 +121,20 @@ test('原子适配：alias 寻址当前模型 → 归一为 canonical id 并保�
   assert.equal(gen.data.params.model, 'alias-img');
 });
 
-test('旧 generationMode 读时迁移为 canonical operation，并剥离 legacy key', () => {
+test('canonical operation stays authoritative during compatibility planning', () => {
   const catalog = createCompatTestCatalog();
-  // vid-frames 支持 first_last_frame；legacy wire 写 generationMode:'flf'
   const target = generateNode('gen', 'video', 'text-to-video', 'vid-frames', {
-    params: { model: 'vid-frames', generationMode: 'flf' },
+    params: { model: 'vid-frames', operation: 'first_last_frame' },
   });
   const srcA = importNode('a', 'image');
   const srcB = importNode('b', 'image');
-  const current = { nodes: [target, srcA, srcB], edges: [] };
-
   const plan = planCanvasInputMutation(
-    current,
-    {
-      addEdges: [
-        { source: 'a', target: 'gen' },
-        { source: 'b', target: 'gen' },
-      ],
-    },
+    { nodes: [target, srcA, srcB], edges: [] },
+    { addEdges: [{ source: 'a', target: 'gen' }, { source: 'b', target: 'gen' }] },
     { catalog },
   );
-
   assert.equal(plan.status, 'allowed');
-  const gen = plan.nodes.find((node) => node.id === 'gen');
-  assert.equal(gen.data.params.model, 'vid-frames');
-  assert.equal(gen.data.params.operation, 'first_last_frame');
-  assert.equal('generationMode' in gen.data.params, false);
+  assert.equal(plan.nodes.find((node) => node.id === 'gen').data.params.operation, 'first_last_frame');
 });
 
 test('effectiveOps：0 → 拒绝；1 → 唯一 op；>=2 → keep_current 或同 model 切换', () => {
@@ -408,4 +396,28 @@ test('GraphMutator：catalog 缺失时媒体连线 catalog_unavailable；文本�
   } finally {
     cleanup();
   }
+});
+
+test('图形 targetHandle=in 不会写入 contract targetSlot；语义帧槽仍保留', () => {
+  const current = imageGenWithImport();
+  const generic = buildCanvasUpstreamFingerprint(
+    'gen',
+    current.nodes,
+    [{ id: 'generic', source: 'src', target: 'gen', targetHandle: 'in' }],
+  );
+  assert.equal(generic.assets[0].targetSlot, undefined);
+
+  const semantic = buildCanvasUpstreamFingerprint(
+    'gen',
+    current.nodes,
+    [{ id: 'semantic', source: 'src', target: 'gen', targetHandle: 'end_frame' }],
+  );
+  assert.equal(semantic.assets[0].targetSlot, 'end_frame');
+
+  const firstFrame = buildCanvasUpstreamFingerprint(
+    'gen',
+    current.nodes,
+    [{ id: 'first-frame', source: 'src', target: 'gen', targetHandle: 'first_frame' }],
+  );
+  assert.equal(firstFrame.assets[0].targetSlot, 'first_frame');
 });

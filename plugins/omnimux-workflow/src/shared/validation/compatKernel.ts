@@ -18,9 +18,9 @@
  * Fail-closed: unknown models, a missing catalog and zero candidates never
  * fall back to a permissive "available".
  *
- * Operation ids are open strings + metadata — the MCC 17-entry union is NOT
- * copied here (cross-package iron rule). Historical GenerationMode strings
- * are translated at read time via LEGACY_OPERATION_MAP.
+ * Operation ids are open strings + metadata — the registry-owned open string
+ * is NOT copied here as an N-entry union (cross-package iron rule). Historical
+ * GenerationMode strings are translated at read time via LEGACY_OPERATION_MAP.
  */
 
 import type {
@@ -69,6 +69,28 @@ function rejection(
   return { code, message, ...(extra ?? {}) };
 }
 
+/**
+ * Read a semantic target slot from an edge.
+ *
+ * in and input are graph handles for ordinary connections, not contract slots.
+ * Explicit edge metadata and real frame slot handles remain semantic slots.
+ */
+export function readExplicitTargetSlot(
+  edgeData: Record<string, unknown>,
+  targetHandle: unknown,
+): string | undefined {
+  const direct = typeof edgeData.targetSlot === 'string' ? edgeData.targetSlot.trim() : '';
+  if (direct) return direct;
+  const binding = edgeData.slotBinding;
+  if (binding && typeof binding === 'object') {
+    const slot = (binding as { slot?: unknown }).slot;
+    if (typeof slot === 'string' && slot.trim()) return slot.trim();
+  }
+  if (typeof targetHandle !== 'string') return undefined;
+  const slot = targetHandle.trim();
+  return slot && slot !== 'in' && slot !== 'input' ? slot : undefined;
+}
+
 // ============================================================================
 // Legacy operation mapping (read-time only; mirrors the hub legacy map
 // semantically WITHOUT importing plugins/omnimux)
@@ -78,6 +100,9 @@ export const LEGACY_OPERATION_MAP: Readonly<Record<string, string>> = Object.fre
   reference: 'video_multi_ref',
   first_last_frame: 'first_last_frame',
   first_frame: 'first_frame',
+  end_frame: 'end_frame',
+  endframe: 'end_frame',
+  'end-frame': 'end_frame',
   text_to_video: 'text_to_video',
   i2v: 'first_frame',
   t2v: 'text_to_video',
@@ -133,6 +158,8 @@ export interface UpstreamAssetFingerprint {
 
 export interface UpstreamFingerprint {
   prompt: string;
+  /** Values supplied on the node itself (for `source: node_field` contract slots). */
+  nodeFields: Record<string, unknown>;
   /** All upstream assets in deterministic (caller-supplied) order. */
   assets: UpstreamAssetFingerprint[];
   /** Media assets only (image/video/audio) — the hard-gate population. */
@@ -154,13 +181,17 @@ export function canonicalJson(value: unknown): string {
 
 export function buildUpstreamFingerprint(input: {
   prompt?: string;
+  nodeFields?: Record<string, unknown>;
   assets?: UpstreamAssetFingerprint[];
 }): UpstreamFingerprint {
   const prompt = typeof input.prompt === 'string' ? input.prompt : '';
+  const nodeFields = Object.fromEntries(
+    Object.entries(input.nodeFields ?? {}).filter(([, value]) => value !== undefined),
+  );
   const assets = (input.assets ?? []).map((asset) => ({ ...asset }));
   const mediaAssets = assets.filter((asset) => isMediaInputType(asset.type));
-  const signature = canonicalJson({ prompt, assets });
-  return { prompt, assets, mediaAssets, signature };
+  const signature = canonicalJson({ prompt, nodeFields, assets });
+  return { prompt, nodeFields, assets, mediaAssets, signature };
 }
 
 // ============================================================================
@@ -172,6 +203,8 @@ export interface ContractOperationView {
   label: string;
   output: { type: string; allowedMimes?: string[]; min?: number; max?: number };
   inputs: InputSlotDto[];
+  inputGroups: Array<{ slots: string[]; min: number; hint?: string }>;
+  parameters?: Record<string, unknown>;
   listed: boolean;
 }
 
@@ -204,10 +237,19 @@ function normalizeSlot(raw: unknown): InputSlotDto | null {
     role: typeof slot.role === 'string' ? slot.role : 'reference',
     ...(typeof slot.source === 'string' ? { source: slot.source as InputSlotDto['source'] } : {}),
     min: Number.isFinite(slot.min) ? (slot.min as number) : 0,
-    max: Number.isFinite(slot.max) ? (slot.max as number) : 0,
+    max: slot.max === null ? null : Number.isFinite(slot.max) ? (slot.max as number) : 0,
     ...(Array.isArray(slot.allowedMimes) ? { allowedMimes: slot.allowedMimes.map(String) } : {}),
     ...(Number.isFinite(slot.maxSizeMb) ? { maxSizeMb: slot.maxSizeMb as number } : {}),
+    ...(typeof slot.maxSizeExclusive === 'boolean' ? { maxSizeExclusive: slot.maxSizeExclusive } : {}),
+    ...(Number.isFinite(slot.minDurationSec) ? { minDurationSec: slot.minDurationSec as number } : {}),
     ...(Number.isFinite(slot.maxDurationSec) ? { maxDurationSec: slot.maxDurationSec as number } : {}),
+    ...(Number.isFinite(slot.totalMinDurationSec) ? { totalMinDurationSec: slot.totalMinDurationSec as number } : {}),
+    ...(Number.isFinite(slot.totalMaxDurationSec) ? { totalMaxDurationSec: slot.totalMaxDurationSec as number } : {}),
+    ...(Number.isFinite(slot.combinedOutputMaxDurationSec)
+      ? { combinedOutputMaxDurationSec: slot.combinedOutputMaxDurationSec as number }
+      : {}),
+    ...(typeof slot.totalMinExclusive === 'boolean' ? { totalMinExclusive: slot.totalMinExclusive } : {}),
+    ...(typeof slot.totalMaxExclusive === 'boolean' ? { totalMaxExclusive: slot.totalMaxExclusive } : {}),
     ...(slot.limitSource && typeof slot.limitSource === 'object'
       ? { limitSource: slot.limitSource as InputSlotDto['limitSource'] }
       : {}),
@@ -225,6 +267,16 @@ function normalizeOperation(raw: OperationContractDto): ContractOperationView | 
     inputs: (Array.isArray(raw.inputs) ? raw.inputs : [])
       .map(normalizeSlot)
       .filter((slot): slot is InputSlotDto => slot !== null),
+    inputGroups: (Array.isArray(raw.inputGroups) ? raw.inputGroups : [])
+      .filter((group) => group && typeof group === 'object' && Array.isArray(group.slots))
+      .map((group) => ({
+        slots: group.slots.map(String),
+        min: Number.isFinite(group.min) ? group.min : 0,
+        ...(typeof group.hint === 'string' ? { hint: group.hint } : {}),
+      })),
+    ...(raw.parameters && typeof raw.parameters === 'object'
+      ? { parameters: raw.parameters as Record<string, unknown> }
+      : {}),
     listed: raw.listed === true,
   };
 }
@@ -293,6 +345,7 @@ function synthesizeLegacyView(
         label: row.label ?? row.id,
         output: { type: outputType },
         inputs,
+        inputGroups: [],
         listed: true,
       },
     ],
@@ -404,6 +457,28 @@ export interface OperationMatch {
   pending: CompatRejection[];
 }
 
+function camelCaseSlot(slot: string): string {
+  return slot.replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase());
+}
+
+function readNodeField(slot: InputSlotDto, fingerprint: UpstreamFingerprint): unknown {
+  if (slot.slot === 'prompt' || slot.role === 'prompt') return fingerprint.prompt;
+  return fingerprint.nodeFields[slot.slot] ?? fingerprint.nodeFields[camelCaseSlot(slot.slot)];
+}
+
+function isRequiredNodeFieldPresent(slot: InputSlotDto, value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (!slot.slot.endsWith('_url')) return true;
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /** Slots that upstream edges can bind into (prompt/node_field slots excluded). */
 function bindableSlots(op: ContractOperationView): InputSlotDto[] {
   return op.inputs.filter(
@@ -459,7 +534,8 @@ export function matchOperationInputs(
     for (const slot of candidates) {
       const state = assignments.get(slot);
       if (!state) continue;
-      if (state.assets.length >= slot.max) {
+      const max = slot.max === null ? Number.POSITIVE_INFINITY : slot.max;
+      if (state.assets.length >= max) {
         attempts.push(rejection('slot_capacity', `槽位 ${slot.slot} 已满（max ${slot.max}）`, {
           operationId: op.id,
           slot: slot.slot,
@@ -484,7 +560,9 @@ export function matchOperationInputs(
       if (
         Number.isFinite(slot.maxSizeMb)
         && Number.isFinite(asset.sizeBytes)
-        && (asset.sizeBytes as number) > (slot.maxSizeMb as number) * BYTES_PER_MB
+        && (slot.maxSizeExclusive === true
+          ? (asset.sizeBytes as number) >= (slot.maxSizeMb as number) * BYTES_PER_MB
+          : (asset.sizeBytes as number) > (slot.maxSizeMb as number) * BYTES_PER_MB)
       ) {
         attempts.push(rejection('size_exceeded', `素材体积超过槽位 ${slot.slot} 上限（${slot.maxSizeMb}MB）`, {
           operationId: op.id,
@@ -502,6 +580,18 @@ export function matchOperationInputs(
           operationId: op.id,
           slot: slot.slot,
           meta: { durationSec: asset.durationSec, maxDurationSec: slot.maxDurationSec },
+        }));
+        continue;
+      }
+      if (
+        Number.isFinite(slot.minDurationSec)
+        && Number.isFinite(asset.durationSec)
+        && (asset.durationSec as number) < (slot.minDurationSec as number)
+      ) {
+        attempts.push(rejection('duration_exceeded', `素材时长低于槽位 ${slot.slot} 下限（${slot.minDurationSec}s）`, {
+          operationId: op.id,
+          slot: slot.slot,
+          meta: { durationSec: asset.durationSec, minDurationSec: slot.minDurationSec },
         }));
         continue;
       }
@@ -561,6 +651,36 @@ export function matchOperationInputs(
     if (!result.assigned) rejections.push(bestRejection(result.attempts));
   }
 
+  for (const state of assignments.values()) {
+    if (state.assets.length === 0) continue;
+    if (!state.assets.every((asset) => Number.isFinite(asset.durationSec))) continue;
+    const total = state.assets.reduce((sum, asset) => sum + (asset.durationSec as number), 0);
+    if (
+      Number.isFinite(state.slot.totalMinDurationSec)
+      && (state.slot.totalMinExclusive
+        ? total <= (state.slot.totalMinDurationSec as number)
+        : total < (state.slot.totalMinDurationSec as number))
+    ) {
+      rejections.push(rejection('duration_exceeded', `槽位 ${state.slot.slot} 的素材总时长低于文档下限`, {
+        operationId: op.id,
+        slot: state.slot.slot,
+        meta: { totalDurationSec: total, totalMinDurationSec: state.slot.totalMinDurationSec },
+      }));
+    }
+    if (
+      Number.isFinite(state.slot.totalMaxDurationSec)
+      && (state.slot.totalMaxExclusive
+        ? total >= (state.slot.totalMaxDurationSec as number)
+        : total > (state.slot.totalMaxDurationSec as number))
+    ) {
+      rejections.push(rejection('duration_exceeded', `槽位 ${state.slot.slot} 的素材总时长超过文档上限`, {
+        operationId: op.id,
+        slot: state.slot.slot,
+        meta: { totalDurationSec: total, totalMaxDurationSec: state.slot.totalMaxDurationSec },
+      }));
+    }
+  }
+
   const bindings: SlotBinding[] = [];
   for (const state of assignments.values()) {
     for (const asset of state.assets) {
@@ -588,11 +708,32 @@ export function matchOperationInputs(
         }));
       }
     }
+    for (const group of op.inputGroups) {
+      const count = group.slots.reduce(
+        (sum, slotName) => sum + (assignments.get(slots.find((slot) => slot.slot === slotName)!)?.assets.length ?? 0),
+        0,
+      );
+      if (count < group.min) {
+        pending.push(rejection('min_unsatisfied', group.hint || `输入组至少需要 ${group.min} 个素材（当前 ${count}）`, {
+          operationId: op.id,
+          meta: { slots: [...group.slots], min: group.min, current: count },
+        }));
+      }
+    }
     const promptRequired = op.inputs.some(
-      (slot) => (slot.role === 'prompt' || slot.source === 'node_field') && slot.min >= 1,
+      (slot) => (slot.role === 'prompt' || slot.slot === 'prompt') && slot.min >= 1,
     );
     if (promptRequired && !fingerprint.prompt.trim()) {
       pending.push(rejection('prompt_required', '该 operation 需要非空 prompt', { operationId: op.id }));
+    }
+    for (const slot of op.inputs) {
+      if (slot.source !== 'node_field' || slot.min < 1 || slot.role === 'prompt' || slot.slot === 'prompt') continue;
+      if (isRequiredNodeFieldPresent(slot, readNodeField(slot, fingerprint))) continue;
+      const name = slot.slot.endsWith('_url') ? '有效 URL' : '非空值';
+      pending.push(rejection('metadata_required', `槽位 ${slot.slot} 需要${name}`, {
+        operationId: op.id,
+        slot: slot.slot,
+      }));
     }
   }
 
@@ -647,7 +788,10 @@ export function evaluateModelCompat(
     };
   }
 
-  const requestedOperationId = opts.operationId ? mapLegacyOperation(opts.operationId) : undefined;
+  const requestedOperationId =
+    typeof opts.operationId === 'string' && opts.operationId.trim()
+      ? opts.operationId.trim()
+      : undefined;
   const listedOps = model.operations.filter((op) => op.listed);
   const candidateOps = opts.outputType
     ? listedOps.filter((op) => op.output.type === opts.outputType)
@@ -830,9 +974,10 @@ export function planAutoAdaptation(args: {
   if (!view.available) return null;
 
   const outputType = args.outputType;
-  const currentOperationId = args.currentOperationId
-    ? mapLegacyOperation(args.currentOperationId)
-    : undefined;
+  const currentOperationId =
+    typeof args.currentOperationId === 'string' && args.currentOperationId.trim()
+      ? args.currentOperationId.trim()
+      : undefined;
 
   const evaluate = (model: ContractModelView) =>
     evaluateModelCompat(model, args.fingerprint, {
@@ -892,9 +1037,9 @@ export function planAutoAdaptation(args: {
 
 export interface MergedInputCapability {
   modalities: string[];
-  referenceImages?: { min: number; max: number; allowedMimeTypes: string[]; supportedRoles: string[] };
-  referenceVideos?: { min: number; max: number; allowedMimeTypes: string[]; supportedRoles: string[] };
-  referenceAudios?: { min: number; max: number; allowedMimeTypes: string[]; supportedRoles: string[] };
+  referenceImages?: { min: number; max: number | null; allowedMimeTypes: string[]; supportedRoles: string[] };
+  referenceVideos?: { min: number; max: number | null; allowedMimeTypes: string[]; supportedRoles: string[] };
+  referenceAudios?: { min: number; max: number | null; allowedMimeTypes: string[]; supportedRoles: string[] };
 }
 
 /**
@@ -904,7 +1049,7 @@ export interface MergedInputCapability {
  */
 export function deriveMergedInputCapability(model: ContractModelView): MergedInputCapability | undefined {
   const modalities: string[] = [];
-  const refs: Record<MediaInputType, { min: number; max: number; allowedMimeTypes: string[]; supportedRoles: string[] } | undefined> = {
+  const refs: Record<MediaInputType, { min: number; max: number | null; allowedMimeTypes: string[]; supportedRoles: string[] } | undefined> = {
     image: undefined,
     video: undefined,
     audio: undefined,
@@ -931,7 +1076,9 @@ export function deriveMergedInputCapability(model: ContractModelView): MergedInp
         };
       } else {
         acc.min = Math.min(acc.min, slot.min);
-        acc.max = Math.max(acc.max, slot.max);
+        acc.max = acc.max === null || slot.max === null
+          ? null
+          : Math.max(acc.max, slot.max);
         for (const mime of slot.allowedMimes ?? []) {
           if (!acc.allowedMimeTypes.includes(mime)) acc.allowedMimeTypes.push(mime);
         }

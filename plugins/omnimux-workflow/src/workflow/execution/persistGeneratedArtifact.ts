@@ -4,12 +4,13 @@
  */
 import { existsSync, openSync, readSync, closeSync } from 'node:fs';
 import { basename } from 'node:path';
-import { projectFileMediaUrl, sniffMediaExtension } from '../../shared/localMedia.ts';
+import { projectFileMediaUrl, sniffMediaExtension, sniffMimeType } from '../../shared/localMedia.ts';
 import { resolveProjectPaths } from '../../projects/paths.ts';
 import { moveFileIntoDir } from '../ingest/IngestionPipeline.ts';
 import { WorkflowStoreError } from '../workspace/WorkflowStoreError.ts';
 import type { RegisterGeneratedAssetPayload } from '../workspace/ProjectAssetsStore.ts';
 import type { ProjectAssetFileType } from '../../shared/projectAssets.ts';
+import { buildMediaMetadata } from '../../shared/mediaMetadata.ts';
 
 export interface PersistGeneratedArtifactOpts {
   workspaceId: string;
@@ -31,6 +32,12 @@ export interface PersistedGeneratedArtifact {
   url: string;
   destAbs: string;
   name: string;
+  /** Canonical MIME; null when unknown. */
+  mimeType: string | null;
+  /** Byte size; null when unknown. */
+  sizeBytes: number | null;
+  /** Duration seconds; null when unknown (generation path rarely measures). */
+  durationSec: number | null;
 }
 
 const SNIFF_HEAD_BYTES = 512;
@@ -99,11 +106,20 @@ export async function persistGeneratedArtifact(
     generatedAt: new Date().toISOString(),
   };
   const type = opts.materialType as ProjectAssetFileType;
+  const sniffedMime = head ? sniffMimeType(head) : undefined;
+  const meta = buildMediaMetadata({
+    mime: sniffedMime,
+    size: typeof copied.size === 'number' ? copied.size : null,
+    filename: copied.name,
+    path: copied.relativePath,
+  });
   const document = opts.registerGenerated(opts.workspaceId, {
     relative_path: copied.relativePath,
     name: copied.name,
     type,
-    size: copied.size,
+    size: meta.sizeBytes,
+    mimeType: meta.mimeType,
+    durationSec: meta.durationSec,
     lineage,
   });
   const item = document.items.find((row) => row.relative_path === copied.relativePath);
@@ -114,5 +130,8 @@ export async function persistGeneratedArtifact(
     url: projectFileMediaUrl(opts.workspaceId, copied.relativePath),
     destAbs: copied.destAbs,
     name: copied.name,
+    mimeType: meta.mimeType,
+    sizeBytes: meta.sizeBytes,
+    durationSec: meta.durationSec,
   };
 }

@@ -16,6 +16,8 @@ import {
 } from '../execution/subgraph';
 import { notFound, type RouteTry, type WorkflowDispatchRequest } from './dispatch';
 import type { EnsureProjectBoundFn } from '../../projects/ensureProjectBound';
+import type { CapabilityCatalog } from '../../shared/api';
+import { findExecutionReadinessFailure } from '../../shared/validation/executionReadiness.ts';
 
 const STATUS_BY_CODE: Record<string, number> = {
   'invalid-json': 400,
@@ -83,8 +85,9 @@ export function createExecutionRoutes(opts: {
   store: WorkspaceStore;
   executionManager: ExecutionManager;
   ensureProjectBound?: EnsureProjectBoundFn;
+  getCatalog?: () => Promise<CapabilityCatalog | null>;
 }): { tryHandle: RouteTry } {
-  const { store, executionManager, ensureProjectBound } = opts;
+  const { store, executionManager, ensureProjectBound, getCatalog } = opts;
   const executionsRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions$`);
   const executionItemRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)$`);
   const executionActionRouteRe = new RegExp(`^${WORKFLOW_ROUTE_PREFIX}/api/workspaces/([^/]+)/executions/([^/]+)/(pause|resume|cancel)$`);
@@ -166,6 +169,22 @@ export function createExecutionRoutes(opts: {
             executionMode: mode,
             nodeIds: normalizeNodeIds(body.nodeIds),
           });
+
+          const readiness = findExecutionReadinessFailure(
+            subgraph.nodes as Array<{ id: string; type: string; data?: Record<string, unknown> }>,
+            getCatalog ? await getCatalog() : null,
+          );
+          if (readiness) {
+            return {
+              status: 400,
+              body: {
+                error: 'configuration_error',
+                reasonCode: readiness.reasonCode,
+                nodeId: readiness.nodeId,
+                message: readiness.message,
+              },
+            };
+          }
 
           if (
             subgraphContainsMediaGenerate(subgraph.nodes as Array<{ type?: string; data?: Record<string, unknown> }>)

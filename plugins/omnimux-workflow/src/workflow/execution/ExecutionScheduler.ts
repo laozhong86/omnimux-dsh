@@ -48,8 +48,12 @@ export interface ExecutableNode {
 }
 
 export interface ExecutableEdge {
+  id?: string;
   source: string;
   target: string;
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
+  data?: Record<string, unknown>;
 }
 
 export interface DagState {

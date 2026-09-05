@@ -21,4 +21,5 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `living` | [evolink-video-channel.md](evolink-video-channel.md) | EvoLink 视频渠道独立记录 | `omnimux/catalog` | 2026-09-05 | 与 APIMart 分账；本批不路由、不回退、不混用约束。 |
 | `living` | [tiktok-drama-center.md](tiktok-drama-center.md) | TikTok Drama Center 一站式参考 | `global` | 2026-08-14 | 更新：2026-08-14。公开网页和官方帮助页能核实的内容写在这里。后台合同、分成公式、帮助中心登录后正文这次没读到。 |

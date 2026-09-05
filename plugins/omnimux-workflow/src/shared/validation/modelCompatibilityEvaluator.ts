@@ -22,9 +22,9 @@ export type ModelCompatibilityLevel = 'available' | 'degraded' | 'disabled' | 'h
 
 export interface ModelInputCapability {
   modalities: MaterialType[];
-  referenceImages?: { min: number; max: number; allowedMimeTypes?: string[]; supportedRoles?: string[] };
-  referenceVideos?: { min: number; max: number; allowedMimeTypes?: string[]; supportedRoles?: string[] };
-  referenceAudios?: { min: number; max: number; allowedMimeTypes?: string[]; supportedRoles?: string[] };
+  referenceImages?: { min: number; max: number | null; allowedMimeTypes?: string[]; supportedRoles?: string[] };
+  referenceVideos?: { min: number; max: number | null; allowedMimeTypes?: string[]; supportedRoles?: string[] };
+  referenceAudios?: { min: number; max: number | null; allowedMimeTypes?: string[]; supportedRoles?: string[] };
 }
 
 export interface ModelCompatibilityResult {
@@ -137,12 +137,12 @@ export function evaluateModelCompatibility(
       reasons.push('该模型不支持参考素材');
       mark('model_incompatible');
       if (!adaptationAdvice) adaptationAdvice = '建议移除参考素材或更换支持图片输入的模型';
-    } else if (cap && cap.max !== undefined && images.length > cap.max) {
+    } else if (cap && cap.max !== null && images.length > cap.max) {
       level = 'disabled';
       reasons.push(`超出模型最大参考图数量（最多 ${cap.max} 张）`);
       mark('slot_capacity');
       if (!adaptationAdvice) adaptationAdvice = `建议截取前 ${cap.max} 张或更换模型`;
-    } else if (cap && cap.min !== undefined && cap.min > 0 && images.length > cap.min && images.length <= cap.max) {
+    } else if (cap && cap.max !== null && cap.min > 0 && images.length > cap.min && images.length <= cap.max) {
       level = 'degraded';
       reasons.push(`输入已超出推荐配额（推荐 ${cap.min} 张，最多 ${cap.max} 张）`);
       if (!adaptationAdvice) adaptationAdvice = `输入超出模型推荐配额，执行时按前 ${cap.max} 张处理`;
@@ -168,12 +168,12 @@ export function evaluateModelCompatibility(
       reasons.push('该模型不支持视频参考素材');
       mark('model_incompatible');
       if (!adaptationAdvice) adaptationAdvice = '建议移除视频参考素材或更换支持视频输入的模型';
-    } else if (cap && cap.max !== undefined && videos.length > cap.max) {
+    } else if (cap && cap.max !== null && videos.length > cap.max) {
       level = 'disabled';
       reasons.push(`超出模型最大参考视频数量（最多 ${cap.max} 个）`);
       mark('slot_capacity');
       if (!adaptationAdvice) adaptationAdvice = `建议截取前 ${cap.max} 个或更换模型`;
-    } else if (cap && cap.min !== undefined && cap.min > 0 && videos.length > cap.min && videos.length <= cap.max) {
+    } else if (cap && cap.max !== null && cap.min > 0 && videos.length > cap.min && videos.length <= cap.max) {
       if (level !== 'disabled') level = 'degraded';
       reasons.push(`输入已超出推荐配额（推荐 ${cap.min} 个，最多 ${cap.max} 个）`);
       if (!adaptationAdvice) adaptationAdvice = `输入超出模型推荐配额，执行时按前 ${cap.max} 个处理`;
@@ -199,12 +199,12 @@ export function evaluateModelCompatibility(
       reasons.push('该模型不支持音频参考素材');
       mark('model_incompatible');
       if (!adaptationAdvice) adaptationAdvice = '建议移除音频参考素材或更换支持音频输入的模型';
-    } else if (cap && cap.max !== undefined && audios.length > cap.max) {
+    } else if (cap && cap.max !== null && audios.length > cap.max) {
       level = 'disabled';
       reasons.push(`超出模型最大参考音频数量（最多 ${cap.max} 个）`);
       mark('slot_capacity');
       if (!adaptationAdvice) adaptationAdvice = `建议截取前 ${cap.max} 个或更换模型`;
-    } else if (cap && cap.min !== undefined && cap.min > 0 && audios.length > cap.min && audios.length <= cap.max) {
+    } else if (cap && cap.max !== null && cap.min > 0 && audios.length > cap.min && audios.length <= cap.max) {
       if (level !== 'disabled') level = 'degraded';
       reasons.push(`输入已超出推荐配额（推荐 ${cap.min} 个，最多 ${cap.max} 个）`);
       if (!adaptationAdvice) adaptationAdvice = `输入超出模型推荐配额，执行时按前 ${cap.max} 个处理`;

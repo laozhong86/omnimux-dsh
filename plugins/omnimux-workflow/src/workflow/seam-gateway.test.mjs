@@ -762,16 +762,66 @@ test('capabilities v1.1：models/operations/research/execution/aliases/parameter
   }
 });
 
-test('回退：OMNIMUX_WORKFLOW_GATEWAY=mock 强制 mock（即使 seam 在场）', async () => {
-  const hub = createFakeSeamHub();
+test('强制 mock：读取本地 modelCatalog，但不会调用任何真实 generation seam', async () => {
+  const operations = Array.from({ length: 31 }, (_, index) => ({
+    id: `video_op_${index + 1}`,
+    label: `Video operation ${index + 1}`,
+    output: { type: 'video' },
+    inputs: [{ slot: 'prompt', type: 'text', role: 'prompt', source: 'node_field', min: 1, max: 1 }],
+    listed: true,
+  }));
+  const models = Array.from({ length: 7 }, (_, index) => ({
+    id: `video-model-${index + 1}`,
+    label: `Video Model ${index + 1}`,
+    listed: true,
+    operations: operations.filter((_, operationIndex) => operationIndex % 7 === index),
+  }));
+  const hub = createFakeSeamHub({
+    catalogList: () => ({
+      source: 'omnimux',
+      schemaVersion: '1.1',
+      fingerprint: 'seven-video-models',
+      defaults: { video: 'video-model-1' },
+      models,
+      video: models.map(({ id, label }) => ({ id, label })),
+      text: [],
+      image: [],
+      audio: [],
+    }),
+  });
   const h = makeHarness({
     seamHub: hub,
     env: { OMNIMUX_WORKFLOW_GATEWAY: 'mock' },
   });
   try {
     const caps = await h.call({ url: '/omnimux-workflow/api/capabilities' });
-    assert.equal(caps.body.source, 'static-stub');
-    assert.ok(caps.body.video.some((row) => row.id === 'mock-video-1'));
+    assert.equal(caps.body.source, 'omnimux');
+    assert.equal(caps.body.fingerprint, 'seven-video-models');
+    assert.equal(caps.body.video.length, 7);
+    assert.equal(caps.body.models.length, 7);
+    assert.equal(caps.body.models.flatMap((model) => model.operations).length, 31);
+
+    const { wsId } = await h.createGraph({
+      nodes: [h.materialNode('n1', 'video', {
+        params: { model: 'video-model-1', operation: 'video_op_1' },
+      })],
+      bind: true,
+    });
+    const execution = await h.call({
+      method: 'POST',
+      url: `/omnimux-workflow/api/workspaces/${wsId}/executions`,
+      body: { mode: 'full' },
+    });
+    const sse = await h.openSse({
+      url: `/omnimux-workflow/api/workspaces/${wsId}/executions/${execution.body.execution.id}/events`,
+      until: (raw) => raw.includes('event: execution_complete'),
+    });
+    assert.ok(sse.satisfied, 'mock execution should complete');
+    const complete = h.parseSse(sse.raw).find((event) => event.event === 'node_complete');
+    assert.equal(complete.data.output.simulated, true);
+    assert.equal(hub.state.submits, 0);
+    assert.equal(hub.state.polls, 0);
+    assert.equal(hub.state.textRequests.length, 0);
   } finally {
     h.dispose();
     rmSync(h.root, { recursive: true, force: true });

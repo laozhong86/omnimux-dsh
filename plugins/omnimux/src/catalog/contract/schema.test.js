@@ -16,25 +16,31 @@ import {
   operationIdSet,
   promptPolicyFor,
   CANONICAL_SCHEMA_VERSION,
+  EXPECTED_OPERATION_COUNT,
 } from './schema.js';
 import { parseFile, prepareCanonicalDoc, preNormalizeDocRoot } from './load.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(__dirname, 'fixtures');
 
-test('operation registry has 17 unique MCC ids with valid promptPolicy', () => {
+test('operation registry has unique MCC ids with valid promptPolicy (count from SSOT)', () => {
   const reg = loadOperationRegistry();
   assert.equal(typeof reg.version, 'string');
   const ids = reg.operations.map((o) => o.id);
-  assert.equal(ids.length, 17);
-  assert.equal(new Set(ids).size, 17);
+  assert.equal(ids.length, EXPECTED_OPERATION_COUNT);
+  assert.equal(new Set(ids).size, EXPECTED_OPERATION_COUNT);
   assert.ok(ids.includes('speech_to_text'));
+  assert.ok(ids.includes('end_frame'), 'registry must include end_frame (#567)');
+  const endFrame = reg.operations.find((o) => o.id === 'end_frame');
+  assert.equal(endFrame.defaultOutputType, 'video');
+  assert.equal(endFrame.promptPolicy, 'optional');
+  assert.equal(endFrame.group, 'video');
   const stt = reg.operations.find((o) => o.id === 'speech_to_text');
   assert.equal(stt.defaultOutputType, 'text');
   assert.equal(stt.promptPolicy, 'none');
   assert.equal(promptPolicyFor('digital_human', reg), 'optional');
   assert.equal(promptPolicyFor('chat', reg), 'required');
-  assert.equal(operationIdSet(reg).size, 17);
+  assert.equal(operationIdSet(reg).size, EXPECTED_OPERATION_COUNT);
   for (const op of reg.operations) {
     assert.ok(
       op.promptPolicy === 'required' || op.promptPolicy === 'optional' || op.promptPolicy === 'none',
@@ -45,7 +51,7 @@ test('operation registry has 17 unique MCC ids with valid promptPolicy', () => {
   assert.equal(regIssues.length, 0, JSON.stringify(regIssues));
 });
 
-test('adapter profiles declare operations/outputTypes; digital_human not in videoGenerate', () => {
+test('adapter profiles declare operations/outputTypes; digital_human not in videoGenerate; end_frame present', () => {
   const profiles = loadAdapterProfiles();
   assert.equal(typeof profiles.version, 'string');
   const issues = validateAdapterProfiles(profiles, loadOperationRegistry());
@@ -54,6 +60,7 @@ test('adapter profiles declare operations/outputTypes; digital_human not in vide
   assert.ok(vg);
   assert.ok(Array.isArray(vg.operations));
   assert.ok(!vg.operations.includes('digital_human'));
+  assert.ok(vg.operations.includes('end_frame'), 'videoGenerate must declare end_frame (#567)');
   assert.deepEqual(vg.outputTypes, ['video']);
   const dh = profiles.profiles.find((p) => p.id === 'videoDigitalHuman');
   assert.ok(dh);
@@ -306,6 +313,7 @@ test('profile_incompatible rejects wrong output type on live profile', () => {
           },
         ],
         research: { status: 'verified', docUrl: 'https://x' },
+        implementation: { status: 'ready', profileId: 'videoGenerate', seam: 'videoGenerate' },
         execution: { status: 'live', profileId: 'videoGenerate', seam: 'videoGenerate' },
       },
     ],

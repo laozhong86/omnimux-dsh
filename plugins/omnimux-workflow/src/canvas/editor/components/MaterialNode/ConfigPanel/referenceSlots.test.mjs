@@ -37,7 +37,7 @@ test('calculateReferenceCapacity：空态渲染参考图 0/y 与非超限状态'
   assert.equal(noMaxRes.imageCount, 0);
   assert.equal(noMaxRes.max, undefined);
   assert.equal(noMaxRes.isOver, false);
-  assert.equal(noMaxRes.capacityLabel, '参考图 0/--');
+  assert.equal(noMaxRes.capacityLabel, '参考图 0/未公布');
   assert.equal(noMaxRes.warningText, undefined);
 });
 
@@ -100,7 +100,7 @@ test('calculateReferenceCapacity：未超限状态正常展示当前容量', () 
     modelId: 'gpt-image-2',
   });
   assert.equal(unknown.max, undefined);
-  assert.equal(unknown.capacityLabel, '参考图 1/--');
+  assert.equal(unknown.capacityLabel, '参考图 1/未公布');
 });
 
 test('calculateReferenceCapacity：超限状态转警示态并生成 degradedWarning', () => {

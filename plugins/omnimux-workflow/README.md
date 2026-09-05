@@ -87,10 +87,12 @@ npm run build      # 显式重建：dist/index.js + lib/client.js + lib/canvas.j
 | 环境 | 行为 |
 |---|---|
 | `OMNIMUX_WORKFLOW_GATEWAY=omnimux` | 强制 seam 客户端；hub 缺席时节点错误 `[omnimux:needs-provider]`（**绝不静默 mock**） |
-| `OMNIMUX_WORKFLOW_GATEWAY=mock` | 强制 mock 网关（开发/离线/测试） |
+| `OMNIMUX_WORKFLOW_GATEWAY=mock` | 只在本地模拟生成；Hub 在场时读取其模型合同目录，未安装 Hub 时使用静态测试目录 |
 | 未设置（默认 `auto`） | 探测 `ctx.get` seam：hub 在场 → seam 客户端；否则 mock。auto 模式在每次提交前重新探测，hub 晚于本插件挂载时自动升级（单向 mock→omnimux，已提交任务仍归原网关所有） |
 
 代码注入优先级最高：`mountWorkflowHost(ctx, { gateway })` 显式传入网关时跳过装配（测试用）。
+
+强制模拟模式只调用本地 `modelCatalog.list()` 投影模型、模式和参数，不调用生成 seam。模拟输出在执行记录和画布节点中保留 `simulated: true`，完成节点显示「模拟结果」；后续真实输出会清除该标记。模拟完成不能作为真实模型调用成功的证据。
 
 ### 输入映射（节点 data → seam 请求）
 
@@ -191,10 +193,9 @@ hub 错误（`OmnimuxError`，带 `code`）映射为节点执行错误，格式 
 
 ## 已知限制
 
-- **视频参考输入（v2v / 动作模仿）暂不支持**：hub 的 `videoGenerate` seam 请求只接受 `image` 参考字段，没有参考视频字段（源码确认，`docs/m4-hub-seam-research.md` §7）。视频节点的上游**图片**参考正常透传（i2v）；上游**视频**参考被忽略（host 日志警告 + 节点 UI 提示「等待执行中枢扩展」）
-- **画幅（aspectRatio）参数不透传**：hub seam 请求 schema 没有 aspectRatio 字段；节点面板仍可配置但当前仅存于画布数据
+- **视频输入和参数按型号、模式限定**：阶段一七款 APIMart 型号的素材角色、画幅、时长和上限见[视频阶段一合同](../../docs/specs/2026-09-05-video-phase-one-scope.md)。不兼容的输入保留并提示，修正前阻止提交。
 - **音频生成不可用**：hub 无 `audioGenerate` seam；音频生成节点在真实网关下报 `[omnimux:needs-provider]`，能力目录 audio 列表为空
-- **能力目录非动态发现**：hub 未暴露模型目录 seam，目录为 hub 契约默认值镜像 + env 覆盖
+- **能力目录不代表真实执行历史**：目录来自 Hub 的本地合同投影；文档确认、适配就绪和真实执行证据分别记录。
 - **跨进程任务恢复为重新提交**：seam 任务表只在插件进程内存（hub 无任务台账）；进程重启后在途节点回置 pending 重新提交
 - **Agent 工具为只读 + 触发执行**：不提供画布结构修改工具（防误改用户画布）；Agent 需要改图时给出建议、由用户操作
 - hub 不可达时的 auto 回退是 mock 网关（模拟生成）——`source: "static-stub"` 目录会明示；要硬保证不跑 mock，用 `OMNIMUX_WORKFLOW_GATEWAY=omnimux`

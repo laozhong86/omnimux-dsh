@@ -8,7 +8,7 @@
 
 import { join } from 'node:path';
 import { localFilePathFromUrl } from '../../shared/localMedia.ts';
-import type { GenerationGateway, ReferenceAssetPayload } from '../seam/gateway';
+import type { GenerationGateway, MediaInputRole, ReferenceAssetPayload } from '../seam/gateway';
 import type {
   ExecutionContext,
   NodeExecutor,
@@ -30,6 +30,16 @@ function readDuration(data: Record<string, unknown>): number | undefined {
   if (typeof fromParams === 'number') return fromParams;
   if (typeof data.duration === 'number') return data.duration;
   return undefined;
+}
+
+function readNumber(source: Record<string, unknown> | undefined, key: string): number | undefined {
+  const value = source?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function readBoolean(source: Record<string, unknown> | undefined, key: string): boolean | undefined {
+  const value = source?.[key];
+  return typeof value === 'boolean' ? value : undefined;
 }
 
 function readMaterialType(nodeData: Record<string, unknown>): 'text' | 'image' | 'video' | 'audio' {
@@ -76,13 +86,37 @@ interface UpstreamMultiModalData {
   audioTrack?: ReferenceAssetPayload;
 }
 
+const MEDIA_ROLES = new Set<MediaInputRole>([
+  'reference',
+  'first_frame',
+  'last_frame',
+  'controlnet',
+  'mask',
+  'audio_track',
+  'source',
+  'document',
+  'webpage',
+  'motion_source',
+]);
+
+function normalizeRole(value: unknown): MediaInputRole {
+  return typeof value === 'string' && MEDIA_ROLES.has(value as MediaInputRole)
+    ? value as MediaInputRole
+    : 'reference';
+}
+
 /** Upstream output: collects text, all media references and audio tracks without short-circuiting. */
 function collectUpstreamMultiModal(ctx: ExecutionContext): UpstreamMultiModalData {
   let text: string | undefined;
   const references: ReferenceAssetPayload[] = [];
   let audioTrack: ReferenceAssetPayload | undefined;
 
-  for (const output of ctx.upstreamOutputs.values()) {
+  const ordered: NonNullable<ExecutionContext['upstreamBindings']> = ctx.upstreamBindings && ctx.upstreamBindings.length > 0
+    ? ctx.upstreamBindings
+    : [...ctx.upstreamOutputs.entries()].map(([sourceNodeId, output]) => ({ sourceNodeId, output }));
+
+  for (const binding of ordered) {
+    const output = binding.output;
     if (!text && output.text && output.text.trim()) {
       text = output.text.trim();
     }
@@ -92,20 +126,20 @@ function collectUpstreamMultiModal(ctx: ExecutionContext): UpstreamMultiModalDat
         const pathOrUrl = resolveMediaSourcePath(asset, ctx.mediaDir) || asset.url;
         if (!pathOrUrl) continue;
 
-        if (asset.type === 'audio') {
-          if (!audioTrack) {
-            audioTrack = {
-              role: 'audio_track',
-              type: 'audio',
-              pathOrUrl,
-            };
-          }
+        const role = normalizeRole(binding.role);
+        const payload: ReferenceAssetPayload = {
+          role,
+          type: asset.type,
+          pathOrUrl,
+          ...(binding.targetSlot ? { targetSlot: binding.targetSlot } : {}),
+          ...(asset.mimeType ? { mimeType: asset.mimeType } : {}),
+          ...(typeof asset.sizeBytes === 'number' ? { sizeBytes: asset.sizeBytes } : {}),
+          ...(typeof asset.durationSec === 'number' ? { durationSec: asset.durationSec } : {}),
+        };
+        if (asset.type === 'audio' && role === 'audio_track' && !audioTrack) {
+          audioTrack = payload;
         } else {
-          references.push({
-            role: 'reference',
-            type: asset.type,
-            pathOrUrl,
-          });
+          references.push(payload);
         }
       }
     }
@@ -122,6 +156,7 @@ export function createMaterialGatewayExecutor(opts: {
     key: 'material:generate',
     async execute(node, ctx): Promise<NodeOutput> {
       const data = node.data ?? {};
+      const params = data.params as Record<string, unknown> | undefined;
       const upstream = collectUpstreamMultiModal(ctx);
 
       // Generative: gateway submit -> await -> output
@@ -136,7 +171,7 @@ export function createMaterialGatewayExecutor(opts: {
       const references = upstream.references;
       const audioTrack = upstream.audioTrack;
       const image = references.find((r) => r.type === 'image')?.pathOrUrl || undefined;
-      const audio = audioTrack?.pathOrUrl || undefined;
+      const audio = references.find((r) => r.type === 'audio')?.pathOrUrl || audioTrack?.pathOrUrl;
 
       const dest = join(ctx.mediaDir, `${node.id}.${extFor(capability)}`);
       ctx.reportProgress?.(10, '已提交生成任务');
@@ -149,15 +184,25 @@ export function createMaterialGatewayExecutor(opts: {
         references: references.length > 0 ? references : undefined,
         audioTrack,
         duration: readDuration(data),
-        model: readString(data.params as Record<string, unknown> | undefined, 'model'),
-        resolution: readString(data.params as Record<string, unknown> | undefined, 'resolution'),
-        aspectRatio: readString(data.params as Record<string, unknown> | undefined, 'aspectRatio'),
-        voice: readString(data.params as Record<string, unknown> | undefined, 'voice'),
-        style: readString(data.params as Record<string, unknown> | undefined, 'style'),
-        instrumental: (data.params as Record<string, unknown> | undefined)?.instrumental === true,
-        speed: typeof (data.params as Record<string, unknown> | undefined)?.speed === 'number'
-          ? (data.params as Record<string, unknown>).speed as number
-          : undefined,
+        operation: readString(params, 'operation'),
+        model: readString(params, 'model'),
+        resolution: readString(params, 'resolution'),
+        aspectRatio: readString(params, 'aspectRatio'),
+        voice: readString(params, 'voice'),
+        style: readString(params, 'style'),
+        instrumental: readBoolean(params, 'instrumental'),
+        speed: readNumber(params, 'speed'),
+        sound: readBoolean(params, 'sound'),
+        seed: readNumber(params, 'seed'),
+        watermark: readBoolean(params, 'watermark'),
+        outputFormat: readString(params, 'outputFormat'),
+        referenceTaskType: readString(params, 'referenceTaskType'),
+        generationType: readString(params, 'generationType'),
+        returnLastFrame: readBoolean(params, 'returnLastFrame'),
+        webSearch: readBoolean(params, 'webSearch'),
+        nsfwCheck: readBoolean(params, 'nsfwCheck'),
+        fileUrl: readString(params, 'fileUrl'),
+        linkUrl: readString(params, 'linkUrl'),
         dest,
         signal: ctx.signal,
         mockFail: readMockFail(data),
@@ -166,9 +211,13 @@ export function createMaterialGatewayExecutor(opts: {
       ctx.reportProgress?.(40, '生成中…');
       const settled = await gateway.awaitTask(submitted.taskId, dest, ctx.signal);
       ctx.reportProgress?.(90, '生成完成');
+      const simulated = settled.simulated === true;
 
       if (capability === 'text') {
-        return { text: settled.text ?? `[gateway:${capability}] ${prompt}` };
+        return {
+          text: settled.text ?? `[gateway:${capability}] ${prompt}`,
+          ...(simulated ? { simulated: true } : {}),
+        };
       }
 
       if (ctx.persistGenerated) {
@@ -178,22 +227,27 @@ export function createMaterialGatewayExecutor(opts: {
           tmpAbs: dest,
           materialType: capability,
           prompt,
-          modelId: readString(data.params as Record<string, unknown> | undefined, 'model'),
+          modelId: readString(params, 'model'),
         });
         return {
           relativePath: persisted.relativePath,
           assetId: persisted.assetId,
+          ...(simulated ? { simulated: true } : {}),
           mediaAssets: [{
             type: capability,
             url: persisted.url,
             relativePath: persisted.relativePath,
             assetId: persisted.assetId,
+            ...(persisted.mimeType ? { mimeType: persisted.mimeType } : {}),
+            ...(persisted.sizeBytes != null ? { sizeBytes: persisted.sizeBytes } : {}),
+            ...(persisted.durationSec != null ? { durationSec: persisted.durationSec } : {}),
           }],
         };
       }
 
       const url = ctx.toPublicUrl ? ctx.toPublicUrl(settled.url) : settled.url;
       return {
+        ...(simulated ? { simulated: true } : {}),
         mediaAssets: [{ type: capability as 'image' | 'video' | 'audio', url }],
       };
     },

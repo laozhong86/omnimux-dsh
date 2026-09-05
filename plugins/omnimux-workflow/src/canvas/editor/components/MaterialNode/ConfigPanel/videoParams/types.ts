@@ -1,29 +1,44 @@
 /**
- * VideoParams Types & Contracts
+ * VideoParams Types & Contracts (Issue 467 / W2).
  *
- * 定义视频生成参数底栏、浮层及画幅几何等全套 TypeScript 接口与类型定义。
- * 严格遵循 DSH 原生 UI 设计规范与工作流画布节点契约。
+ * Generation mode is an open-string Catalog operation id (`params.operation`).
+ * retired from the write path; legacy values are read-time migrated only.
  */
 
 import type { ReactNode, Ref } from 'react';
+import type { ModelParameterSchema } from '../../../../../../shared/api.ts';
+import type { OperationUiOption } from '../../../../../../shared/validation/operationUi.ts';
 
-/**
- * 视频生成模式：
- * - reference: 全能参考模式（支持图生视频、文生视频等）
- * - first_last_frame: 首尾帧模式（首帧和尾帧生成视频过渡）
- */
-export type GenerationMode = 'reference' | 'first_last_frame';
+export interface PendingVideoParamAdjustment {
+  suggestedParams: Record<string, unknown>;
+  /** Values observed when each suggestion was created; protects later edits. */
+  originalParams: Record<string, unknown>;
+  notices: string[];
+}
 
 /**
  * 存放于 nodeData.params 中的视频参数原始/持久化结构
  */
 export interface VideoNodeParams {
   model?: string;
-  generationMode?: GenerationMode;
+  /** Canonical operation id from the Catalog DTO. */
+  operation?: string;
   aspectRatio?: string;
   resolution?: string;
   duration?: number | string;
   sound?: boolean;
+  seed?: number;
+  watermark?: boolean;
+  outputFormat?: string;
+  referenceTaskType?: string;
+  generationType?: string;
+  returnLastFrame?: boolean;
+  webSearch?: boolean;
+  nsfwCheck?: boolean;
+  /** Suggested parameter replacements that require explicit user confirmation. */
+  pendingVideoParamAdjustment?: PendingVideoParamAdjustment;
+  fileUrl?: string;
+  linkUrl?: string;
   firstFrameUrl?: string;
   lastFrameUrl?: string;
   [key: string]: unknown;
@@ -34,12 +49,33 @@ export interface VideoNodeParams {
  */
 export interface EffectiveVideoParams {
   model: string;
-  generationMode: GenerationMode;
+  /** Canonical operation id (may be '' when zero effective ops). */
+  operation: string;
+  /** Resolved label for the current operation ('' when mode UI hidden). */
+  operationLabel: string;
+  /** Effective operations (≥2 → mode selector visible). */
+  effectiveOperations: OperationUiOption[];
+  /** True when the mode segment / TriggerBar mode text must render. */
+  showModeUi: boolean;
+  /** Model schema merged with the selected operation override. */
+  schema: ModelParameterSchema;
   aspectRatio: string;
   resolution?: string;
   duration: number | string;
   sound: boolean;
   hasSoundSupport: boolean;
+  seed?: number;
+  watermark?: boolean;
+  outputFormat?: string;
+  referenceTaskType?: string;
+  generationType?: string;
+  returnLastFrame?: boolean;
+  webSearch?: boolean;
+  nsfwCheck?: boolean;
+  /** Suggested parameter replacements that require explicit user confirmation. */
+  pendingVideoParamAdjustment?: PendingVideoParamAdjustment;
+  fileUrl?: string;
+  linkUrl?: string;
   firstFrameUrl?: string;
   lastFrameUrl?: string;
 }
@@ -132,4 +168,3 @@ export interface VideoParamPopoverProps {
 }
 
 export type { VideoSummaryFormatResult } from './summaryFormatter.ts';
-

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   normalizeResearch,
+  normalizeImplementation,
   normalizeExecution,
   materializeOpStatus,
   computeListed,
@@ -30,6 +31,11 @@ test('normalizeExecution defaults none', () => {
   assert.equal(normalizeExecution({ status: 'nope' }).status, 'none');
 });
 
+test('normalizeImplementation defaults none and accepts ready', () => {
+  assert.equal(normalizeImplementation(undefined).status, 'none');
+  assert.equal(normalizeImplementation({ status: 'ready', profileId: 'videoGenerate' }).status, 'ready');
+});
+
 test('adapterProfileExists requires live profile', () => {
   assert.equal(adapterProfileExists(profiles, 'videoGenerate'), true);
   // #538: speechToText seam mounted; videoDigitalHuman audioTrack passthrough fixed
@@ -44,7 +50,7 @@ test('digital_human incompatible with coarse videoGenerate', () => {
     id: 'digital_human',
     output: { type: 'video' },
     inputs: [],
-    execution: { status: 'live', profileId: 'videoGenerate', seam: 'videoGenerate' },
+    implementation: { status: 'ready', profileId: 'videoGenerate', seam: 'videoGenerate' },
   };
   const compat = adapterProfileCompatible(op, profiles);
   assert.equal(compat.ok, false);
@@ -56,34 +62,39 @@ test('text_to_video compatible with videoGenerate', () => {
     id: 'text_to_video',
     output: { type: 'video' },
     inputs: [],
-    execution: { status: 'live', profileId: 'videoGenerate', seam: 'videoGenerate' },
+    implementation: { status: 'ready', profileId: 'videoGenerate', seam: 'videoGenerate' },
   };
   assert.equal(adapterProfileCompatible(op, profiles).ok, true);
 });
 
 test('materializeOpStatus inherits model defaults with op override', () => {
-  const { research, execution } = materializeOpStatus(
+  const { research, implementation, execution } = materializeOpStatus(
     {
       research: { status: 'verified', docUrl: 'https://op' },
+      implementation: { status: 'ready', profileId: 'imageGenerate' },
       execution: { status: 'live', profileId: 'imageGenerate' },
     },
     {
       research: { status: 'draft' },
+      implementation: { status: 'none', profileId: 'videoGenerate' },
       execution: { status: 'none', profileId: 'videoGenerate' },
     },
   );
   assert.equal(research.status, 'verified');
   assert.equal(research.docUrl, 'https://op');
+  assert.equal(implementation.status, 'ready');
+  assert.equal(implementation.profileId, 'imageGenerate');
   assert.equal(execution.status, 'live');
   assert.equal(execution.profileId, 'imageGenerate');
 });
 
-test('operation-level listed: same model one live one draft', () => {
+test('operation-level listed: same model one implementation-ready one draft', () => {
   const liveOp = {
     id: 'text_to_image',
     output: { type: 'image' },
     inputs: [],
     research: { status: 'verified', docUrl: 'https://x' },
+    implementation: { status: 'ready', profileId: 'imageGenerate', seam: 'imageGenerate' },
     execution: { status: 'live', profileId: 'imageGenerate', seam: 'imageGenerate' },
   };
   const draftOp = {
@@ -91,6 +102,7 @@ test('operation-level listed: same model one live one draft', () => {
     output: { type: 'image' },
     inputs: [],
     research: { status: 'draft' },
+    implementation: { status: 'none', profileId: 'imageGenerate' },
     execution: { status: 'stub', profileId: 'imageGenerate' },
   };
   assert.equal(computeOperationListed(liveOp, 'm1', profiles, { contractComplete: true }), true);
@@ -112,6 +124,7 @@ test('digital_human + videoGenerate not operation-listed', () => {
     output: { type: 'video' },
     inputs: [],
     research: { status: 'verified', docUrl: 'https://x' },
+    implementation: { status: 'ready', profileId: 'videoGenerate' },
     execution: { status: 'live', profileId: 'videoGenerate' },
   };
   assert.equal(computeOperationListed(op, 'kling-avatar', profiles, { contractComplete: true }), false);
@@ -128,6 +141,7 @@ test('listed five-way: whisper-like not listed', () => {
         output: { type: 'text' },
         inputs: [],
         research: { status: 'draft' },
+        implementation: { status: 'none', profileId: 'speechToText' },
         execution: { status: 'none', profileId: 'speechToText' },
       },
     ],
@@ -144,6 +158,7 @@ test('computeListed true when any op listed', () => {
         output: { type: 'video' },
         inputs: [],
         research: { status: 'verified', docUrl: 'https://x' },
+        implementation: { status: 'ready', profileId: 'videoGenerate', seam: 'videoGenerate' },
         execution: { status: 'live', profileId: 'videoGenerate', seam: 'videoGenerate' },
       },
     ],

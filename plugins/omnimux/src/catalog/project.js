@@ -100,16 +100,21 @@ export function mergeInputCapability(ops) {
       else if (type === 'document') addModality('document');
 
       const mergeRef = (acc) => {
+        const slotMax = slot.max === null
+          ? null
+          : Number.isFinite(slot.max) ? slot.max : 0;
         if (!acc) {
           return {
             min: Number.isFinite(slot.min) ? slot.min : 0,
-            max: Number.isFinite(slot.max) ? slot.max : 0,
+            max: slotMax,
             allowedMimeTypes: Array.isArray(slot.allowedMimes) ? [...slot.allowedMimes] : [],
             supportedRoles: slot.role ? [slot.role] : [],
           };
         }
         acc.min = Math.min(acc.min, Number.isFinite(slot.min) ? slot.min : 0);
-        acc.max = Math.max(acc.max, Number.isFinite(slot.max) ? slot.max : 0);
+        acc.max = acc.max === null || slotMax === null
+          ? null
+          : Math.max(acc.max, slotMax);
         for (const mime of slot.allowedMimes ?? []) {
           if (!acc.allowedMimeTypes.includes(mime)) acc.allowedMimeTypes.push(mime);
         }

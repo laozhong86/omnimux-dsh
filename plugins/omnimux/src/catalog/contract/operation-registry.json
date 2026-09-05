@@ -65,21 +65,29 @@
       "label": "首帧驱动",
       "group": "video",
       "defaultOutputType": "video",
-      "promptPolicy": "required"
+      "promptPolicy": "optional"
     },
     {
       "id": "first_last_frame",
       "label": "首尾帧过渡",
       "group": "video",
       "defaultOutputType": "video",
-      "promptPolicy": "required"
+      "promptPolicy": "optional"
+    },
+    {
+      "id": "end_frame",
+      "label": "尾帧参考",
+      "group": "video",
+      "defaultOutputType": "video",
+      "promptPolicy": "optional",
+      "notes": "仅尾帧锚点；禁止映射为 first_frame；slot=end_frame role=last_frame；wire 候选 image_tail（#566 间接 / #567）"
     },
     {
       "id": "video_multi_ref",
-      "label": "多图风格/主体参考",
+      "label": "全能参考生视频",
       "group": "video",
       "defaultOutputType": "video",
-      "promptPolicy": "required"
+      "promptPolicy": "optional"
     },
     {
       "id": "digital_human",
@@ -94,7 +102,28 @@
       "label": "视频编辑/重绘",
       "group": "video",
       "defaultOutputType": "video",
-      "promptPolicy": "required"
+      "promptPolicy": "optional"
+    },
+    {
+      "id": "video_extend",
+      "label": "视频延长",
+      "group": "video",
+      "defaultOutputType": "video",
+      "promptPolicy": "optional"
+    },
+    {
+      "id": "document_to_video",
+      "label": "文档参考生视频",
+      "group": "video",
+      "defaultOutputType": "video",
+      "promptPolicy": "optional"
+    },
+    {
+      "id": "webpage_to_video",
+      "label": "网页参考生视频",
+      "group": "video",
+      "defaultOutputType": "video",
+      "promptPolicy": "optional"
     },
     {
       "id": "text_to_speech",

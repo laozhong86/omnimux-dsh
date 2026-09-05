@@ -559,10 +559,17 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
 
       const result = createMaterialNode(type as MaterialType, targetPosition);
       if (result.nodes.length === 0) return;
+      const addedNodes = result.nodes.map((node) => ({ ...node, selected: true }));
+      const applied = applyCanvasInputMutation({
+        addNodes: addedNodes,
+        nodePatches: nodes
+          .filter((node) => node.selected)
+          .map((node) => ({ nodeId: node.id, data: {}, node: { selected: false } })),
+      });
+      if (applied.status !== 'allowed') return;
       nodeCreateCounter.current += 1;
-      setNodes((current) => appendWithSelectionReset(current, result.nodes));
     },
-    [setNodes, applyCanvasInputMutation, t],
+    [nodes, setNodes, applyCanvasInputMutation, t],
   );
 
   // 删除键：级联删除（经 mutation gateway，自动清 dangling edges）

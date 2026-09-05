@@ -68,10 +68,10 @@ describe('media route', () => {
     assert.equal(route.modelId, 'grok-imagine-video-1-5')
   })
 
-  it('maps stale canvas grok-imagine-video to grok-imagine-video-1-5', () => {
+  it('does not guess a version for the obsolete generic Grok id', () => {
     const media = parseMediaConfig(undefined)
     const route = resolveMediaRoute('video', { model: 'grok-imagine-video' }, media, {})
-    assert.equal(route.modelId, 'grok-imagine-video-1-5')
+    assert.equal(route.modelId, 'grok-imagine-video')
   })
 
   it('maps dotted grok-imagine-video-1.5 to grok-imagine-video-1-5', () => {
@@ -80,11 +80,11 @@ describe('media route', () => {
     assert.equal(route.modelId, 'grok-imagine-video-1-5')
   })
 
-  it('toMediaWireModelId rewrites grok video aliases onto grok-imagine-video-1-5', () => {
+  it('toMediaWireModelId normalizes only documented Grok 1.5 aliases', () => {
     assert.equal(toMediaWireModelId('grok-imagine-video-1-5'), 'grok-imagine-video-1-5')
-    assert.equal(toMediaWireModelId('grok-imagine-video'), 'grok-imagine-video-1-5')
+    assert.equal(toMediaWireModelId('grok-imagine-video'), 'grok-imagine-video')
     assert.equal(toMediaWireModelId('grok-imagine-video-1.5'), 'grok-imagine-video-1-5')
-    assert.equal(toMediaWireModelId('grok-imagine-video.1.5'), 'grok-imagine-video-1-5')
+    assert.equal(toMediaWireModelId('grok-imagine-video.1.5'), 'grok-imagine-video.1.5')
     assert.equal(toMediaWireModelId('seedance-2-0-fast'), 'seedance-2-0-fast')
     assert.equal(toMediaWireModelId(''), '')
   })

@@ -1,6 +1,6 @@
 /**
  * Dispositions registry (H2): the machine source of truth governing every
- * runtime catalog id (43 rows). Disposition expresses governance intent only;
+ * runtime catalog id (canonical ids plus documented wire aliases). Disposition expresses governance intent only;
  * listing is still decided by the H1 op-level five-predicate conjunction.
  *
  * Rules D1-D7 (design doc 2026-09-04-model-io-contract-h2-catalog-design §5.2):

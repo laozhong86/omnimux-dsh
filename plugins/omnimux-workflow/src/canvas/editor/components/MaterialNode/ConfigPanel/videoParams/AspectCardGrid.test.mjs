@@ -51,13 +51,13 @@ test('AspectCardGrid 采用 4 列网格类名与 wf-video-aspect-card 卡片结�
   assert.match(aspectSrc, /onChange\(opt\.value\)/);
 });
 
-test('SegmentControls 生成方式分段依据 supportedRoles 动态渲染，不支持直接隐藏', () => {
-  assert.match(segmentSrc, /supportedRoles/);
-  assert.match(segmentSrc, /supportsReference/);
-  assert.match(segmentSrc, /supportsFirstLast/);
-  // 两个模式 label
-  assert.match(segmentSrc, /'全能参考'/);
-  assert.match(segmentSrc, /'首尾帧'/);
+test('SegmentControls operation 分段消费 effective operations；≤1 隐藏；无 hardcoded dual-button', () => {
+  assert.match(segmentSrc, /OperationSegment/);
+  assert.match(segmentSrc, /operations\.length <= 1/);
+  // 旧 dual-button 已收口
+  assert.doesNotMatch(segmentSrc, /value:\s*'reference'/);
+  assert.doesNotMatch(segmentSrc, /value:\s*'first_last_frame'/);
+  assert.doesNotMatch(segmentSrc, /'全能参考'/);
   // 通用分段类名
   assert.match(segmentSrc, /wf-video-seg/);
   // 分辨率只读提示
@@ -77,8 +77,11 @@ test('DurationGrid 含时长胶囊网格类与 onChange 透传', () => {
 
 test('组件源码无硬编码裸色 hex/rgba 字面量', () => {
   // 除 SVG viewBox 等几何数值外，组件代码禁止直接写色值（统一交由 CSS 类名 / DSH token）
+  const stripComments = (src) => src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
   const colorRe = /#[0-9a-fA-F]{3,8}\b|rgba?\(/;
   for (const src of Object.values(sources)) {
-    assert.doesNotMatch(src, colorRe);
+    assert.doesNotMatch(stripComments(src), colorRe);
   }
 });

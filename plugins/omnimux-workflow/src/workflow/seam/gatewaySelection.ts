@@ -76,6 +76,34 @@ export type AutoSwitchGateway = GenerationGateway & {
   currentMode(): 'mock' | 'omnimux';
 };
 
+function hasModelCatalog(getSeam: SeamGetter): boolean {
+  const catalog = getSeam('modelCatalog');
+  return (
+    typeof catalog === 'object'
+    && catalog !== null
+    && typeof (catalog as { list?: unknown }).list === 'function'
+  );
+}
+
+/**
+ * Offline generation paired with the hub's local catalog projection. This
+ * lets L2 validate the real model/operation contract without ever invoking a
+ * generation seam; only mock submit/await own artifacts and task lifecycles.
+ */
+function createCatalogAwareMockGateway(getSeam: SeamGetter, env?: NodeJS.ProcessEnv): GenerationGateway {
+  const mock = createMockGateway();
+  const catalogProjection = createOmnimuxSeamClient({ getSeam, env });
+  return {
+    submit: (request) => mock.submit(request),
+    awaitTask: (taskId, dest, signal) => mock.awaitTask(taskId, dest, signal),
+    capabilities: () => (
+      hasModelCatalog(getSeam)
+        ? catalogProjection.capabilities()
+        : mock.capabilities()
+    ),
+  };
+}
+
 /**
  * Auto mode backend: delegates to the omnimux seam client once the hub is
  * reachable, with per-task routing so a task submitted through the mock is
@@ -163,8 +191,8 @@ export function assembleGateway(opts: AssembleGatewayOptions): AssembledGateway 
   const mode = opts.mode ?? resolveGatewayMode(opts.env);
 
   if (mode === 'mock') {
-    logger.info('gateway mode: mock (explicit override)');
-    return { gateway: createMockGateway(), mode, backend: 'mock' };
+    logger.info('gateway mode: mock (explicit override; local catalog when available)');
+    return { gateway: createCatalogAwareMockGateway(opts.getSeam, opts.env), mode, backend: 'mock' };
   }
 
   const omnimux = createOmnimuxSeamClient({

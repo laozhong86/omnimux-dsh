@@ -52,15 +52,70 @@ interface SseEventData {
       url: string;
       relativePath?: string;
       assetId?: string;
+      mimeType?: string;
+      sizeBytes?: number;
+      durationSec?: number;
     }>;
     text?: string;
     relativePath?: string;
     assetId?: string;
+    simulated?: boolean;
   };
 }
 
-/** Merge one node's execution fields into canvasStore node.data (single node). */
-function writeNodeData(nodeId: string, patch: Record<string, unknown>): void {
+export interface ExecutionNodeOutput {
+  mediaAssets?: Array<{
+    type: 'image' | 'video' | 'audio';
+    url: string;
+    relativePath?: string;
+    assetId?: string;
+    mimeType?: string;
+    sizeBytes?: number;
+    durationSec?: number;
+  }>;
+  text?: string;
+  relativePath?: string;
+  assetId?: string;
+  simulated?: boolean;
+}
+
+/** Apply transport output to node.data and recompute dependent contracts. */
+export function applyExecutionNodeOutput(
+  nodeId: string,
+  output: ExecutionNodeOutput,
+  basePatch: Record<string, unknown> = {},
+): void {
+  const patch: Record<string, unknown> = { ...basePatch };
+  patch.simulated = output.simulated === true ? true : undefined;
+  if (output.text) patch.generatedContent = output.text;
+  const first = output.mediaAssets?.[0];
+  if (output.mediaAssets && output.mediaAssets.length > 0 && first) {
+    patch.mediaAssets = output.mediaAssets;
+    if (first.url) patch.mediaUrl = first.url;
+    const relativePath = output.relativePath || first.relativePath;
+    const assetId = output.assetId || first.assetId;
+    if (relativePath) patch.relativePath = relativePath;
+    if (assetId) patch.assetId = assetId;
+    if (first.mimeType) patch.mimeType = first.mimeType;
+    if (first.sizeBytes !== undefined) patch.sizeBytes = first.sizeBytes;
+    if (first.durationSec !== undefined) patch.durationSec = first.durationSec;
+    delete patch.realPath;
+  }
+  writeNodeData(nodeId, patch, Boolean(first));
+}
+
+/**
+ * Merge one node's execution fields into canvasStore node.data.
+ *
+ * Completed output can change the contract fingerprint seen by downstream
+ * generate nodes, so it asks the existing mutation gateway to soft-recompute
+ * those targets after the source data has been written.
+ */
+function writeNodeData(
+  nodeId: string,
+  patch: Record<string, unknown>,
+  recomputeDownstream = false,
+): void {
   const store = useCanvasStore.getState();
   const node = store.nodes.find((candidate) => candidate.id === nodeId);
   if (!node) return;
@@ -69,6 +124,21 @@ function writeNodeData(nodeId: string, patch: Record<string, unknown>): void {
       candidate.id === nodeId ? { ...candidate, data: { ...candidate.data, ...patch } } : candidate,
     ),
   );
+  if (!recomputeDownstream) return;
+
+  const current = useCanvasStore.getState();
+  const targetIds = [...new Set(
+    current.edges.filter((edge) => edge.source === nodeId).map((edge) => edge.target),
+  )];
+  const nodePatches = targetIds.flatMap((targetId) => {
+    const target = current.nodes.find((candidate) => candidate.id === targetId);
+    if (!target) return [];
+    const data = target.data as Record<string, unknown>;
+    return [{ nodeId: targetId, data: { prompt: typeof data.prompt === 'string' ? data.prompt : '' } }];
+  });
+  if (nodePatches.length > 0) {
+    current.applyCanvasInputMutation({ nodePatches });
+  }
 }
 
 export interface ExecutionControllerOptions {
@@ -157,28 +227,12 @@ export function useExecutionController(
             percentage: data.progress ?? exec.progress.percentage,
           },
         });
-        // Result backfill (mock gateway output in M3) — node.data update
-        // also marks the workspace dirty and triggers the autosave layer.
-        const output = data.output ?? {};
-        const patch: Record<string, unknown> = { executionStatus: 'completed', executionError: undefined };
-        if (output.text) patch.generatedContent = output.text;
-        if (output.mediaAssets && output.mediaAssets.length > 0) {
-          const first = output.mediaAssets[0] as {
-            type: string;
-            url: string;
-            relativePath?: string;
-            assetId?: string;
-          };
-          patch.mediaAssets = output.mediaAssets;
-          if (first.url) patch.mediaUrl = first.url;
-          const relativePath = output.relativePath || first.relativePath;
-          const assetId = output.assetId || first.assetId;
-          if (relativePath) patch.relativePath = relativePath;
-          if (assetId) patch.assetId = assetId;
-          delete patch.realPath;
-          patch.taskId = `exec-${data.executionId ?? ''}`;
-        }
-        writeNodeData(data.nodeId, patch);
+        // Result backfill also marks the workspace dirty and triggers autosave.
+        applyExecutionNodeOutput(data.nodeId, data.output ?? {}, {
+          executionStatus: 'completed',
+          executionError: undefined,
+          taskId: 'exec-' + (data.executionId ?? ''),
+        });
         break;
       }
       case 'node_error': {
@@ -287,28 +341,12 @@ export function useExecutionController(
       exec.setNodeStatus(nodeId, state.status);
       const patch: Record<string, unknown> = { executionStatus: state.status };
       if (state.status === 'error' && state.error) patch.executionError = state.error;
-      const output = snapshot.nodeOutputs?.[nodeId] as
-        | {
-            mediaAssets?: Array<{ type: string; url: string; relativePath?: string; assetId?: string }>;
-            text?: string;
-            relativePath?: string;
-            assetId?: string;
-          }
-        | undefined;
+      const output = snapshot.nodeOutputs?.[nodeId] as ExecutionNodeOutput | undefined;
       if (output) {
-        if (output.text) patch.generatedContent = output.text;
-        if (output.mediaAssets && output.mediaAssets.length > 0) {
-          patch.mediaAssets = output.mediaAssets;
-          const first = output.mediaAssets[0];
-          if (first?.url) patch.mediaUrl = first.url;
-          const relativePath = output.relativePath || first?.relativePath;
-          const assetId = output.assetId || first?.assetId;
-          if (relativePath) patch.relativePath = relativePath;
-          if (assetId) patch.assetId = assetId;
-          delete patch.realPath;
-        }
+        applyExecutionNodeOutput(nodeId, output, patch);
+      } else {
+        writeNodeData(nodeId, patch);
       }
-      writeNodeData(nodeId, patch);
     }
   }, []);
 

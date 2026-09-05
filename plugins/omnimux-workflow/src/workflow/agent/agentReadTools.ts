@@ -4,6 +4,8 @@
  */
 
 import type { CanvasWorkspaceSnapshot } from '../../shared/canvasTypes.ts';
+import type { CapabilityCatalog } from '../../shared/api.ts';
+import { findExecutionReadinessFailure } from '../../shared/validation/executionReadiness.ts';
 import {
   normalizeNodeIds,
   resolveExecutionSubgraph,
@@ -159,6 +161,18 @@ export function createWorkflowRunTool(deps: WorkflowAgentDeps): AgentToolSpec {
       }
       if (subgraph.nodes.length === 0) {
         return errorBody('empty-graph', `workspace ${workspace.id} has no nodes to execute`);
+      }
+      const readiness = findExecutionReadinessFailure(
+        subgraph.nodes as Array<{ id: string; type: string; data?: Record<string, unknown> }>,
+        (typeof deps.getCatalog === 'function' ? deps.getCatalog() : null) as CapabilityCatalog | null,
+      );
+      if (readiness) {
+        return {
+          error: 'configuration_error',
+          reasonCode: readiness.reasonCode,
+          nodeId: readiness.nodeId,
+          message: readiness.message,
+        };
       }
       if (
         subgraphContainsMediaGenerate(subgraph.nodes as Array<{ type?: string; data?: Record<string, unknown> }>)

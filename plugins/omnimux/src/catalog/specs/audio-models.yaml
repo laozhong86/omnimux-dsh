@@ -39,6 +39,8 @@ models:
     research:
       status: "draft"
       notes: "runtime AUDIO 目录有 suno；仓内无 dated live 证据，不上架"
+    implementation:
+      status: "none"
     execution:
       status: "stub"
       profileId: "audioGenerate"
@@ -75,6 +77,8 @@ models:
     research:
       status: "draft"
       notes: "runtime AUDIO 目录存在；仓内无 dated live 证据，不上架"
+    implementation:
+      status: "none"
     execution:
       status: "stub"
       profileId: "audioGenerate"
@@ -107,6 +111,8 @@ models:
     research:
       status: "draft"
       notes: "draft 处置：speech_to_text output 为 text；speechToText seam 已挂载（#538）可探测；promptPolicy=none；#530 探测翻 live"
+    implementation:
+      status: "none"
     execution:
       status: "none"
       profileId: "speechToText"

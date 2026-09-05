@@ -24,7 +24,7 @@ export function mountMedia(ctx, opts) {
 
   const api = {
     /**
-     * @param {{ prompt?: string, dest: string, duration?: number, image?: string, taskId?: string, wait?: boolean, signal?: AbortSignal }} req
+     * @param {{ prompt?: string, dest: string, duration?: number, image?: string, taskId?: string, wait?: boolean, signal?: AbortSignal, [key: string]: unknown }} req
      */
     execute(req) {
       assertCapabilityEnabled(gate, kind, 'media')
@@ -57,7 +57,7 @@ export function mountMedia(ctx, opts) {
     description:
       `Generate one ${kind} to dest. Default waits until the file is on disk (mode live). wait false returns mode submitted plus taskId. Pass task_id with dest to poll and download an existing task. Uses OMNIMUX_API_KEY / OMNIMUX_TOKEN.`,
     parameters: objectParams({
-      prompt: { type: 'string', description: 'Required unless task_id is set' },
+      prompt: { type: 'string', description: 'Prompt text. Required only when the selected model operation declares it.' },
       dest: { type: 'string', required: true, description: destHint },
       model: { type: 'string', description: 'Model ID (e.g. suno, gpt-4o-mini-tts, nanobanana-2, seedream-5.0-pro, midjourney-8.1, gpt-image-2)' },
       operation: {
@@ -75,6 +75,7 @@ export function mountMedia(ctx, opts) {
           properties: {
             type: { type: 'string' },
             role: { type: 'string' },
+            targetSlot: { type: 'string' },
             pathOrUrl: { type: 'string' },
           },
           required: ['type', 'pathOrUrl'],
@@ -95,6 +96,17 @@ export function mountMedia(ctx, opts) {
       },
       aspectRatio: { type: 'string', description: 'Requested aspect ratio for compatible media operations.' },
       resolution: { type: 'string', description: 'Requested resolution for compatible media operations.' },
+      sound: { type: 'boolean', description: 'Generate synchronized sound when the model supports it.' },
+      seed: { type: 'number', description: 'Generation seed when supported by the model.' },
+      watermark: { type: 'boolean', description: 'Watermark switch when supported by the model.' },
+      outputFormat: { type: 'string', description: 'Output container such as mp4 or mov.' },
+      referenceTaskType: { type: 'string', description: 'Explicit APIMart reference/edit/extend task type.' },
+      generationType: { type: 'string', description: 'Explicit APIMart frame/reference generation type.' },
+      returnLastFrame: { type: 'boolean', description: 'Return the generated final frame when supported.' },
+      webSearch: { type: 'boolean', description: 'Enable the documented web_search tool.' },
+      nsfwCheck: { type: 'boolean', description: 'Enable APIMart request moderation when supported.' },
+      fileUrl: { type: 'string', description: 'Public document URL for document_to_video.' },
+      linkUrl: { type: 'string', description: 'Public login-free page URL for webpage_to_video.' },
       speech: { type: 'string', description: 'Talking-head / spoken text. Optional.' },
       audio: { type: 'string', description: 'Reference audio URL. Optional.' },
       voice: { type: 'string', description: 'TTS voice selection (alloy, echo, fable, onyx, nova, shimmer). Optional.' },
@@ -120,6 +132,17 @@ export function mountMedia(ctx, opts) {
           audioTrack: args.audioTrack,
           aspectRatio: args.aspectRatio,
           resolution: args.resolution,
+          sound: args.sound,
+          seed: args.seed,
+          watermark: args.watermark,
+          outputFormat: args.outputFormat,
+          referenceTaskType: args.referenceTaskType,
+          generationType: args.generationType,
+          returnLastFrame: args.returnLastFrame,
+          webSearch: args.webSearch,
+          nsfwCheck: args.nsfwCheck,
+          fileUrl: args.fileUrl,
+          linkUrl: args.linkUrl,
           speech: args.speech,
           audio: args.audio,
           wait: args.wait,

@@ -259,8 +259,16 @@ export interface ImportedMediaFields {
   content: string;
   originalName: string;
   realPath: string;
-  fileSize?: number;
-  mimeType?: string;
+  /** Canonical MIME; null when unknown (never invent octet-stream). */
+  mimeType: string | null;
+  /** Canonical byte size; null when unknown (never invent 0). */
+  sizeBytes: number | null;
+  /** Canonical duration seconds; null when unknown / non-AV. */
+  durationSec: number | null;
+  /** Legacy alias of sizeBytes (same null semantics). */
+  fileSize: number | null;
+  /** Legacy alias of durationSec (same null semantics). */
+  duration: number | null;
   isMissing: false;
   mediaAssets: Array<{ type: MaterialType; url: string; path: string }>;
 }
@@ -269,18 +277,48 @@ export function buildImportedMediaData(input: {
   realPath: string;
   name: string;
   materialType: MaterialType;
-  mime?: string;
-  size?: number;
+  mime?: string | null;
+  size?: number | null;
+  durationSec?: number | null;
+  duration?: number | null;
 }): ImportedMediaFields {
   const url = localFileMediaUrl(input.realPath);
+  // Lazy import avoided — keep localMedia free of circular deps by inlining
+  // the null-safe normalize rules (mirrors shared/mediaMetadata.ts).
+  const rawMime =
+    (typeof input.mime === 'string' && input.mime.trim() ? input.mime.trim() : '')
+    || mimeFromFilename(input.name)
+    || mimeFromFilename(input.realPath)
+    || '';
+  const mimeLower = rawMime.toLowerCase();
+  const mimeType =
+    rawMime
+    && mimeLower !== 'unknown'
+    && mimeLower !== 'application/octet-stream'
+      ? rawMime
+      : null;
+  const sizeBytes =
+    typeof input.size === 'number' && Number.isFinite(input.size) && input.size >= 0
+      ? input.size
+      : null;
+  const durationSec =
+    (typeof input.durationSec === 'number' && Number.isFinite(input.durationSec) && input.durationSec >= 0
+      ? input.durationSec
+      : null)
+    ?? (typeof input.duration === 'number' && Number.isFinite(input.duration) && input.duration >= 0
+      ? input.duration
+      : null);
   return {
     mediaUrl: url,
     status: 'ready',
     content: input.name,
     originalName: input.name,
     realPath: input.realPath,
-    fileSize: input.size,
-    mimeType: input.mime || mimeFromFilename(input.name) || mimeFromFilename(input.realPath),
+    mimeType,
+    sizeBytes,
+    durationSec,
+    fileSize: sizeBytes,
+    duration: durationSec,
     isMissing: false,
     mediaAssets: [{ type: input.materialType, url, path: input.realPath }],
   };
