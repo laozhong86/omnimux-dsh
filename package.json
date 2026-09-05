@@ -44,7 +44,7 @@
     "archived:verify": "node scripts/verify-archived-agent-notes.mjs",
     "archived:seal": "node scripts/verify-archived-agent-notes.mjs --write",
     "check:boundaries": "node scripts/verify-plugin-boundaries.mjs",
-    "test:gates": "node --test scripts/verify-ci-gates.test.mjs",
+    "test:gates": "node --test scripts/verify-ci-gates.test.mjs scripts/ego-browser-qa.test.mjs",
     "auto:run": "node scripts/auto-pipeline.mjs",
     "test": "corepack pnpm --filter omnimux test && corepack pnpm --filter omnimux-accounts test && corepack pnpm --filter omnimux-inspiration test && corepack pnpm --filter omnimux-market test && corepack pnpm --filter omnimux-publish test && corepack pnpm test:gates",
     "test:all": "corepack pnpm -r test && corepack pnpm test:gates",
