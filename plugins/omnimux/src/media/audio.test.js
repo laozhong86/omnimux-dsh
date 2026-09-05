@@ -1,13 +1,11 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { describe, it } from 'node:test'
 import {
   executeOmnimuxAudio,
   readOmnimuxAudioConfig,
 } from './audio.js'
 import { parseMediaConfig, resolveMediaRoute } from './route.js'
+import { mapOmnimuxInput } from './vendors/omnimux.js'
 
 describe('omnimux audio helpers', () => {
   it('defaults to suno on the openai-media row', () => {
@@ -27,42 +25,28 @@ describe('omnimux audio helpers', () => {
     assert.equal(route.modelId, 'gpt-4o-mini-tts')
   })
 
-  it('refuses to execute without a key', async () => {
+  it('rejects unlisted audio before auth or vendor execution', async () => {
+    let vendorCalls = 0
     await assert.rejects(
-      () => executeOmnimuxAudio({ prompt: 'synthwave track', dest: '/tmp/no.mp3', env: {} }),
-      (err) => err?.code === 'needs-omnimux',
+      () => executeOmnimuxAudio({
+        prompt: 'synthwave track',
+        dest: '/tmp/no.mp3',
+        // Unknown external fields must not alter SubmitGuard admission.
+        bypassSubmitGuard: true,
+        env: {},
+        runtime: { async execute() { vendorCalls += 1 } },
+      }),
+      (err) => err?.code === 'omnimux-invalid-request',
     )
+    assert.equal(vendorCalls, 0)
   })
 
-  it('executes through mock store token without OMNIMUX_API_KEY', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'omnimux-audio-pat-'))
-    const dest = join(dir, 'out.mp3')
-    const result = await executeOmnimuxAudio({
+  it('keeps legacy audio wire mapping out of unchecked submit execution', () => {
+    const input = mapOmnimuxInput('audio', {
       prompt: 'a piano melody',
-      dest,
-      // suno text_to_music is not listed — protocol path uses bypass; admission covered in submit-guard tests
-      bypassSubmitGuard: true,
-      env: {},
-      store: {
-        resolve: async () => 'pat-login-token',
-      },
-      runtime: {
-        async execute(req) {
-          assert.equal(req.modelId, 'omnimux-audio')
-          return {
-            taskId: 'audio-pat-1',
-            outputs: [{ type: 'audio', url: 'https://cdn.example/out-pat.mp3' }],
-          }
-        },
-      },
-      fetcher: async (url) => {
-        assert.equal(String(url), 'https://cdn.example/out-pat.mp3')
-        return { ok: true, arrayBuffer: async () => Buffer.from('pat-mp3-bytes') }
-      },
+      style: 'minimal',
     })
-    assert.equal(result.mode, 'live')
-    assert.equal(result.taskId, 'audio-pat-1')
-    assert.equal(readFileSync(dest, 'utf8'), 'pat-mp3-bytes')
-    rmSync(dir, { recursive: true, force: true })
+    assert.equal(input.prompt, 'a piano melody')
+    assert.deepEqual(input.metadata, { style: 'minimal' })
   })
 })

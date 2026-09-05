@@ -485,7 +485,11 @@ describe('SubmitGuard execute integration', () => {
           return { taskId: 't1', outputs: [{ type: 'video', url: 'https://cdn.example/a.mp4' }] }
         },
       },
-      fetcher: async () => ({ ok: true, arrayBuffer: async () => Buffer.from('mp4') }),
+      fetcher: async () => ({
+        ok: true,
+        headers: { get: () => 'video/mp4' },
+        arrayBuffer: async () => Buffer.from('mp4'),
+      }),
     })
     assert.equal(result.mode, 'live')
     assert.equal(calls, 1)
@@ -535,7 +539,11 @@ describe('SubmitGuard execute integration', () => {
             json: async () => ({ status: 'completed', url: 'https://cdn.example/done.mp4' }),
           }
         }
-        return { ok: true, arrayBuffer: async () => Buffer.from('done') }
+        return {
+          ok: true,
+          headers: { get: () => 'video/mp4' },
+          arrayBuffer: async () => Buffer.from('done'),
+        }
       },
     })
     assert.equal(result.mode, 'live')
@@ -558,7 +566,11 @@ describe('SubmitGuard execute integration', () => {
           return { taskId: 'i1', outputs: [{ type: 'image', url: 'https://cdn.example/i.png' }] }
         },
       },
-      fetcher: async () => ({ ok: true, arrayBuffer: async () => Buffer.from('png') }),
+      fetcher: async () => ({
+        ok: true,
+        headers: { get: () => 'image/png' },
+        arrayBuffer: async () => Buffer.from('png'),
+      }),
     })
     assert.equal(result.mode, 'live')
     rmSync(dir, { recursive: true, force: true })

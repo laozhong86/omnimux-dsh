@@ -5,7 +5,7 @@ import {
 } from '../catalog/contract/submit-guard/index.js'
 import { parseTextConfig, resolveTextRoute } from './catalog.js'
 import { completeTextViaChat } from './chat.js'
-import { loadTextImage } from './image.js'
+import { probeTextImage, saveProbedTextImage } from './image.js'
 import { loadTextVideo, toVideoImageUrlPart } from './video.js'
 
 /**
@@ -38,7 +38,6 @@ import { loadTextVideo, toVideoImageUrlPart } from './video.js'
  *   apiKey?: string,
  *   baseUrl?: string,
  *   assetMeta?: object,
- *   bypassSubmitGuard?: boolean,
  * }} input
  */
 export async function executeOmnimuxText(input) {
@@ -59,65 +58,58 @@ export async function executeOmnimuxText(input) {
     : route.maxTokens
   const system = typeof input.system === 'string' ? input.system.trim() : ''
 
-  let guardPlan = null
-  if (!input.bypassSubmitGuard) {
-    // Vision path needs MIME metadata when contract declares allowedMimes.
-    // For path/URL without caller metadata, supply a conservative default so
-    // listed vision_chat can proceed (callers may override via assetMeta).
-    /** @type {Record<string, object>} */
-    const assetMeta = { ...(input.assetMeta && typeof input.assetMeta === 'object' ? input.assetMeta : {}) }
-    if (image && !assetMeta[image]) {
-      assetMeta[image] = { mime: 'image/png', sizeBytes: 1024 }
-    }
-    // Native video-on-text is a hub protocol special (image_url + data:video), not a
-    // listed contract media slot today. Keep it off the slot matcher so chat/vision
-    // admission still works; video remains on the execute path below.
-    guardPlan = assertGuardSubmit(
-      {
-        prompt,
-        model: route.modelId,
-        operation: input.operation,
-        image: image || undefined,
-        // intentionally omit video from guard assets
-        system,
-        maxTokens,
-        assetMeta,
-        seam: 'textComplete',
-        capability: 'text',
-      },
-      {
-        seam: 'textComplete',
-        capability: 'text',
-        outputType: 'text',
-        gateAllows: gate
-          ? (modelId) => {
-              // Prefer gate.models when present; unknown gate shape → allow.
-              const models = gate.models
-              if (models && typeof models === 'object' && modelId in models) {
-                return models[modelId] !== false
-              }
-              return true
-            }
-          : undefined,
-      },
-    )
+  if (image && (!input.attachments || typeof input.attachments.saveImage !== 'function')) {
+    throw new OmnimuxError('needs-provider', 'image input requires ctx.attachments')
   }
+  const probedImage = image
+    ? await probeTextImage(image, { attachments: input.attachments, fetcher: input.fetcher, signal: input.signal })
+    : null
+  const packedVideo = video ? await loadTextVideo(video, { signal: input.signal }) : null
+  const assets = [
+    ...(probedImage ? [{ type: 'image', role: 'reference', pathOrUrl: image, mime: probedImage.mediaType, sizeBytes: probedImage.sizeBytes }] : []),
+    ...(packedVideo ? [{ type: 'video', role: 'reference', pathOrUrl: video, mime: packedVideo.mediaType, sizeBytes: packedVideo.bytes }] : []),
+  ]
+  const guardPlan = assertGuardSubmit(
+    {
+      prompt,
+      model: route.modelId,
+      operation: input.operation,
+      assets,
+      system,
+      maxTokens,
+      seam: 'textComplete',
+      capability: 'text',
+    },
+    {
+      seam: 'textComplete',
+      capability: 'text',
+      outputType: 'text',
+      gateAllows: gate
+        ? (modelId) => {
+            const models = gate.models
+            if (models && typeof models === 'object' && modelId in models) {
+              return models[modelId] !== false
+            }
+            return true
+          }
+        : undefined,
+    },
+  )
 
   if (video) {
-    const packed = await loadTextVideo(video, { signal: input.signal })
     const result = await completeTextViaChat({
       model: route.modelId,
       prompt,
       system,
       maxTokens,
-      videoPart: toVideoImageUrlPart(packed),
+      videoPart: toVideoImageUrlPart(packedVideo),
       env: input.env,
       fetcher: input.fetcher,
       signal: input.signal,
       apiKey: input.apiKey,
       baseUrl: input.baseUrl,
     })
-    if (guardPlan) assertGuardOutput(guardPlan, result, { capability: 'text' })
+    assertGuardOutput(guardPlan, result, { capability: 'text' })
     return result
   }
 
@@ -125,15 +117,8 @@ export async function executeOmnimuxText(input) {
     throw new OmnimuxError('needs-provider', 'textComplete requires ctx.llm')
   }
   const content = [{ type: 'text', text: prompt }]
-  if (image) {
-    if (!input.attachments || typeof input.attachments.saveImage !== 'function') {
-      throw new OmnimuxError('needs-provider', 'image input requires ctx.attachments')
-    }
-    const attachment = await loadTextImage(image, {
-      attachments: input.attachments,
-      fetcher: input.fetcher,
-      signal: input.signal,
-    })
+  if (probedImage) {
+    const attachment = saveProbedTextImage(probedImage, input.attachments)
     content.push({ type: 'image', attachment })
   }
   const options = {
@@ -173,6 +158,6 @@ export async function executeOmnimuxText(input) {
     throw new OmnimuxError('omnimux-invalid-response', 'text complete produced no text')
   }
   const result = { mode: 'live', model: route.modelId, text: assembled }
-  if (guardPlan) assertGuardOutput(guardPlan, result, { capability: 'text' })
+  assertGuardOutput(guardPlan, result, { capability: 'text' })
   return result
 }

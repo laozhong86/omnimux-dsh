@@ -142,29 +142,26 @@ export async function executeOmnimuxSpeechToText(input) {
 
   // SubmitGuard (#468): whisper/STT must be listed+verified+live. Seam presence alone
   // does not admit draft models (whisper-1 remains draft → reject before HTTP).
-  let guardPlan = null
-  if (!input.bypassSubmitGuard) {
-    const audioPath = input.audio.trim()
-    /** @type {Record<string, object>} */
-    const assetMeta = { ...(input.assetMeta && typeof input.assetMeta === 'object' ? input.assetMeta : {}) }
-    if (!assetMeta[audioPath]) {
-      // Defaults so size/duration ceilings do not mask admission (draft) failures;
-      // callers with real metadata should pass assetMeta.
-      assetMeta[audioPath] = { mime: 'audio/mp3', sizeBytes: 1024, durationSec: 1 }
-    }
-    guardPlan = assertGuardSubmit(
-      {
-        model: route.modelId,
-        operation: input.operation ?? 'speech_to_text',
-        audio: audioPath,
-        language: input.language,
-        assetMeta,
-        seam: 'speechToText',
-        capability: 'stt',
-      },
-      { seam: 'speechToText', capability: 'stt', outputType: 'text' },
-    )
+  const audioPath = input.audio.trim()
+  /** @type {Record<string, object>} */
+  const assetMeta = { ...(input.assetMeta && typeof input.assetMeta === 'object' ? input.assetMeta : {}) }
+  if (!assetMeta[audioPath]) {
+    // Defaults so size/duration ceilings do not mask admission (draft) failures;
+    // callers with real metadata should pass assetMeta.
+    assetMeta[audioPath] = { mime: 'audio/mp3', sizeBytes: 1024, durationSec: 1 }
   }
+  const guardPlan = assertGuardSubmit(
+    {
+      model: route.modelId,
+      operation: input.operation ?? 'speech_to_text',
+      audio: audioPath,
+      language: input.language,
+      assetMeta,
+      seam: 'speechToText',
+      capability: 'stt',
+    },
+    { seam: 'speechToText', capability: 'stt', outputType: 'text' },
+  )
 
   const auth = await resolveMediaAuth(route, {
     env: input.env,
@@ -172,15 +169,42 @@ export async function executeOmnimuxSpeechToText(input) {
     credentials: input.credentials,
   })
 
+  const result = await transcribeSpeechToTextRequest({
+    route,
+    apiKey: auth.apiKey,
+    audio: input.audio,
+    language: input.language,
+    fetcher: input.fetcher,
+    signal: input.signal,
+  })
+  assertGuardOutput(guardPlan, result, { capability: 'stt' })
+  return result
+}
+
+/**
+ * Internal wire primitive: the Hub calls this only after SubmitGuard has
+ * admitted a first-time transcription request. Tests exercise the protocol
+ * here with an explicit route instead of a caller-controlled input bypass.
+ * @param {{
+ *   route: Pick<ReturnType<typeof resolveMediaRoute>, 'baseUrl' | 'modelId'>,
+ *   apiKey?: string,
+ *   audio: string,
+ *   language?: string,
+ *   fetcher?: typeof fetch,
+ *   signal?: AbortSignal,
+ * }} input
+ * @returns {Promise<{ mode: 'live', model: string, text: string }>}
+ */
+export async function transcribeSpeechToTextRequest(input) {
   const audio = await loadAudioBytes(input.audio, {
     fetcher: input.fetcher,
-    apiKey: auth.apiKey,
+    apiKey: input.apiKey,
     signal: input.signal,
   })
 
   const form = new FormData()
   form.append('file', new Blob([audio.bytes], { type: audio.contentType }), audio.filename)
-  form.append('model', route.modelId)
+  form.append('model', input.route.modelId)
   if (typeof input.language === 'string' && input.language.trim()) {
     form.append('language', input.language.trim())
   }
@@ -190,9 +214,9 @@ export async function executeOmnimuxSpeechToText(input) {
   /** @type {Record<string, string>} */
   const headers = {
     accept: 'application/json',
-    ...(auth.apiKey && auth.apiKey.trim() ? { authorization: `Bearer ${auth.apiKey.trim()}` } : {}),
+    ...(input.apiKey && input.apiKey.trim() ? { authorization: `Bearer ${input.apiKey.trim()}` } : {}),
   }
-  const url = `${route.baseUrl}/${TRANSCRIPTION_PATH}`
+  const url = `${input.route.baseUrl}/${TRANSCRIPTION_PATH}`
   let response
   try {
     response = await fetcher(url, {
@@ -229,9 +253,6 @@ export async function executeOmnimuxSpeechToText(input) {
   if (!text) {
     throw new OmnimuxError('omnimux-invalid-response', 'speech-to-text response carried no text')
   }
-  const result = { mode: 'live', model: route.modelId, text }
-  if (guardPlan) {
-    assertGuardOutput(guardPlan, result, { capability: 'stt' })
-  }
+  const result = { mode: 'live', model: input.route.modelId, text }
   return result
 }

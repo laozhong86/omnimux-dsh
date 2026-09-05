@@ -40,12 +40,15 @@ export async function getJson(fetcher, url, apiKey, signal) {
 }
 
 /**
- * @param {{ dest: string, url: string, apiKey?: string, fetcher?: typeof fetch, signal?: AbortSignal }} options
+ * @param {{ dest: string, url: string, capability?: 'video' | 'image' | 'audio', apiKey?: string, fetcher?: typeof fetch, signal?: AbortSignal }} options
  */
 export async function downloadMediaFile(options) {
   const url = options.url
   let buffer
+  let contentType = ''
   if (url.startsWith('data:')) {
+    const headerEnd = url.indexOf(',')
+    contentType = (headerEnd >= 0 ? url.slice(5, headerEnd) : '').split(';')[0].trim().toLowerCase()
     const comma = url.indexOf(',')
     const payload = comma >= 0 ? url.slice(comma + 1) : ''
     if (!payload) {
@@ -77,8 +80,29 @@ export async function downloadMediaFile(options) {
       }
       throw new OmnimuxError('omnimux-download-failed', `download failed: ${response.status}`, { status: response.status })
     }
+    contentType = typeof response.headers?.get === 'function'
+      ? String(response.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase()
+      : ''
     buffer = Buffer.from(await response.arrayBuffer())
   }
+  assertDownloadedMediaType(contentType, options.capability)
   mkdirSync(dirname(options.dest), { recursive: true })
   writeFileSync(options.dest, buffer)
+}
+
+/**
+ * A URL-only provider result has no trustworthy MIME until the bytes are
+ * downloaded. Require the response to identify the broad media type before
+ * writing it to the requested destination.
+ * @param {string} contentType
+ * @param {'video' | 'image' | 'audio' | undefined} capability
+ */
+export function assertDownloadedMediaType(contentType, capability) {
+  if (!capability) return
+  if (!contentType) {
+    throw new OmnimuxError('omnimux-invalid-response', `${capability} download omitted Content-Type`)
+  }
+  if (!contentType.startsWith(`${capability}/`)) {
+    throw new OmnimuxError('omnimux-invalid-response', `expected ${capability} output, got ${contentType}`)
+  }
 }

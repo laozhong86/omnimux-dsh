@@ -2,13 +2,6 @@ import { readFile } from 'node:fs/promises'
 import { basename, isAbsolute } from 'node:path'
 import { OmnimuxError } from '../media/errors.js'
 
-const EXT_MEDIA = Object.freeze({
-  '.mp4': 'video/mp4',
-  '.m4v': 'video/mp4',
-  '.webm': 'video/webm',
-  '.mov': 'video/quicktime',
-})
-
 const MIME_MEDIA = Object.freeze({
   'video/mp4': 'video/mp4',
   'video/webm': 'video/webm',
@@ -44,10 +37,14 @@ export async function loadTextVideo(source, opts = {}) {
           )
         })()
       : await readLocalVideo(raw, opts.signal)
-  const mediaType = loaded.mediaType
-  if (!mediaType || !MIME_MEDIA[mediaType]) {
+  const probedMediaType = mediaFromVideoMagic(loaded.data)
+  if (!probedMediaType) {
     throw new OmnimuxError('omnimux-invalid-request', 'video must be MP4, WebM, or QuickTime')
   }
+  if (loaded.mediaType && loaded.mediaType !== probedMediaType) {
+    throw new OmnimuxError('omnimux-invalid-request', `video MIME ${loaded.mediaType} does not match its bytes`)
+  }
+  const mediaType = probedMediaType
   const cap = typeof opts.maxVideoBytes === 'number' && opts.maxVideoBytes > 0
     ? opts.maxVideoBytes
     : DEFAULT_BYTE_CAP
@@ -110,7 +107,6 @@ async function readLocalVideo(filePath, signal) {
   if (!isAbsolute(filePath)) {
     throw new OmnimuxError('omnimux-invalid-request', 'video path must be absolute')
   }
-  const ext = extnameOf(filePath)
   let data
   try {
     data = new Uint8Array(await readFile(filePath, signal ? { signal } : undefined))
@@ -120,22 +116,30 @@ async function readLocalVideo(filePath, signal) {
     }
     throw error
   }
-  const mediaType = EXT_MEDIA[ext]
-  if (!mediaType) {
-    throw new OmnimuxError('omnimux-invalid-request', 'video path must end in .mp4, .m4v, .webm, or .mov')
-  }
   return {
     data,
-    mediaType,
     name: basename(filePath),
   }
 }
 
 /**
- * @param {string} filePath
+ * Return a broad video MIME only after reading the container signature. This
+ * intentionally refuses extension or data-URI declarations without matching
+ * bytes, so external request metadata cannot choose the guard's asset type.
+ * @param {Uint8Array} bytes
+ * @returns {'video/mp4' | 'video/webm' | 'video/quicktime' | undefined}
  */
-function extnameOf(filePath) {
-  const base = basename(filePath).toLowerCase()
-  const dot = base.lastIndexOf('.')
-  return dot === -1 ? '' : base.slice(dot)
+export function mediaFromVideoMagic(bytes) {
+  if (bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) {
+    return 'video/webm'
+  }
+  const ftyp = bytes.length >= 8
+    && ((bytes[0] === 0x66 && bytes[1] === 0x74 && bytes[2] === 0x79 && bytes[3] === 0x70)
+      || (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70))
+  if (!ftyp) return undefined
+  const brandOffset = bytes[0] === 0x66 ? 4 : 8
+  if (bytes.length >= brandOffset + 2 && bytes[brandOffset] === 0x71 && bytes[brandOffset + 1] === 0x74) {
+    return 'video/quicktime'
+  }
+  return 'video/mp4'
 }

@@ -46,7 +46,6 @@ const CAPABILITY_SEAM = Object.freeze({
  *   store?: { resolve: () => Promise<string | undefined> },
  *   credentials?: { resolve: (ref: string) => Promise<{ value?: string } | undefined> },
  *   runtime?: { execute: (req: object) => Promise<{ taskId?: string, outputs: Array<{ type: string, url?: string }> }> },
- *   bypassSubmitGuard?: boolean,
  * }} input
  */
 export async function executeOmnimuxMedia(capability, input) {
@@ -56,94 +55,76 @@ export async function executeOmnimuxMedia(capability, input) {
   const taskId = typeof input.taskId === 'string' ? input.taskId.trim() : ''
   const media = parseMediaConfig(input.media)
   const route = resolveMediaRoute(capability, input, media, input.env)
+
+  // taskId poll/finish: skip initial asset SubmitGuard and do not resubmit.
+  if (taskId) {
+    const auth = await resolveMediaAuth(route, {
+      env: input.env,
+      store: input.store,
+      credentials: input.credentials,
+    })
+    return finishMediaTask(capability, route, { ...input, taskId, authKey: auth.apiKey })
+  }
+
+  const prompt = typeof input.prompt === 'string' ? input.prompt : ''
+  const seam = CAPABILITY_SEAM[capability] ?? capability
+  const guardPlan = assertGuardSubmit(
+    {
+      prompt,
+      model: route.modelId,
+      operation: input.operation,
+      image: input.image,
+      image_tail: input.image_tail ?? input.imageTail,
+      references: input.references,
+      audioTrack: input.audioTrack,
+      audio: input.audio,
+      speech: input.speech,
+      duration: input.duration,
+      voice: input.voice,
+      style: input.style,
+      instrumental: input.instrumental,
+      speed: input.speed,
+      aspectRatio: input.aspectRatio,
+      resolution: input.resolution,
+      metadata: input.metadata,
+      assetMeta: input.assetMeta,
+      capability,
+      seam,
+    },
+    {
+      seam,
+      capability,
+      outputType: capability === 'video' || capability === 'image' || capability === 'audio' ? capability : undefined,
+    },
+  )
+
   const auth = await resolveMediaAuth(route, {
     env: input.env,
     store: input.store,
     credentials: input.credentials,
   })
 
-  // taskId poll/finish: skip initial asset SubmitGuard and do not resubmit.
-  if (taskId) {
-    return finishMediaTask(capability, route, { ...input, taskId, authKey: auth.apiKey })
-  }
-
-  const prompt = typeof input.prompt === 'string' ? input.prompt : ''
-  if (!prompt.trim() && capability !== 'stt') {
-    // Guard will also enforce promptPolicy; keep early check for clear errors on empty legacy calls.
-  }
-
-  const seam = CAPABILITY_SEAM[capability] ?? capability
-  let guardPlan = null
-  if (!input.bypassSubmitGuard) {
-    guardPlan = assertGuardSubmit(
-      {
-        prompt,
-        model: route.modelId,
-        operation: input.operation,
-        image: input.image,
-        image_tail: input.image_tail ?? input.imageTail,
-        references: input.references,
-        audioTrack: input.audioTrack,
-        audio: input.audio,
-        speech: input.speech,
-        duration: input.duration,
-        voice: input.voice,
-        style: input.style,
-        instrumental: input.instrumental,
-        speed: input.speed,
-        aspectRatio: input.aspectRatio,
-        resolution: input.resolution,
-        metadata: input.metadata,
-        assetMeta: input.assetMeta,
-        capability,
-        seam,
-      },
-      {
-        seam,
-        capability,
-        outputType: capability === 'video' || capability === 'image' || capability === 'audio' ? capability : undefined,
-      },
-    )
-  }
-
   const wait = input.wait !== false
   const runtime = input.runtime ?? createProtocolRuntime(route, input.fetcher, auth.apiKey)
 
-  const mappedInput = guardPlan
-    ? mapOmnimuxInput(capability, {
-        prompt: guardPlan.prompt,
-        model: guardPlan.modelId,
-        duration: input.duration,
-        image: input.image,
-        speech: input.speech,
-        audio: input.audio,
-        references: input.references,
-        audioTrack: input.audioTrack,
-        voice: input.voice,
-        style: input.style,
-        instrumental: input.instrumental,
-        speed: input.speed,
-        aspectRatio: input.aspectRatio,
-        resolution: input.resolution,
-        operation: guardPlan.operationId,
-        guardPlan,
-      })
-    : mapOmnimuxInput(capability, {
-        prompt,
-        model: route.modelId,
-        duration: input.duration,
-        image: input.image,
-        speech: input.speech,
-        audio: input.audio,
-        references: input.references,
-        audioTrack: input.audioTrack,
-        voice: input.voice,
-        style: input.style,
-        instrumental: input.instrumental,
-        speed: input.speed,
-        aspectRatio: input.aspectRatio,
-        resolution: input.resolution,
-      })
+  const mappedInput = mapOmnimuxInput(capability, {
+    prompt: guardPlan.prompt,
+    model: guardPlan.modelId,
+    duration: input.duration,
+    image: input.image,
+    speech: input.speech,
+    audio: input.audio,
+    references: input.references,
+    audioTrack: input.audioTrack,
+    voice: input.voice,
+    style: input.style,
+    instrumental: input.instrumental,
+    speed: input.speed,
+    aspectRatio: input.aspectRatio,
+    resolution: input.resolution,
+    operation: guardPlan.operationId,
+    guardPlan,
+  })
 
   let result
   try {
@@ -164,9 +145,7 @@ export async function executeOmnimuxMedia(capability, input) {
     throw unwrapped
   }
 
-  if (guardPlan) {
-    assertGuardOutput(guardPlan, result, { capability })
-  }
+  assertGuardOutput(guardPlan, result, { capability })
 
   const url = result.outputs.find((item) => item.type === capability)?.url
   const submittedId = result.taskId ?? null
@@ -182,6 +161,7 @@ export async function executeOmnimuxMedia(capability, input) {
   await downloadMediaFile({
     dest: input.dest,
     url,
+    capability,
     apiKey: auth.apiKey,
     fetcher: input.fetcher,
     signal: input.signal,
@@ -225,9 +205,18 @@ export async function finishMediaTask(capability, route, input) {
   if (!url) {
     throw new OmnimuxError('omnimux-invalid-response', `task ${input.taskId} completed without a ${capability} url`)
   }
+  // A poll has no original submit operation to recover, but it still crosses
+  // the output boundary. Validate the completed result shape here; the
+  // download layer below validates the response MIME before it writes bytes.
+  assertGuardOutput(
+    { operation: { output: { type: capability } } },
+    { mode: 'live', outputs: [{ type: capability, url }] },
+    { capability },
+  )
   await downloadMediaFile({
     dest: input.dest,
     url,
+    capability,
     apiKey,
     fetcher: input.fetcher,
     signal: input.signal,

@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 import { parseGateConfig } from '../gate/config.js'
 import { OmnimuxError } from './errors.js'
 import { mountMedia } from './mount.js'
+import { executeOmnimuxVideo } from './video.js'
 
 describe('mountMedia capability gate', () => {
   it('registers tool and provides seam when gate is enabled by default', () => {
@@ -94,5 +95,39 @@ describe('mountMedia capability gate', () => {
 
     // Because gate.media.audio is false, register was skipped
     assert.equal(registeredTool, undefined)
+  })
+
+  it('registered tool and seam reject untrusted bypassSubmitGuard before the video runtime', async () => {
+    const tools = []
+    const provided = {}
+    let vendorCalls = 0
+    const ctx = {
+      tools: { register(tool) { tools.push(tool) } },
+      provide(name, api) { provided[name] = api },
+    }
+    mountMedia(ctx, {
+      kind: 'video',
+      execute: executeOmnimuxVideo,
+      media: undefined,
+      jsonOut: {},
+    })
+    const request = {
+      prompt: 'morph first to last',
+      dest: '/tmp/omnimux-guard-never-writes.mp4',
+      model: 'kling-v3',
+      operation: 'first_last_frame',
+      bypassSubmitGuard: true,
+      runtime: { async execute() { vendorCalls += 1 } },
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+    }
+    await assert.rejects(
+      () => tools[0].execute(request, {}),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    await assert.rejects(
+      () => provided.videoGenerate.execute(request),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(vendorCalls, 0)
   })
 })
