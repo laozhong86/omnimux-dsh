@@ -6,10 +6,20 @@
  * twin) and opens `#omnimux-sidebar-new-menu`. Real new-session happens only
  * after the "新建会话" menuitem click. This helper mirrors that gesture.
  */
-import { isBlankSession } from './is-blank-session.js'
-
 export const NEW_SESSION_WAIT_MS = 1500
 export const NEW_SESSION_POLL_MS = 50
+
+/** Official `sessions` client service injected into this plugin at apply time. */
+let officialSessions = null
+
+/**
+ * Bind the official public sessions service. This is scoped to the inspiration
+ * client module; it is not an attachment-store fallback or a cross-plugin queue.
+ * @param {unknown} sessions
+ */
+export function bindOfficialSessions(sessions) {
+  officialSessions = sessions || null
+}
 
 const SESSION_MENU_RE = /新会话|新建会话|new session/i
 const PROJECT_MENU_RE = /新建项目|create project|new project/i
@@ -17,13 +27,6 @@ const PROJECT_MENU_RE = /新建项目|create project|new project/i
 function resolveDoc(doc) {
   if (doc) return doc
   return typeof document !== 'undefined' ? document : null
-}
-
-function resolveWindow(doc, win) {
-  if (win) return win
-  if (doc && doc.defaultView) return doc.defaultView
-  if (typeof window !== 'undefined') return window
-  return undefined
 }
 
 function isVisible(el) {
@@ -83,6 +86,24 @@ export function findNewSessionButton(doc) {
   return visible || pool[0]
 }
 
+/**
+ * Resolve the official per-workspace new-session control only when it is
+ * unambiguous. This preserves the official action while avoiding the generic
+ * action's no-current/no-recent clear path in a single-workspace baseline.
+ * @param {Document | { querySelectorAll?: Function, querySelector?: Function } | null | undefined} [doc]
+ * @returns {HTMLElement | null}
+ */
+export function findSingleWorkspaceNewSessionButton(doc) {
+  const d = resolveDoc(doc)
+  if (!d || typeof d.querySelectorAll !== 'function') return null
+  const matches = Array.from(d.querySelectorAll('button')).filter((button) => {
+    if (!isVisible(button) || typeof button.getAttribute !== 'function') return false
+    const aria = String(button.getAttribute('aria-label') || '').trim()
+    return /^(在.+中新建会话|New session in .+)$/i.test(aria)
+  })
+  return matches.length === 1 ? matches[0] : null
+}
+
 function menuItemLabel(el) {
   if (!el) return ''
   const text = el.textContent
@@ -125,34 +146,36 @@ export function findNewSessionMenuItem(doc) {
   return queryMenuItems(doc).find((el) => isNewSessionMenuItem(el)) || null
 }
 
-function clickIfPossible(el) {
+function clickIfPossible(el, beforeClick) {
   if (!el || typeof el.click !== 'function') return false
+  if (typeof beforeClick === 'function') beforeClick()
   el.click()
   return true
 }
 
-function readActiveSessionId(win) {
-  const getter = win && win.__omnimuxAttachments && win.__omnimuxAttachments.getActiveSessionId
-  if (typeof getter !== 'function') return ''
+function sessionSnapshot(sessions) {
+  const list = sessions && sessions.list
+  if (!list || typeof list.getSnapshot !== 'function') return null
   try {
-    return String(getter.call(win.__omnimuxAttachments) || '')
+    return list.getSnapshot()
   } catch {
-    return ''
+    return null
   }
 }
 
-function sessionOpened(blank, doc, win, beforeId, clicked) {
-  const afterId = readActiveSessionId(win)
-  if (afterId && afterId !== beforeId) {
-    return { ok: true, sessionId: afterId !== 'default' ? afterId : undefined }
+function resolvedOfficialTarget(sessions, beforeId) {
+  const snapshot = sessionSnapshot(sessions)
+  const sessionId = snapshot?.current
+  if (!sessionId || typeof sessionId !== 'string') return null
+  const summary = snapshot.byId?.[sessionId]
+  // `blank` is the official SessionSummary lifecycle bit. It proves that this
+  // selected target is a legal new-session result, including blank reuse.
+  if (!summary || summary.blank !== true) return null
+  return {
+    ok: true,
+    sessionId,
+    reusedBlank: sessionId === beforeId,
   }
-  // After an official / menuitem click, welcome chrome with no real turns
-  // is a reused blank session (host keeps the same id). A session that still
-  // has user/assistant messages and the same id is not a success.
-  if (clicked && blank(doc)) {
-    return { ok: true, sessionId: afterId && afterId !== 'default' ? afterId : undefined }
-  }
-  return null
 }
 
 /**
@@ -162,51 +185,79 @@ function sessionOpened(blank, doc, win, beforeId, clicked) {
  * @param {{
  *   document?: unknown,
  *   window?: unknown,
- *   isBlank?: (doc?: unknown) => boolean,
  *   now?: () => number,
  *   sleep?: (ms: number) => Promise<void>,
+ *   sessions?: { list?: { getSnapshot?: () => unknown, subscribe?: (listener: () => void) => (() => void) } },
  *   timeoutMs?: number,
  *   pollMs?: number,
  * }} [opts]
- * @returns {Promise<{ ok: true, sessionId?: string } | { ok: false, error: 'newSessionFailed' }>}
+ * @returns {Promise<{ ok: true, sessionId: string, reusedBlank?: boolean } | { ok: false, error: 'newSessionFailed' }>}
  */
 export async function clickOfficialNewSession(opts = {}) {
   const doc = resolveDoc(opts.document)
-  const win = resolveWindow(doc, opts.window)
+  const sessions = opts.sessions || officialSessions
   const timeoutMs = Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : NEW_SESSION_WAIT_MS
   const pollMs = Number.isFinite(opts.pollMs) ? opts.pollMs : NEW_SESSION_POLL_MS
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
   const sleep = typeof opts.sleep === 'function'
     ? opts.sleep
     : (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-  const blank = typeof opts.isBlank === 'function' ? opts.isBlank : isBlankSession
-
-  const beforeId = readActiveSessionId(win)
-  let clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
-  let clickedButton = false
-
-  if (!clickedMenu) {
-    const button = findNewSessionButton(doc)
-    if (!button || typeof button.click !== 'function') {
-      return { ok: false, error: 'newSessionFailed' }
-    }
-    button.click()
-    clickedButton = true
-    // Menu may open synchronously (collapsed rail interceptor).
-    clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
+  const list = sessions?.list
+  if (!list || typeof list.getSnapshot !== 'function' || typeof list.subscribe !== 'function') {
+    return { ok: false, error: 'newSessionFailed' }
   }
+  const beforeId = sessionSnapshot(sessions)?.current || ''
+  const hasOfficialCurrent = Boolean(beforeId)
+  let directActionPending = false
+  let menuActionDispatched = false
+  let observedTarget = null
+  const unsubscribe = list.subscribe(() => {
+    if (!directActionPending && !menuActionDispatched) return
+    observedTarget = resolvedOfficialTarget(sessions, beforeId)
+  })
+  const dispatchMenu = (el) => clickIfPossible(el, () => { menuActionDispatched = true })
+  const dispatchButton = (el) => clickIfPossible(el, () => { directActionPending = true })
 
-  const started = now()
-  while (now() - started < timeoutMs) {
+  try {
+    let clickedMenu = dispatchMenu(findNewSessionMenuItem(doc))
     if (!clickedMenu) {
-      clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
+      // The generic action clears selection when this L2 runtime has neither a
+      // current session nor a projected recent workspace. Its single visible
+      // workspace control is the official explicit-target action and therefore
+      // the only reliable product-equivalent gesture for this baseline.
+      const button = !hasOfficialCurrent
+        ? (findSingleWorkspaceNewSessionButton(doc) || findNewSessionButton(doc))
+        : findNewSessionButton(doc)
+      if (!button || typeof button.click !== 'function') {
+        return { ok: false, error: 'newSessionFailed' }
+      }
+      dispatchButton(button)
+      // Menu may open synchronously (collapsed rail interceptor).
+      const menuItem = findNewSessionMenuItem(doc)
+      if (menuItem) {
+        // The button was a menu opener, not the session action. Discard any
+        // selection projection it observed and wait for the menuitem gesture.
+        directActionPending = false
+        observedTarget = null
+        clickedMenu = dispatchMenu(menuItem)
+      }
     }
-    const opened = sessionOpened(blank, doc, win, beforeId, clickedMenu || clickedButton)
-    if (opened) return opened
-    await sleep(pollMs)
-  }
 
-  const opened = sessionOpened(blank, doc, win, beforeId, clickedMenu || clickedButton)
-  if (opened) return opened
-  return { ok: false, error: 'newSessionFailed' }
+    const started = now()
+    while (now() - started < timeoutMs) {
+      if (!clickedMenu) {
+        const menuItem = findNewSessionMenuItem(doc)
+        if (menuItem) {
+          directActionPending = false
+          observedTarget = null
+          clickedMenu = dispatchMenu(menuItem)
+        }
+      }
+      if (observedTarget) return observedTarget
+      await sleep(pollMs)
+    }
+    return observedTarget || { ok: false, error: 'newSessionFailed' }
+  } finally {
+    try { unsubscribe() } catch { /* public-store cleanup */ }
+  }
 }

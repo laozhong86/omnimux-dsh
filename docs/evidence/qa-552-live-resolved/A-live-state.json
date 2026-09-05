@@ -1,0 +1,59 @@
+{
+  "schema": "qa-552-live-state/v1",
+  "capturedAt": "2026-09-05T12:00:00+08:00",
+  "environment": {
+    "url": "http://127.0.0.1:44202/",
+    "egoTaskSpace": 476,
+    "hostPid": 15622,
+    "watchPid": 15792,
+    "dshHome": "/Users/x/.dsh-dev/tasks/replicate-dismiss-reversal",
+    "profile": "omnimux-dev-replicate-dismiss-reversal",
+    "worktree": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-replicate-dismiss-reversal-552",
+    "head": "b70143c0ec9ebc8b4889e6200f338ce223071dae",
+    "artifact": {
+      "path": "plugins/omnimux-inspiration/lib/client.js",
+      "sha256": "53ec6a41a038c605c031a6df7a41de375b40bdb8f2a2d69193e35555604fd1c0"
+    }
+  },
+  "fixture": {
+    "id": "qa552-live-fixture",
+    "title": "QA-552 isolated inspiration fixture",
+    "sourceUrl": "https://example.invalid/qa-552-live-fixture",
+    "scope": "isolated L2 local record; no cloud request"
+  },
+  "before": {
+    "attachmentActiveSessionId": "session-bdc04d83-3a50-4546-b2cd-5604bb110c46",
+    "attachments": [],
+    "sessionTreeRows": [],
+    "composer": [{"tag": "DIV", "innerText": "", "textContent": ""}],
+    "send": {"ariaLabel": "发送消息", "disabled": true},
+    "workbenchTabs": ["omnimux-inspiration:library"],
+    "canvasTouched": false
+  },
+  "action": {
+    "selector": ".omnimux-inspiration-overlay-cta-btn.primary",
+    "visibleLabel": "一键复刻",
+    "hovered": true,
+    "clickCount": 1,
+    "settleMs": 2500
+  },
+  "after": {
+    "visibleStatus": "无法打开新会话，请手动点「新会话」后重试",
+    "attachmentActiveSessionId": "session-bdc04d83-3a50-4546-b2cd-5604bb110c46",
+    "attachments": [],
+    "sessionTreeRows": [],
+    "composer": [{"tag": "DIV", "innerText": "", "textContent": ""}],
+    "send": {"ariaLabel": "发送消息", "disabled": true, "clickCount": 0},
+    "workbenchTabs": ["omnimux-inspiration:library"],
+    "canvasTouched": false
+  },
+  "result": {
+    "scenarioA": "FAIL",
+    "officialTargetConfirmed": false,
+    "writes": {"attachment": 0, "prefill": 0, "send": 0},
+    "notes": [
+      "The real CTA was clicked once. No synthetic event, sessions.create, runtime patch, or mock was used.",
+      "The visible retry status and zero writes meet the guarded failure behavior, but the primary success path has not completed."
+    ]
+  }
+}

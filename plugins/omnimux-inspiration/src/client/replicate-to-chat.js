@@ -1,16 +1,15 @@
 /**
  * Inspiration → chat orchestrator (official new-session semantics).
  *
- * Pipeline: exclusive lock → hasAnySession → reuse blank or click .newSession
- * → addAttachment → dismissInspirationLibrary → prefillReplicationPrompt.
+ * Pipeline: exclusive lock → clickOfficialNewSession → reveal conversation →
+ * one guarded session-scoped attachment + prefill intent.
  * Never starts a workflow project, never copies text, never clicks send.
+ * 灵感库 Tab 永不由此链路关闭（#552 P-1）；画布开关权归用户，本链路完全不触碰（P-3）。
+ * CTA 唯一副作用 = 展开中间会话栏（split）+ 预填 prompt（P-2）。
  */
 import { buildReplicationPrompt } from './replication.js'
-import { prefillReplicationPrompt } from './composer-inject.js'
-import { hasAnySession, isBlankSession } from './is-blank-session.js'
+import { queueSessionPrefill } from './session-prefill.js'
 import { clickOfficialNewSession } from './new-session-click.js'
-
-export const INSPIRATION_LIBRARY_TAB_ID = 'omnimux-inspiration:library'
 
 /** Module-level inflight lock. A second call returns `{ error: 'busy' }` and does not queue. */
 let replicateInflight = null
@@ -101,14 +100,13 @@ export function buildInspirationPayload(row) {
 }
 
 /**
- * @param {{ window?: Window, tabId?: string, onDismissModal?: () => void }} [io]
+ * @param {{ setConversationCollapsed?: (next: boolean) => void, setFocus?: (mode: string) => void } | undefined} wb
  */
 /**
- * Library tabs default to `gui` (conversationCollapsed). Closing the library
- * while another occupant (创作画布) remains does NOT close the panel, and
- * `closePanel` would hide the canvas — but the user expects the canvas to
- * stay and the conversation to appear side by side (#531).
- * Enter-conversation: uncollapse + split AFTER closeTab, never closePanel.
+ * Enter-conversation: uncollapse + split only. The library tab stays open
+ * (#552 P-1) and the canvas panel is left untouched (#552 P-3).
+ * `setFocus('split')` already uncollapses the conversation internally;
+ * the explicit call is a redundant-but-harmless double safety.
  */
 function revealConversationColumn(wb) {
   if (!wb) return
@@ -126,64 +124,43 @@ function workbenchFrom(win) {
   return undefined
 }
 
-export function dismissInspirationLibrary(io = {}) {
+/**
+ * Reveal the conversation column for a replicate CTA. The library tab is
+ * never closed and the canvas panel is never touched (#552 P-1/P-3); the
+ * only side effects are uncollapse + split focus, plus closing the card
+ * detail modal via `onDismissModal` (unrelated to tabs).
+ * @param {{ window?: Window, onDismissModal?: () => void }} [io]
+ */
+export function revealConversationForReplicate(io = {}) {
   if (typeof io.onDismissModal === 'function') {
     try { io.onDismissModal() } catch { /* ignore */ }
   }
   const win = io.window
     ?? (typeof window !== 'undefined' ? window : undefined)
-  const tabId = io.tabId || INSPIRATION_LIBRARY_TAB_ID
   const wb = workbenchFrom(win)
-  const hideLibraryThenReveal = () => {
-    if (wb && typeof wb.closeTab === 'function') {
-      try { wb.closeTab(tabId) } catch { /* ignore */ }
-    } else if (wb && typeof wb.createSidebarStore === 'function') {
-      try { wb.createSidebarStore({ tabId })?.close?.() } catch { /* ignore */ }
-    }
-    revealConversationColumn(wb)
-  }
-  hideLibraryThenReveal()
-  // Library open() defaults to gui and can re-collapse the middle pane on the
-  // same tick as closeTab; replay after React/workbench subscribers settle.
+  revealConversationColumn(wb)
+  // Reveal-only replay after React/workbench subscribers settle. Idempotent
+  // geometry assertion: re-asserts uncollapse + split without mutating the
+  // tab set or persisting any new state (#552).
   if (typeof setTimeout === 'function') {
-    setTimeout(hideLibraryThenReveal, 0)
-    setTimeout(hideLibraryThenReveal, 50)
+    const replay = () => revealConversationColumn(wb)
+    setTimeout(replay, 0)
+    setTimeout(replay, 50)
   }
 }
 
-function readActiveSessionId(win) {
-  const getter = win && win.__omnimuxAttachments && win.__omnimuxAttachments.getActiveSessionId
-  if (typeof getter !== 'function') return ''
-  try {
-    return String(getter.call(win.__omnimuxAttachments) || '')
-  } catch {
-    return ''
-  }
+function resolveNewSessionId(clickResult) {
+  const sessionId = clickResult && clickResult.sessionId != null
+    ? String(clickResult.sessionId)
+    : ''
+  return sessionId !== 'default' ? sessionId : ''
 }
 
-function resolveAttachSessionId(io, clickResult, win) {
-  if (io.sessionId != null && String(io.sessionId) !== '') {
-    const explicit = String(io.sessionId)
-    return explicit === 'default' ? '' : explicit
-  }
-  const fromClick = clickResult && clickResult.sessionId != null ? String(clickResult.sessionId) : ''
-  if (fromClick && fromClick !== 'default') return fromClick
-  const active = readActiveSessionId(win)
-  if (active && active !== 'default') return active
-  return ''
-}
-
-function defaultAddAttachment(win, doc) {
+function defaultAddAttachment(win) {
   return (sessionId, payload) => {
     const store = win && win.__omnimuxAttachments
     if (store && typeof store.addAttachment === 'function') {
       return store.addAttachment(sessionId || '', payload)
-    }
-    const target = win || (doc && doc.defaultView) || (typeof window !== 'undefined' ? window : null)
-    if (target && typeof target.dispatchEvent === 'function' && typeof target.CustomEvent === 'function') {
-      const eventName = ['omnimux', 'add-to-conversation'].join(':')
-      target.dispatchEvent(new target.CustomEvent(eventName, { detail: payload }))
-      return { ok: true }
     }
     return { ok: false, reason: 'invalid-payload' }
   }
@@ -204,110 +181,85 @@ export async function oneClickReplicate(row, io = {}) {
   return runExclusive(async () => {
     const doc = resolveDoc(io)
     const win = resolveWindow(io, doc)
-    const hasSession = typeof io.hasSession === 'function' ? io.hasSession : hasAnySession
-    const isBlank = typeof io.isBlank === 'function' ? io.isBlank : isBlankSession
     const clickNew = typeof io.clickNewSession === 'function' ? io.clickNewSession : clickOfficialNewSession
     const addAttachment = typeof io.addAttachment === 'function'
       ? io.addAttachment
-      : defaultAddAttachment(win, doc)
-    const prefill = typeof io.prefillPrompt === 'function' ? io.prefillPrompt : prefillReplicationPrompt
-    const dismiss = typeof io.dismissLibrary === 'function'
-      ? io.dismissLibrary
-      : () => dismissInspirationLibrary({
+      : defaultAddAttachment(win)
+    const prefill = typeof io.prefillPrompt === 'function'
+      ? io.prefillPrompt
+      : queueSessionPrefill
+    const reveal = typeof io.revealConversation === 'function'
+      ? io.revealConversation
+      : () => revealConversationForReplicate({
         window: win,
         onDismissModal: io.onDismissModal,
       })
 
     onStatus('card.cta.replicating')
 
-    if (!hasSession(doc)) {
-      onStatus('card.cta.noSession')
-      return { ok: false, error: 'noSession' }
-    }
-
-    let reused = false
-    let clickedNewSession = false
-    let clickResult = null
-    if (isBlank(doc)) {
-      reused = true
-    } else {
-      try {
-        clickResult = await clickNew({ document: doc, window: win, isBlank })
-      } catch {
-        onStatus('card.cta.newSessionFailed')
-        return { ok: false, error: 'newSessionFailed' }
-      }
-      if (!clickResult || clickResult.ok !== true) {
-        onStatus('card.cta.newSessionFailed')
-        return { ok: false, error: 'newSessionFailed' }
-      }
-      clickedNewSession = true
-    }
-
-    const sessionId = resolveAttachSessionId(io, clickResult, win)
-    const payload = buildInspirationPayload(row)
-    let attached = false
-    let duplicate = false
-    let quotaExceeded = false
-    let attachResult
+    let clickPromise
     try {
-      attachResult = addAttachment(sessionId, payload)
+      // Dispatch exactly one official New Session gesture, then reveal the
+      // middle column while official lifecycle resolution remains pending.
+      clickPromise = clickNew({ document: doc, window: win })
     } catch {
-      onStatus('card.cta.attachFailed')
-      return { ok: false, error: 'attachFailed' }
+      try { reveal() } catch { /* keep the visible retry surface */ }
+      onStatus('card.cta.newSessionFailed')
+      return { ok: false, error: 'newSessionFailed' }
     }
-    if (attachResult && typeof attachResult.then === 'function') {
-      try {
-        attachResult = await attachResult
-      } catch {
-        onStatus('card.cta.attachFailed')
-        return { ok: false, error: 'attachFailed' }
-      }
+    try { reveal() } catch { /* keep awaiting official resolution */ }
+
+    let clickResult = null
+    try {
+      clickResult = await clickPromise
+    } catch {
+      onStatus('card.cta.newSessionFailed')
+      return { ok: false, error: 'newSessionFailed' }
+    }
+    if (!clickResult || clickResult.ok !== true) {
+      onStatus('card.cta.newSessionFailed')
+      return { ok: false, error: 'newSessionFailed' }
     }
 
-    const reason = attachResult && attachResult.reason ? String(attachResult.reason) : ''
-    if (attachResult && attachResult.ok === true) {
-      attached = true
-    } else if (reason === 'duplicate') {
-      attached = true
-      duplicate = true
-    } else if (reason === 'quota-exceeded') {
-      quotaExceeded = true
-      onStatus('card.cta.attachFull')
-    } else {
-      onStatus('card.cta.attachFailed')
-      return { ok: false, error: 'attachFailed' }
+    const sessionId = resolveNewSessionId(clickResult)
+    if (!sessionId) {
+      onStatus('card.cta.newSessionFailed')
+      return { ok: false, error: 'newSessionFailed' }
     }
-
+    // The input.dock consumer performs the empty-draft guard, attachment write,
+    // and official setDraft in that order. This keeps an attachment failure
+    // retryable: it cannot leave a system-owned prompt in the draft.
     const prompt = buildReplicationPrompt(row)
-    if (quotaExceeded) {
-      try { await prefill(prompt) } catch { /* ignore */ }
-      return { ok: false, error: 'attachFull' }
-    }
-
-    // Reveal before prefill so a gui-hidden composer does not fail first
-    // and skip dismiss. Prefill errors still leave the conversation column up.
-    try { dismiss() } catch { /* ignore */ }
-
+    const payload = buildInspirationPayload(row)
     let prefilled
     try {
-      prefilled = await prefill(prompt)
+      prefilled = await prefill({
+        targetSessionId: sessionId,
+        prompt,
+        attach: () => addAttachment(sessionId, payload),
+      })
     } catch {
       onStatus('card.cta.sendManual')
       return { ok: false, error: 'sendManual' }
     }
     if (!prefilled || prefilled.ok !== true) {
-      onStatus('card.cta.sendManual')
-      return { ok: false, error: 'sendManual' }
+      const error = prefilled?.error === 'draft-protected'
+        ? 'draftProtected'
+        : prefilled?.error === 'attach-full'
+          ? 'attachFull'
+          : prefilled?.error === 'attach-failed'
+            ? 'attachFailed'
+            : 'sendManual'
+      onStatus(`card.cta.${error}`)
+      return { ok: false, error }
     }
 
     onStatus(null)
     return {
       ok: true,
-      reused,
-      clickedNewSession,
-      attached,
-      ...(duplicate ? { duplicate: true } : {}),
+      clickedNewSession: true,
+      attached: true,
+      ...(prefilled.duplicate ? { duplicate: true } : {}),
     }
   })
 }
