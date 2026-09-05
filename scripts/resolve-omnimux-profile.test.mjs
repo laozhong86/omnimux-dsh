@@ -1,0 +1,71 @@
+import { afterEach, describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+const resolver = join(root, 'scripts', 'resolve-omnimux-profile.sh')
+const temporaryRoots = []
+
+afterEach(() => {
+  for (const directory of temporaryRoots.splice(0)) {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+function fixture() {
+  const home = mkdtempSync(join(tmpdir(), 'omnimux-profile-resolver-'))
+  temporaryRoots.push(home)
+  return home
+}
+
+function resolve(home, target) {
+  return spawnSync('bash', ['-c', 'source "$1"; resolve_omnimux_profile_dir "$2"', 'resolver', resolver, target], {
+    encoding: 'utf8',
+    env: { ...process.env, HOME: home },
+  })
+}
+
+describe('resolve_omnimux_profile_dir', () => {
+  it('uses the conventional profile for regular target homes', () => {
+    const home = fixture()
+    const target = join(home, '.omnimux-dev')
+    const result = resolve(home, target)
+
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(result.stdout.trim(), join(target, 'profiles', 'omnimux'))
+  })
+
+  it('uses dev-env’s task-name profile for an L2 task root', () => {
+    const home = fixture()
+    const task = join(home, '.dsh-dev', 'tasks', 'client-action')
+    const result = resolve(home, task)
+
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(result.stdout.trim(), join(task, 'profiles', 'omnimux-dev-client-action'))
+  })
+
+  it('rejects a task-root alias so a temporary profiles/omnimux symlink cannot become a target', () => {
+    const home = fixture()
+    const task = join(home, '.dsh-dev', 'tasks', 'client-action')
+    mkdirSync(join(task, 'profiles', 'omnimux'), { recursive: true })
+    const result = resolve(home, task)
+
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /拒绝 profiles\/omnimux alias/)
+  })
+
+  it('rejects an L2 target with both profile names instead of guessing', () => {
+    const home = fixture()
+    const task = join(home, '.dsh-dev', 'tasks', 'client-action')
+    mkdirSync(join(task, 'profiles', 'omnimux'), { recursive: true })
+    mkdirSync(join(task, 'profiles', 'omnimux-dev-client-action'), { recursive: true })
+    const result = resolve(home, task)
+
+    assert.notEqual(result.status, 0)
+    assert.match(result.stderr, /同时存在/)
+  })
+})
