@@ -99,3 +99,27 @@ test('implicit sole operation validates its override parameters', () => {
     message: '参数“duration”不支持值 5',
   });
 });
+
+test('implicit sole operation validates its required node fields', () => {
+  const catalog = {
+    source: 'omnimux', text: [], image: [], audio: [], video: [],
+    models: [{
+      id: 'document-model', label: 'Document model', listed: true,
+      operations: [{
+        id: 'document_to_video', label: 'Document', listed: true, output: { type: 'video' },
+        inputs: [{ slot: 'file_url', type: 'document', role: 'document', source: 'node_field', min: 1, max: 1 }],
+      }],
+    }],
+  };
+  const failure = findExecutionReadinessFailure([{
+    id: 'video-document', type: 'material', data: {
+      materialType: 'video', selectedTool: 'video-generation', prompt: '生成视频',
+      params: { model: 'document-model' },
+    },
+  }], catalog);
+  assert.deepEqual(failure, {
+    nodeId: 'video-document',
+    reasonCode: 'metadata_required',
+    message: '槽位 file_url 需要有效 URL',
+  });
+});
