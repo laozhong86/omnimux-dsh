@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button, IconButton } from 'dsh-ui-kit'
 import {
-  patchLocalInspiration,
   pickCoverSrc,
   resolveCreatorProfileUrl,
   resolveTikTokEmbedUrl,
@@ -20,8 +19,6 @@ const ICON_COPY = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" st
 const ICON_CLOSE = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
 const ICON_REPLICATE = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M4 16V6a2 2 0 0 1 2-2h10" /></svg>
 const ICON_EXTERNAL = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M14 4h6v6M20 4 11 13" /><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" /></svg>
-const ICON_STAR = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9" /></svg>
-const ICON_STAR_ON = <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9" /></svg>
 const ICON_LIKE = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M7 10v10H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h3ZM7 20h9.5a2 2 0 0 0 1.9-1.4l2.2-7A2 2 0 0 0 18.7 9H14l.7-3.5A2 2 0 0 0 12.8 3L7 10v10Z" /></svg>
 const ICON_COMMENT = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 9.7 9.7 0 0 1-4-.9L3 21l1.9-4A8.4 8.4 0 1 1 21 11.5Z" /></svg>
 const ICON_SHARE = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m15 8 5-5m0 0v4m0-4h-4M10 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4" /></svg>
@@ -71,7 +68,6 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
   const [translating, setTranslating] = useState(false)
   const [translateError, setTranslateError] = useState(null)
   const [showTranslation, setShowTranslation] = useState(false)
-  const [favoriteBusy, setFavoriteBusy] = useState(false)
   const [activeSegmentId, setActiveSegmentId] = useState('')
   const [collapsed, setCollapsed] = useState({})
   const [showRaw, setShowRaw] = useState(false)
@@ -150,17 +146,6 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
     }
   }
 
-  const handleFavorite = async () => {
-    if (favoriteBusy || !data.safeItem.id) return
-    setFavoriteBusy(true)
-    try {
-      const response = await patchLocalInspiration(data.safeItem.id, { is_favorite: !data.isFavorite })
-      if (response.ok && response.body?.data) applyItem(response.body.data)
-    } finally {
-      setFavoriteBusy(false)
-    }
-  }
-
   const highlightSegment = (id) => {
     setActiveSegmentId(id)
     setActiveTab('script')
@@ -174,7 +159,6 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
 
   const scriptValue = scriptCopyText(data, showTranslation)
   const deconValue = deconstructionCopyText(data)
-  const analyzeLabel = hasDeconstruction(data) ? t('modal.header.reanalyze') : t('modal.header.analyze')
 
   return (
     <div className="omnimux-inspiration-modal-backdrop" onClick={onClose}>
@@ -182,26 +166,12 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
         <div className="omnimux-inspiration-modal-container">
           <header className="omnimux-inspiration-modal-header">
             <div className="omnimux-inspiration-modal-heading">
-              <h2>{data.title}</h2>
+              <h2 title={data.title}>{data.title}</h2>
               <CopyButton value={data.title} label={t('modal.header.copy')} copiedLabel={t('modal.header.copied')} iconOnly />
             </div>
-            <div className="omnimux-inspiration-modal-header-meta">
-              {data.durationLabel ? <span>{data.durationLabel}</span> : null}
-              {data.segmentCount ? <span>{t('modal.header.segments').replace('{n}', String(data.segmentCount))}</span> : null}
-              {data.platform ? <span className="omnimux-inspiration-modal-platform">{data.platform}</span> : null}
-            </div>
-            <div className="omnimux-inspiration-modal-actions">
-              <Button variant="ghost" onClick={handleFavorite} disabled={favoriteBusy} aria-label={t('modal.header.favorite')}>
-                {data.isFavorite ? ICON_STAR_ON : ICON_STAR}
-                {data.isFavorite ? t('modal.header.favorited') : t('modal.header.favorite')}
-              </Button>
-              <Button variant="secondary" onClick={handleAnalyze} loading={analyzing} disabled={analyzing}>
-                {analyzing ? t('modal.header.analyzing') : analyzeLabel}
-              </Button>
-              <IconButton className="omnimux-inspiration-modal-close" variant="ghost" size="sm" aria-label={t('close')} onClick={onClose}>
-                {ICON_CLOSE}
-              </IconButton>
-            </div>
+            <IconButton className="omnimux-inspiration-modal-close" variant="ghost" size="sm" aria-label={t('close')} onClick={onClose}>
+              {ICON_CLOSE}
+            </IconButton>
           </header>
 
           <nav className="omnimux-inspiration-modal-mobile-tabs" role="tablist" aria-label={t('modal.header.tabs')}>
