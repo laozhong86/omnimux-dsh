@@ -49,9 +49,9 @@ resolve_omnimux_profile_dir() {
       fi
       if [ -e "$conventional_profile" ]; then
         if [ -e "$task_profile" ]; then
-          echo "❌ L2 目标 [$home_dir] 同时存在 $conventional_profile 与 $task_profile，拒绝使用临时 alias。" >&2
+          echo "❌ L2 目标 [$home_dir] 同时存在 ${conventional_profile} 与 ${task_profile}，拒绝使用临时 alias。" >&2
         else
-          echo "❌ L2 目标 [$home_dir] 只能使用 $task_profile，拒绝 profiles/omnimux alias。" >&2
+          echo "❌ L2 目标 [$home_dir] 只能使用 ${task_profile}，拒绝 profiles/omnimux alias。" >&2
         fi
         return 1
       fi
