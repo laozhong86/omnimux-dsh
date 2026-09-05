@@ -108,6 +108,16 @@ ERR_MODULE_NOT_FOUND: Cannot find package 'esbuild'
 | 估计覆盖 | 写入分支高；真实 CTA 新会话、附件、Lexical prompt、画布保活尚未通过 |
 | Routing Decision | **Engineer（仅回传主理人）**：#552 合并前 L2 gate FAIL；不改源码、不联系工程师 |
 
+## 历史结论 → 当前 #552 official-session seam 状态（2026-09-05）
+
+本文件上半部分是旧的“预填 prompt 重复”第 2/2 轮 QA 历史记录；它不能替代当前 official-session seam 的独立验收。
+
+当前目标为 `b70143c0ec9ebc8b4889e6200f338ce223071dae`，实际 L2 为 `http://127.0.0.1:44202/` / ego task space `476`，加载产物 `plugins/omnimux-inspiration/lib/client.js` SHA-256 为 `53ec6a41a038c605c031a6df7a41de375b40bdb8f2a2d69193e35555604fd1c0`。代码与回归层已验证 official `sessions.list` seam 注入、`current` + `byId[current].blank === true` 确认、same-id blank reuse、seam 存在时禁用 attachment fallback、action dispatch 后立刻 split reveal、失败 zero-write；focused 41/41、插件 178 pass / 2 skip、`verify:stages` 和 inspiration build 均绿。
+
+但当前真实 L2 A 场景仍 **FAIL**：在 `qa552-live-fixture` 上 hover 后只点击一次真实 `.omnimux-inspiration-overlay-cta-btn.primary`，2.5 秒后显示“无法打开新会话，请手动点「新会话」后重试”；无官方 blank target、无 session tree row、attachment 仍 `[]`、真实 contenteditable 的 `innerText` / `textContent` 都为空、Send 未点、库仍开、canvas 未触碰，且未变为 split。官方侧栏新会话 UI 和工作区添加流也无法在此 L2 状态产出 session target；安装 Host `workspaces.startSession()` 在无可解析 target 时 `sessions.clear()`，与观察一致。
+
+完整当前证据与报告：`docs/evidence/qa-552-live-resolved/report.md`、`A-live-state.json` 和同目录截图。结论为 **Engineer / 主理人路由：L2 release gate FAIL，不得宣称 App PASS**。下一步是修复/准备 L2 official workspace/session lifecycle，使按钮驱动 action 产出 `current` 且 `byId[current].blank === true`，随后从干净隔离 L2 复跑 A/B/C、live busy 与真实 Lexical exact-text 验收；不得用公共 45120、HTTP 200、其它 revision 或物化后状态替代。
+
 ## 唯一可执行下一步（需要源码修复后再验收）
 
-工程师需从隔离 L2 对真实 CTA 的实际运行路径诊断：为什么 `Preparing replication…` 后官方新会话/attachment/prefill 链路没有完成。修复后由主理人再授权一次干净 L2 场景，按 A 与 B 全量复测，须保留真实 session id、attachment snapshot、Lexical exact text、tabs/画布 snapshot 和视觉证据。L2 Host/watch 保留，**不得**以公共 45120、HTTP 200、其它 revision 或物化后状态替代本门禁。
+工程师需从隔离 L2 对真实 CTA 的实际运行路径诊断：为什么官方新会话 UI 不产生可由 `sessions.list` 确认的 blank target。修复后由主理人再授权一次干净 L2 场景，按 A 与 B 全量复测，须保留真实 session id、attachment snapshot、Lexical exact text、tabs/画布 snapshot 和视觉证据。L2 Host/watch 保留，**不得**以公共 45120、HTTP 200、其它 revision 或物化后状态替代本门禁。
