@@ -5,6 +5,7 @@ import {
   getInspirationPreviewData,
   hasDeconstruction,
   scriptCopyText,
+  renderPlainBreakdownText,
 } from './inspiration-preview-data.js'
 
 describe('inspiration preview data', () => {
@@ -50,6 +51,10 @@ describe('inspiration preview data', () => {
     assert.equal(data.visual, '')
     assert.equal(data.replication, '')
     assert.equal(hasDeconstruction(data), false)
+  })
+
+  it('renders breakdown text without Markdown markers', () => {
+    assert.equal(renderPlainBreakdownText('## 目标\n* **转化目标**: 提升点击\n- 继续观看\n\n\n下一步'), '目标\n· 转化目标: 提升点击\n· 继续观看\n\n下一步')
   })
 
   it('keeps real segment timecodes and formats duration', () => {

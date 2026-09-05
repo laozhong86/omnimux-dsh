@@ -13,15 +13,17 @@ import {
   getInspirationPreviewData,
   hasDeconstruction,
   scriptCopyText,
+  renderPlainBreakdownText,
 } from './inspiration-preview-data.js'
 
 const ICON_COPY = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M4 16V6a2 2 0 0 1 2-2h10" /></svg>
 const ICON_CLOSE = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
 const ICON_REPLICATE = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M4 16V6a2 2 0 0 1 2-2h10" /></svg>
+const ICON_EXTERNAL = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M14 4h6v6M20 4 11 13" /><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5" /></svg>
 const ICON_STAR = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9" /></svg>
 const ICON_STAR_ON = <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9" /></svg>
 
-function CopyButton({ value, label, copiedLabel }) {
+function CopyButton({ value, label, copiedLabel, iconOnly = false }) {
   const [copied, setCopied] = useState(false)
   if (!value) return null
   const copy = async () => {
@@ -35,9 +37,15 @@ function CopyButton({ value, label, copiedLabel }) {
     }
   }
   return (
-    <button type="button" className="omnimux-inspiration-modal-copy" onClick={copy}>
+    <button
+      type="button"
+      className={`omnimux-inspiration-modal-copy${iconOnly ? ' is-icon-only' : ''}`}
+      onClick={copy}
+      title={iconOnly ? label : undefined}
+      aria-label={label}
+    >
       {ICON_COPY}
-      <span>{copied ? copiedLabel : label}</span>
+      {iconOnly ? null : <span>{copied ? copiedLabel : label}</span>}
     </button>
   )
 }
@@ -167,7 +175,7 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
           <header className="omnimux-inspiration-modal-header">
             <div className="omnimux-inspiration-modal-heading">
               <h2>{data.title}</h2>
-              <CopyButton value={data.title} label={t('modal.header.copy')} copiedLabel={t('modal.header.copied')} />
+              <CopyButton value={data.title} label={t('modal.header.copy')} copiedLabel={t('modal.header.copied')} iconOnly />
             </div>
             <div className="omnimux-inspiration-modal-header-meta">
               {data.durationLabel ? <span>{data.durationLabel}</span> : null}
@@ -219,8 +227,8 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
               </div>
               {sourceUrl ? (
                 <div className="omnimux-inspiration-modal-meta-row">
-                  <a className="omnimux-inspiration-modal-link" href={sourceUrl} target="_blank" rel="noopener noreferrer">{t('modal.meta.source')}</a>
-                  <CopyButton value={sourceUrl} label={t('modal.meta.copyLink')} copiedLabel={t('modal.header.copied')} />
+                  <a className="omnimux-inspiration-modal-link" href={sourceUrl} target="_blank" rel="noopener noreferrer" title={sourceUrl}>{sourceUrl} {ICON_EXTERNAL}</a>
+                  <CopyButton value={sourceUrl} label={t('modal.meta.copyLink')} copiedLabel={t('modal.header.copied')} iconOnly />
                 </div>
               ) : null}
               <div className="omnimux-inspiration-modal-meta-list">
@@ -231,7 +239,7 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
                     ) : (
                       <span>{t('modal.meta.author')}: {creatorLabel}</span>
                     )}
-                    <CopyButton value={creator.handle || creatorLabel} label={t('modal.meta.copyAuthor')} copiedLabel={t('modal.header.copied')} />
+                    <CopyButton value={creator.handle || creatorLabel} label={t('modal.meta.copyAuthor')} copiedLabel={t('modal.header.copied')} iconOnly />
                   </div>
                 ) : null}
                 {data.publishedAt || data.createdAt ? (
@@ -284,9 +292,13 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
                   ))}
                 </ol>
               ) : data.script ? (
-                <div className="omnimux-inspiration-modal-script-content">{showTranslation && data.translationText ? data.translationText : data.script}</div>
+                <div className="omnimux-inspiration-modal-script-content">{renderPlainBreakdownText(showTranslation && data.translationText ? data.translationText : data.script)}</div>
               ) : (
-                <div className="omnimux-inspiration-modal-empty">{t('modal.script.empty')}</div>
+                <div className="omnimux-inspiration-modal-empty">
+                  <p>{t('modal.script.empty')}</p>
+                  <p>{t('modal.script.emptyHint')}</p>
+                  {!hasDeconstruction(data) ? <Button variant="primary" onClick={handleAnalyze} loading={analyzing} disabled={analyzing}>{t('modal.deconstruction.analyze')}</Button> : null}
+                </div>
               )}
             </section>
 
@@ -315,15 +327,15 @@ export function InspirationPreviewModal({ row, t, onClose, onItemUpdated, onRepl
                       </button>
                       {collapsed[section.id] ? null : (
                         <>
-                          {section.quote ? <blockquote>{section.quote}</blockquote> : null}
-                          {section.analysis ? <p>{section.analysis}</p> : null}
+                          {section.quote ? <blockquote>{renderPlainBreakdownText(section.quote)}</blockquote> : null}
+                          {section.analysis ? <p>{renderPlainBreakdownText(section.analysis)}</p> : null}
                         </>
                       )}
                     </article>
                   )) : dimensions.map(([key, label, value]) => value ? (
                     <article key={key}>
                       <h4>{label}</h4>
-                      <p>{value}</p>
+                      <p>{renderPlainBreakdownText(value)}</p>
                     </article>
                   ) : null)}
                   {data.rawMarkdown ? (

@@ -776,19 +776,6 @@ export const INSPIRATION_CSS = `
   overflow: hidden;
   padding: 12px;
 }
-.omnimux-inspiration-modal-player-box {
-  position: relative;
-  width: 100%;
-  max-width: 320px;
-  height: 100%;
-  aspect-ratio: 9 / 16;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--dsw-alias-bg-base, #000000);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .omnimux-inspiration-player-frame {
   width: 100%;
   height: 100%;
@@ -1445,6 +1432,7 @@ export const INSPIRATION_CSS = `
   flex: 0 0 auto;
   display: flex;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 16px;
   padding: 8px 16px;
   border-bottom: 1px solid var(--dsw-alias-border-l2);
@@ -1495,6 +1483,12 @@ export const INSPIRATION_CSS = `
   background: var(--dsw-alias-interactive-bg-hover);
   color: var(--dsw-alias-label-primary);
 }
+.omnimux-inspiration-modal-copy.is-icon-only {
+  width: 32px;
+  padding: 0;
+  justify-content: center;
+  flex: 0 0 32px;
+}
 .omnimux-inspiration-modal-close {
   position: static !important;
   top: auto !important;
@@ -1538,13 +1532,23 @@ export const INSPIRATION_CSS = `
   font-weight: 600;
 }
 .omnimux-inspiration-modal-player-box {
-  width: 100%;
-  max-width: 300px;
-  height: min(52vh, 500px);
+  position: relative;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 9 / 16;
+  max-height: min(56vh, 560px);
   margin: 0 auto 14px;
   overflow: hidden;
   border-radius: 8px;
   background: var(--dsw-alias-bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.omnimux-inspiration-player-frame,
+.omnimux-inspiration-modal-cover-bg {
+  width: 100%;
+  height: 100%;
 }
 .omnimux-inspiration-modal-script-content,
 .omnimux-inspiration-modal-dimensions p,
@@ -1565,7 +1569,25 @@ export const INSPIRATION_CSS = `
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.omnimux-inspiration-modal-link,
+.omnimux-inspiration-creator-link {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-secondary);
+}
+.omnimux-inspiration-modal-link svg {
+  display: inline-block;
+  margin-left: 4px;
+  vertical-align: -2px;
+  flex: 0 0 auto;
+}
+.omnimux-inspiration-modal-meta-row .omnimux-inspiration-modal-copy {
+  flex: 0 0 32px;
 }
 .omnimux-inspiration-modal-script-list {
   list-style: none;

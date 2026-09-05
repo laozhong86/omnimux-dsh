@@ -54,6 +54,16 @@ describe('inspiration triptych modal', () => {
     assert.match(INSPIRATION_CSS, /\.omnimux-inspiration-modal-panel\.is-active/)
   })
 
+  it('preserves portrait player geometry and compact header controls', () => {
+    const player = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-player-box')
+    assert.equal(decl(player, 'aspect-ratio'), '9 / 16')
+    assert.match(decl(player, 'max-height'), /56vh/)
+    assert.equal(decl(player, 'display'), 'flex')
+    const header = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-header')
+    assert.equal(decl(header, 'flex-wrap'), 'nowrap')
+    assert.match(INSPIRATION_CSS, /modal-copy\.is-icon-only/)
+  })
+
   it('supports optional timecode columns and quote blocks without fabricating timestamps', () => {
     const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
     assert.match(INSPIRATION_CSS, /omnimux-inspiration-modal-script-list\.has-timecode/)
