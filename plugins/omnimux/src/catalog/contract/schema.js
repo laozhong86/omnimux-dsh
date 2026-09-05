@@ -23,6 +23,13 @@ const SLOT_SOURCES = new Set(['user', 'upstream_edge', 'node_field']);
 const PROMPT_POLICIES = new Set(['required', 'optional', 'none']);
 const PROFILE_STATUSES = new Set(['live', 'stub', 'unavailable']);
 
+/**
+ * Canonical operation count lock (registry SSOT).
+ * Historical MCC first batch = 17; #567 adds end_frame → 18.
+ * Prefer this constant over scattered magic numbers in tests/admission.
+ */
+export const EXPECTED_OPERATION_COUNT = 18;
+
 /** @type {object|null} */
 let cachedRegistry = null;
 /** @type {object|null} */
@@ -844,8 +851,15 @@ export function validateOperationRegistry(registry = loadOperationRegistry()) {
       out.push(issue('schema_invalid', `registry operation "${op.id}" invalid defaultOutputType`));
     }
   }
-  if (seen.size !== 17) {
-    out.push(issue('schema_invalid', `operation registry must have exactly 17 ops, got ${seen.size}`));
+  // Registry length is the machine SSOT. Keep a single lock constant so tests
+  // and admission share one expected count (17 historical + end_frame = 18).
+  if (seen.size !== EXPECTED_OPERATION_COUNT) {
+    out.push(
+      issue(
+        'schema_invalid',
+        `operation registry must have exactly ${EXPECTED_OPERATION_COUNT} ops, got ${seen.size}`,
+      ),
+    );
   }
   return out;
 }

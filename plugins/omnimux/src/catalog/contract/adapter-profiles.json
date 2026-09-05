@@ -27,7 +27,7 @@
       "id": "videoGenerate",
       "seam": "videoGenerate",
       "status": "live",
-      "operations": ["text_to_video", "first_frame", "first_last_frame", "video_multi_ref", "video_edit"],
+      "operations": ["text_to_video", "first_frame", "first_last_frame", "end_frame", "video_multi_ref", "video_edit"],
       "outputTypes": ["video"],
       "logicalFields": ["prompt", "image", "references", "image_tail", "duration", "aspectRatio", "resolution"],
       "vendorFields": ["prompt", "image", "image_tail", "reference_images", "duration", "aspect_ratio", "resolution"],
@@ -45,6 +45,10 @@
           "allow": ["prompt", "image", "image_tail", "duration", "aspect_ratio", "resolution"],
           "require": ["image", "image_tail"]
         },
+        "end_frame": {
+          "allow": ["prompt", "image_tail", "duration", "aspect_ratio", "resolution"],
+          "require": ["image_tail"]
+        },
         "video_multi_ref": {
           "allow": ["prompt", "reference_images", "duration", "aspect_ratio", "resolution"]
         },
@@ -52,7 +56,7 @@
           "allow": ["prompt", "image", "reference_images", "duration", "aspect_ratio", "resolution"]
         }
       },
-      "notes": "不含 digital_human；first_frame 仅 image；multi_ref 仅 reference_images；FLF 为 image+image_tail"
+      "notes": "不含 digital_human；first_frame 仅 image；end_frame 仅 image_tail；multi_ref 仅 reference_images；FLF 为 image+image_tail"
     },
     {
       "id": "audioGenerate",

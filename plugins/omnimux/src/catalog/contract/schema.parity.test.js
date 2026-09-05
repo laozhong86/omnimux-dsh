@@ -245,9 +245,10 @@ test('parity: profile shape requires operations+outputTypes; ops ∈ registry', 
   );
 });
 
-test('parity: registry requires promptPolicy on all 17; keeps own version field', () => {
+test('parity: registry requires promptPolicy on all ops; keeps own version field', () => {
   const reg = loadOperationRegistry();
   assert.equal(typeof reg.version, 'string');
+  assert.ok(reg.operations.some((o) => o.id === 'end_frame'));
   assert.equal(validateOperationRegistry(reg).length, 0);
   const broken = {
     version: '1.0.0',

@@ -18,8 +18,9 @@
  * Fail-closed: unknown models, a missing catalog and zero candidates never
  * fall back to a permissive "available".
  *
- * Operation ids are canonical open strings + metadata — the MCC 17-entry union
- * is not copied here (cross-package iron rule).
+ * Operation ids are open strings + metadata — the registry-owned open string
+ * is NOT copied here as an N-entry union (cross-package iron rule). Historical
+ * GenerationMode strings are translated at read time via LEGACY_OPERATION_MAP.
  */
 
 import type {
@@ -88,6 +89,39 @@ export function readExplicitTargetSlot(
   if (typeof targetHandle !== 'string') return undefined;
   const slot = targetHandle.trim();
   return slot && slot !== 'in' && slot !== 'input' ? slot : undefined;
+}
+
+// ============================================================================
+// Legacy operation mapping (read-time only; mirrors the hub legacy map
+// semantically WITHOUT importing plugins/omnimux)
+// ============================================================================
+
+export const LEGACY_OPERATION_MAP: Readonly<Record<string, string>> = Object.freeze({
+  reference: 'video_multi_ref',
+  first_last_frame: 'first_last_frame',
+  first_frame: 'first_frame',
+  end_frame: 'end_frame',
+  endframe: 'end_frame',
+  'end-frame': 'end_frame',
+  text_to_video: 'text_to_video',
+  i2v: 'first_frame',
+  t2v: 'text_to_video',
+  flf: 'first_last_frame',
+  avatar: 'digital_human',
+  digital_human: 'digital_human',
+  tts: 'text_to_speech',
+  asr: 'speech_to_text',
+  stt: 'speech_to_text',
+  music: 'text_to_music',
+  t2i: 'text_to_image',
+  i2i: 'image_to_image',
+});
+
+/** Map a historical GenerationMode / wire operation string to the canonical id. */
+export function mapLegacyOperation(raw: string | undefined | null): string {
+  const key = String(raw ?? '').trim();
+  if (!key) return '';
+  return LEGACY_OPERATION_MAP[key] ?? key;
 }
 
 // ============================================================================
