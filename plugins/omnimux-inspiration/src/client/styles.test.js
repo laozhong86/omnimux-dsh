@@ -41,13 +41,21 @@ describe('inspiration triptych modal', () => {
     assert.equal(decl(panel, 'overflow-x'), 'hidden')
   })
 
-  it('keeps footer replication separate from in-panel analysis', () => {
+  it('keeps the footer focused on a stable one-line replication action', () => {
     const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
+    const footer = section.slice(
+      section.indexOf('<footer className="omnimux-inspiration-modal-footer">'),
+      section.indexOf('</footer>'),
+    )
+    const footerCss = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-footer')
+    const replicateCss = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-footer .omnimux-inspiration-modal-replicate')
     assert.match(section, /modal\.deconstruction\.analyze/)
-    assert.match(section, /modal-footer/)
-    assert.match(section, /onReplicate\(data\.safeItem\)/)
-    assert.match(section, /modal\.script\.noSegmentsHint/)
-    assert.match(INSPIRATION_CSS, /justify-content: space-between/)
+    assert.match(footer, /onReplicate\(data\.safeItem\)/)
+    assert.match(footer, /omnimux-inspiration-modal-replicate/)
+    assert.doesNotMatch(footer, /footer-meta|footer-stats|data\.publishedAt|data\.createdAt|Object\.keys\(data\.stats\)/)
+    assert.equal(decl(footerCss, 'justify-content'), 'flex-end')
+    assert.equal(decl(replicateCss, 'height'), '32px')
+    assert.equal(decl(replicateCss, 'white-space'), 'nowrap')
     assert.match(INSPIRATION_CSS, /padding: 10px;\s*margin-bottom: 8px/)
   })
 
@@ -66,7 +74,7 @@ describe('inspiration triptych modal', () => {
     const heading = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-heading')
     assert.equal(decl(header, 'height'), '60px')
     assert.equal(decl(header, 'flex-wrap'), 'nowrap')
-    assert.equal(decl(heading, 'max-width'), 'min(680px, calc(100% - 40px))')
+    assert.equal(decl(heading, 'max-width'), 'min(520px, calc(100% - 40px))')
     assert.match(INSPIRATION_CSS, /modal-copy\.is-icon-only/)
   })
 
