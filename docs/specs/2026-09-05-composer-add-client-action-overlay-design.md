@@ -188,14 +188,14 @@ pinned deepseek-harness source
   -> corepack yarn install --immutable
   -> yarn omnimux:stage (产品插件 preset 快照)
   -> yarn package:dir / 发布构建
-  -> /Applications/OmniMux Dev.app（用户手动重启后加载）
+  -> /Applications/OmniMux Dev.app（获准安装并启动后加载）
 ```
 
 证据：fork `package.json:315-320` 定义受管 upstream/runtime 命令；`scripts/sync-vendored-runtime.mjs:65-131` 从 `deepseek-harness/dist/npm` 写 tarball、manifest 和 resolutions；desktop `module-resolution.ts:47-140` 与 `profile.ts:495-525` 让 Host/Client 都按 Desktop/Profile semver overlay 解析；`stage-preset-profile.ts` 只物化产品插件，不能物化官方 runtime overlay。
 
 **阻断/决策点：**产品仓对该 desktop-fork runtime 再物化没有现成 `yarn omnimux:*` 一键入口。工程需要在 fork 新增一个受管的、可测试的 `yarn omnimux:runtime-overlay`（命名待 fork owner 确认）或把等价步骤并入已有受管 `upstream:prepare-runtime` 流程；它必须：检查 pin SHA、在临时/隔离 upstream tree apply 产品 patch、官方 build/pack、同步 vendored runtime、执行 `check:vendored-runtime`，并拒绝不匹配 pin。由于这是**跨仓 desktop-fork 变更**，需要老板/desktop-fork owner 的额外授权和独立工作树/PR；本 Issue 的插件 PR 不应偷带 desktop-fork 实现。
 
-获授权并构建新 Dev App 前，真实 `/Applications/OmniMux Dev.app` 仍加载旧官方 artifact。client bundle/runtime 变化不能靠 `yarn omnimux:sync` 物化；该命令只构建/物化产品插件。新 app artifact 安装后，Host/runtime 变化可能需要**用户手动重启 Dev App**；本设计和工程均不得重启或新起替代 server。
+获授权并构建新 Dev App 前，真实 `/Applications/OmniMux Dev.app` 仍加载旧官方 artifact。client bundle/runtime 变化不能靠 `yarn omnimux:sync` 物化；该命令只构建/物化产品插件。新 app artifact 安装及 Host/runtime 启动须先取得具体 Dev 目标和操作窗口的授权；获准后由 Agent 通过官方入口执行并收集验收证据。未获放行时，不替换 App、不启动或重启共享 Dev，也不新起替代 server。
 
 ### 1.8 PR #558 增量改造与回滚
 

@@ -2,7 +2,7 @@
 
 - **Language**: 中文（zh-CN）
 - **归属插件**: `plugins/omnimux`（composer 附件子系统所在；共享组件的落位由架构师定，见 §8 Q3）
-- **状态**: proposed（等待架构师 + 老板对触发路线拍板，见 §7/§8）
+- **状态**: 实施中；触发路线以 [clientAction 增量设计](2026-09-05-composer-add-client-action-overlay-design.md) 为准。本文的 capture 与 Enter popup 方案已被替代，真实原生混选与 UI 验收仍须完成。
 - **日期**: 2026-09-05
 - **上游档案**: [2026-09-04-composer-add-file-assets-prd.md](2026-09-04-composer-add-file-assets-prd.md)（基线 PRD，已落地 Issue #493 → PR #501/#513/#523/#526）
 - **性质**: 增量 PRD。只覆盖「触发链路改造」与「资产库选择器组件化」两个增量，不重述基线 PRD 已定的附件写入管线、配额、去重、物化规则（全部沿用）。
