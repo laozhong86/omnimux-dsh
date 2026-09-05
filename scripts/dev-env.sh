@@ -8,7 +8,7 @@
 #
 # 铁律：一个 dev profile 里 link 的在研插件不超过 1 个，其余全是物化稳定副本。
 #
-# 端口（M1）：L2 专用池 44200–44299。禁止占用：
+# 端口（M1）：L2 专用池 44201–44299。禁止占用：
 #   43120–43151（DSH Desktop）/ 44120–44151（OmniMux App 默认+重试窗）。
 # start 写入 cordis.patch.yml 的 webserver.port + port.txt，并以 --port <池口> 硬绑，避免照抄生产 44120。
 # 任务名仅允许 [A-Za-z0-9_-]，且任务目录必须落在 ~/.dsh-dev/tasks/<name>/ 下（防 rm 路径穿越）。
@@ -38,7 +38,7 @@ DSH_SRC="${DSH_SRC:-/Users/x/Desktop/Project/Github/deepseek-harness}"
 DEV_HOME="${DSH_DEV_HOME:-$HOME/.dsh-dev}"
 # L2 任务 Host 的 DSH_HOME 根（与安装层无关）；仅用于 credentials 等可选种子。
 PROD_HOME="${DSH_HOME:-$HOME/.dsh}"
-L2_PORT_POOL_START="${OMNIMUX_L2_PORT_POOL_START:-44200}"
+L2_PORT_POOL_START="${OMNIMUX_L2_PORT_POOL_START:-44201}"
 L2_PORT_POOL_END="${OMNIMUX_L2_PORT_POOL_END:-44299}"
 LEGACY_HOME="${OMNIMUX_DEV_LEGACY_HOME:-0}"
 
@@ -327,6 +327,7 @@ legacy_profile_dir() { echo "$DEV_HOME/profiles/omnimux-dev-$1"; }
 # 保留窗：Desktop 43120–43151、OmniMux App 44120–44151
 port_reserved() {
   local p="$1"
+  [ "$p" -eq 44200 ] && return 0
   { [ "$p" -ge 43120 ] && [ "$p" -le 43151 ]; } && return 0
   { [ "$p" -ge 44120 ] && [ "$p" -le 44151 ]; } && return 0
   return 1
@@ -338,7 +339,7 @@ port_in_use() {
 
 port_in_pool() {
   local p="$1"
-  [ "$p" -ge "$L2_PORT_POOL_START" ] && [ "$p" -le "$L2_PORT_POOL_END" ]
+  [ "$p" -ge 44201 ] && [ "$p" -le 44299 ] && [ "$p" -ge "$L2_PORT_POOL_START" ] && [ "$p" -le "$L2_PORT_POOL_END" ]
 }
 
 # 优先复用 port.txt（须在池内、空闲、不在保留窗）；否则扫 L2 池。

@@ -495,10 +495,11 @@ const CanvasEditorContent: React.FC<CanvasEditorProps> = ({
   );
 
   // 拖线过程中的实时校验（同 Gxgen isValidConnection 接线）
+  // Issue #466：与 mutation gateway 使用同一 evaluator + 同一 catalog 注入。
   const isValidConnection = useCallback(
     (connection: Connection | Edge) => {
       const state = useCanvasStore.getState();
-      return validateConnection(connection, state.nodes, state.edges);
+      return validateConnection(connection, state.nodes, state.edges, state.catalogRuntime);
     },
     [],
   );

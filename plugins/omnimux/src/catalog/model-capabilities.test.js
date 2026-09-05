@@ -65,13 +65,32 @@ test('H2: 处置表 43 行 + listed 集合与处置一致', () => {
     }
   }
 
-  // Batch A 锁定：listed 恰好为 3 条 dated 证据媒体 op，多一条少一条都是红灯
+  // #530 PR-A: listed = Batch A 三媒体键 + text 19 op；多一条少一条都是红灯
   assert.deepEqual(index.listedOperations, [
+    'claude-opus-4-6#chat',
+    'claude-opus-4-6#vision_chat',
+    'claude-opus-5#chat',
+    'deepseek-v4-flash-vision-exp#chat',
+    'deepseek-v4-flash-vision-exp#vision_chat',
+    'deepseek-v4-pro#chat',
+    'gemini-3.1-pro-preview#chat',
+    'gemini-3.1-pro-preview#vision_chat',
+    'gemini-3.7-flash#chat',
+    'gemini-3.7-flash#vision_chat',
+    'glm-5.3#chat',
+    'gpt-5.5#chat',
+    'gpt-5.5#vision_chat',
+    'gpt-5.6-sol#chat',
+    'gpt-5.6-sol#vision_chat',
     'gpt-image-2#text_to_image',
+    'grok-4.6#chat',
+    'grok-4.6#vision_chat',
     'grok-imagine-image#text_to_image',
+    'kimi-k3#chat',
+    'kimi-k3#vision_chat',
     'seedance-2-0-fast#text_to_video',
   ]);
-  // Batch A 白名单外：同模型其它 op 不得 listed
+  // 媒体同模型其它 op 仍不得 listed
   assert.ok(!index.listedOperations.includes('seedance-2-0-fast#first_frame'));
   assert.ok(!index.listedOperations.includes('seedance-2-0-fast#video_multi_ref'));
   assert.ok(!index.listedOperations.includes('gpt-image-2#multi_reference'));

@@ -42,10 +42,11 @@ test('calculateReferenceCapacity：空态渲染参考图 0/y 与非超限状态'
 });
 
 test('calculateReferenceCapacity：未超限状态正常展示当前容量', () => {
+  // Issue #466: BUILTIN_MODEL_CAPABILITIES 已绞杀；容量必须来自显式 max / catalog。
   // 单图模型输入 1 张图片
   const singleImageRes = calculateReferenceCapacity({
     upstreams: [{ materialType: 'image' }],
-    modelId: 'gpt-image-2', // 内置 max: 1
+    max: 1,
   });
   assert.equal(singleImageRes.imageCount, 1);
   assert.equal(singleImageRes.max, 1);
@@ -53,20 +54,53 @@ test('calculateReferenceCapacity：未超限状态正常展示当前容量', () 
   assert.equal(singleImageRes.capacityLabel, '参考图 1/1');
   assert.equal(singleImageRes.warningText, undefined);
 
-  // 多图模型（如 Grok Imagine 2 max: 4）输入 3 张图片
+  // 多图模型 max: 4 输入 3 张图片
   const multiImageRes = calculateReferenceCapacity({
     upstreams: [
       { materialType: 'image' },
       { materialType: 'image' },
       { materialType: 'image' },
     ],
-    modelId: 'grok-imagine-2', // 内置 max: 4
+    max: 4,
   });
   assert.equal(multiImageRes.imageCount, 3);
   assert.equal(multiImageRes.max, 4);
   assert.equal(multiImageRes.isOver, false);
   assert.equal(multiImageRes.capacityLabel, '参考图 3/4');
   assert.equal(multiImageRes.warningText, undefined);
+
+  // catalog-driven 路径：modelId + catalog（无 BUILTIN 兜底）
+  const catalog = {
+    source: 'static-stub',
+    text: [],
+    image: [
+      {
+        id: 'catalog-img',
+        label: 'Catalog Img',
+        inputCapability: {
+          modalities: ['text', 'image'],
+          referenceImages: { min: 0, max: 2 },
+        },
+      },
+    ],
+    video: [],
+    audio: [],
+  };
+  const viaCatalog = calculateReferenceCapacity({
+    upstreams: [{ materialType: 'image' }],
+    modelId: 'catalog-img',
+    catalog,
+  });
+  assert.equal(viaCatalog.max, 2);
+  assert.equal(viaCatalog.isOver, false);
+
+  // 未知 modelId 且无 catalog → max undefined（fail closed，不回 BUILTIN）
+  const unknown = calculateReferenceCapacity({
+    upstreams: [{ materialType: 'image' }],
+    modelId: 'gpt-image-2',
+  });
+  assert.equal(unknown.max, undefined);
+  assert.equal(unknown.capacityLabel, '参考图 1/--');
 });
 
 test('calculateReferenceCapacity：超限状态转警示态并生成 degradedWarning', () => {

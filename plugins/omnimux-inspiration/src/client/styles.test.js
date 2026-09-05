@@ -34,18 +34,29 @@ describe('inspiration triptych modal', () => {
   it('uses a three-column grid with independently scrolling panels', () => {
     const body = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-body')
     assert.match(decl(body, 'display'), /grid/)
-    assert.match(decl(body, 'grid-template-columns'), /minmax/)
+    assert.equal(decl(body, 'grid-template-columns'), 'minmax(240px, 0.9fr) minmax(320px, 1.2fr) minmax(300px, 1.1fr)')
     const panel = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-panel')
     assert.equal(decl(panel, 'min-width'), '0')
     assert.equal(decl(panel, 'overflow-y'), 'auto')
     assert.equal(decl(panel, 'overflow-x'), 'hidden')
   })
 
-  it('keeps footer replication separate from header analysis', () => {
+  it('keeps the footer focused on a stable one-line replication action', () => {
     const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
-    assert.match(section, /modal\.header\.analyze/)
-    assert.match(section, /modal-footer/)
-    assert.match(section, /onReplicate\(data\.safeItem\)/)
+    const footer = section.slice(
+      section.indexOf('<footer className="omnimux-inspiration-modal-footer">'),
+      section.indexOf('</footer>'),
+    )
+    const footerCss = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-footer')
+    const replicateCss = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-footer .omnimux-inspiration-modal-replicate')
+    assert.match(section, /modal\.deconstruction\.analyze/)
+    assert.match(footer, /onReplicate\(data\.safeItem\)/)
+    assert.match(footer, /omnimux-inspiration-modal-replicate/)
+    assert.doesNotMatch(footer, /footer-meta|footer-stats|data\.publishedAt|data\.createdAt|Object\.keys\(data\.stats\)/)
+    assert.equal(decl(footerCss, 'justify-content'), 'flex-end')
+    assert.equal(decl(replicateCss, 'height'), '32px')
+    assert.equal(decl(replicateCss, 'white-space'), 'nowrap')
+    assert.match(INSPIRATION_CSS, /padding: 10px;\s*margin-bottom: 8px/)
   })
 
   it('provides narrow-screen tabs without horizontal overflow', () => {
@@ -54,14 +65,30 @@ describe('inspiration triptych modal', () => {
     assert.match(INSPIRATION_CSS, /\.omnimux-inspiration-modal-panel\.is-active/)
   })
 
-  it('preserves portrait player geometry and compact header controls', () => {
+  it('uses a larger portrait player and compact title-only header', () => {
     const player = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-player-box')
     assert.equal(decl(player, 'aspect-ratio'), '9 / 16')
-    assert.match(decl(player, 'max-height'), /56vh/)
+    assert.equal(decl(player, 'max-height'), 'min(43vh, 430px)')
     assert.equal(decl(player, 'display'), 'flex')
     const header = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-header')
+    const heading = ruleBody(INSPIRATION_CSS, '.omnimux-inspiration-modal-heading')
+    assert.equal(decl(header, 'height'), '60px')
     assert.equal(decl(header, 'flex-wrap'), 'nowrap')
+    assert.equal(decl(heading, 'max-width'), 'min(520px, calc(100% - 40px))')
     assert.match(INSPIRATION_CSS, /modal-copy\.is-icon-only/)
+  })
+
+  it('removes platform, favorite, and re-analyze controls from the modal header', () => {
+    const section = readFileSync(join(here, 'InspirationPreviewModal.jsx'), 'utf8')
+    const header = section.slice(
+      section.indexOf('<header className="omnimux-inspiration-modal-header">'),
+      section.indexOf('</header>'),
+    )
+    assert.doesNotMatch(header, /modal\.header\.favorite/)
+    assert.doesNotMatch(header, /modal\.header\.reanalyze/)
+    assert.doesNotMatch(header, /modal-header-meta/)
+    assert.doesNotMatch(header, /modal-actions/)
+    assert.match(header, /omnimux-inspiration-modal-close/)
   })
 
   it('supports optional timecode columns and quote blocks without fabricating timestamps', () => {

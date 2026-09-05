@@ -1428,44 +1428,33 @@ export const INSPIRATION_CSS = `
   border-radius: 16px;
 }
 .omnimux-inspiration-modal-header {
+  height: 60px;
   min-height: 60px;
-  flex: 0 0 auto;
+  flex: 0 0 60px;
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 16px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--dsw-alias-border-l2);
 }
 .omnimux-inspiration-modal-heading {
   min-width: 0;
-  flex: 1 1 auto;
+  max-width: min(520px, calc(100% - 40px));
+  flex: 0 1 520px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .omnimux-inspiration-modal-heading h2 {
+  min-width: 0;
+  flex: 1 1 auto;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 16px;
   color: var(--dsw-alias-label-primary);
-}
-.omnimux-inspiration-modal-header-meta,
-.omnimux-inspiration-modal-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.omnimux-inspiration-modal-platform,
-.omnimux-inspiration-modal-header-meta span {
-  padding: 4px 8px;
-  border-radius: 9999px;
-  background: var(--dsw-alias-bg-layer-1);
-  color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
 }
 .omnimux-inspiration-modal-copy {
   display: inline-flex;
@@ -1496,6 +1485,8 @@ export const INSPIRATION_CSS = `
   width: 32px !important;
   height: 32px !important;
   min-width: 32px;
+  margin-left: auto;
+  flex: 0 0 32px;
   border-radius: 8px !important;
   border: 0 !important;
   background: transparent !important;
@@ -1506,7 +1497,7 @@ export const INSPIRATION_CSS = `
   min-height: 0;
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.1fr) minmax(280px, 1.1fr);
+  grid-template-columns: minmax(240px, 0.9fr) minmax(320px, 1.2fr) minmax(300px, 1.1fr);
   overflow: hidden;
 }
 .omnimux-inspiration-modal-panel {
@@ -1536,7 +1527,7 @@ export const INSPIRATION_CSS = `
   width: auto;
   max-width: 100%;
   aspect-ratio: 9 / 16;
-  max-height: min(56vh, 560px);
+  max-height: min(43vh, 430px);
   margin: 0 auto 14px;
   overflow: hidden;
   border-radius: 8px;
@@ -1559,6 +1550,19 @@ export const INSPIRATION_CSS = `
   font-size: 13px;
   line-height: 1.65;
   color: var(--dsw-alias-label-secondary);
+}
+.omnimux-inspiration-modal-script-content.is-card {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1);
+}
+.omnimux-inspiration-modal-script-hint {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
 }
 .omnimux-inspiration-modal-panel-actions {
   display: flex;
@@ -1626,8 +1630,8 @@ export const INSPIRATION_CSS = `
   color: var(--dsw-alias-label-secondary);
 }
 .omnimux-inspiration-modal-dimensions article {
-  padding: 12px;
-  margin-bottom: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
   border-radius: 8px;
   background: var(--dsw-alias-bg-layer-1);
 }
@@ -1657,7 +1661,15 @@ export const INSPIRATION_CSS = `
   font-size: 13px;
   color: var(--dsw-alias-label-primary);
 }
-.omnimux-inspiration-modal-dimensions p { margin: 0; }
+.omnimux-inspiration-modal-dimensions p {
+  margin: 0;
+  line-height: 1.55;
+}
+.omnimux-inspiration-modal-chevron {
+  display: inline-flex;
+  transition: transform 120ms ease;
+}
+.omnimux-inspiration-modal-chevron.is-collapsed { transform: rotate(-90deg); }
 .omnimux-inspiration-modal-dimensions pre {
   margin: 0;
   font-family: ui-monospace, monospace;
@@ -1689,11 +1701,33 @@ export const INSPIRATION_CSS = `
   padding: 0 16px;
   border-top: 1px solid var(--dsw-alias-border-l2);
 }
+.omnimux-inspiration-modal-footer .omnimux-inspiration-modal-replicate {
+  width: auto;
+  min-width: 112px;
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.omnimux-inspiration-modal-footer .omnimux-inspiration-modal-replicate .dshUk-Button-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  white-space: nowrap;
+}
+.omnimux-inspiration-modal-footer .omnimux-inspiration-modal-replicate svg {
+  flex: 0 0 14px;
+}
 @media (max-width: 860px) {
   .omnimux-inspiration-modal-backdrop { padding: 12px; }
   .omnimux-inspiration-modal-container { height: min(92vh, 760px); }
   .omnimux-inspiration-modal-header { gap: 8px; padding: 0 12px; }
-  .omnimux-inspiration-modal-header-meta { display: none; }
+  .omnimux-inspiration-modal-heading { max-width: calc(100% - 40px); }
   .omnimux-inspiration-modal-mobile-tabs {
     display: flex;
     flex: 0 0 44px;

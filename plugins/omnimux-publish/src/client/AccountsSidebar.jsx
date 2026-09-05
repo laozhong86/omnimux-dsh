@@ -2,38 +2,23 @@ import { useCallback, useEffect, useState } from 'react'
 import { Button } from 'dsh-ui-kit'
 import { IconPlusOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import {
-  ACCOUNTS_HELP_URL,
-  ACCOUNTS_TUTORIAL_URL,
   errorText,
   listHubAccounts,
 } from './api.js'
 import {
   ACCOUNT_PLATFORM,
-  ACCOUNT_TABS,
   accountDisplayName,
   accountHandle,
   accountStatusTone,
-  countAccountTabs,
   extractAccounts,
   filterAccounts,
   isNeedsLogin,
 } from './account-sidebar-view.js'
 import { AuthorizeModal, authorizeBaseline } from './AuthorizeModal.jsx'
 import {
-  IconBookOutline16,
-  IconExternalLinkOutline16,
   IconSearchOutline16,
   IconUserOutline16,
 } from './icons/accounts.js'
-
-/**
- * 打开外链（仅当常量已配置；空字符串不渲染入口）。
- * @param {string} url
- */
-function openExternal(url) {
-  if (typeof url !== 'string' || url === '') return
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
 
 /**
  * 账号行状态文案：优先已知状态映射，未知值原样透传，空值回退「已连接」。
@@ -92,7 +77,7 @@ function AccountItem({ t, row }) {
 }
 
 /**
- * 空态：暂无授权账号 + 新增账号主按钮 + 使用教程外链（常量配置后渲染）。
+ * 空态：暂无授权账号 + 新增账号主按钮。
  * @param {{
  *   t: (key: string) => string,
  *   onAdd: () => void,
@@ -110,24 +95,13 @@ function EmptyState({ t, onAdd }) {
       >
         {t('acct.add')}
       </Button>
-      {ACCOUNTS_TUTORIAL_URL !== '' ? (
-        <button
-          type="button"
-          className="omnimux-publish-accounts-tutorial"
-          onClick={() => { openExternal(ACCOUNTS_TUTORIAL_URL) }}
-        >
-          <IconBookOutline16 />
-          <span>{t('acct.tutorial')}</span>
-          <IconExternalLinkOutline16 size={12} />
-        </button>
-      ) : null}
     </div>
   )
 }
 
 /**
  * 发布 Stage 内「账号」侧栏视图：左侧 336px 账号列表面板（头部 + 新增 +
- * 搜索 + 分段 tabs + 账号行 / 空态 / 登录引导态），右侧说明留白区。
+ * 搜索 + 账号行 / 空态 / 登录引导态），右侧说明留白区。
  * 数据源：GET /omnimux/accounts?platform=tiktok（hub 权威 ViewRow 合并，
  * 本插件不自建账号路由）。「新增账号」弹 AuthorizeModal 走官方授权。
  * @param {{
@@ -138,7 +112,6 @@ export function AccountsSidebar({ t }) {
   const [phase, setPhase] = useState('loading') // loading | ready | need-login
   const [rows, setRows] = useState([])
   const [error, setError] = useState('')
-  const [tab, setTab] = useState('all')
   const [query, setQuery] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
 
@@ -169,8 +142,7 @@ export function AccountsSidebar({ t }) {
     void loadAccounts()
   }, [loadAccounts])
 
-  const counts = countAccountTabs(rows)
-  const filtered = filterAccounts(rows, { tab, query })
+  const filtered = filterAccounts(rows, query)
 
   /** 授权完成（检测到新账号或用户点「我已完成」）：关弹窗并刷新列表。 */
   const handleConnected = useCallback(() => {
@@ -184,23 +156,11 @@ export function AccountsSidebar({ t }) {
     setPhase('need-login')
   }, [])
 
-  const tabLabels = { all: 'acct.tab.all', commerce: 'acct.tab.commerce', standard: 'acct.tab.standard' }
-
   return (
     <div className="omnimux-publish-accounts-view">
       <aside className="omnimux-publish-accounts-sidebar">
         <div className="omnimux-publish-accounts-head">
           <span className="omnimux-publish-accounts-head-title">{t('acct.title')}</span>
-          {ACCOUNTS_HELP_URL !== '' ? (
-            <button
-              type="button"
-              className="omnimux-publish-accounts-help"
-              onClick={() => { openExternal(ACCOUNTS_HELP_URL) }}
-            >
-              <span>{t('acct.help')}</span>
-              <IconExternalLinkOutline16 size={12} />
-            </button>
-          ) : null}
         </div>
 
         {phase === 'need-login' ? (
@@ -229,22 +189,6 @@ export function AccountsSidebar({ t }) {
                 value={query}
                 onChange={(event) => { setQuery(event.currentTarget.value) }}
               />
-            </div>
-
-            <div className="omnimux-publish-accounts-tabs" role="tablist">
-              {ACCOUNT_TABS.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === key}
-                  className={`omnimux-publish-accounts-tab${tab === key ? ' active' : ''}`}
-                  onClick={() => { setTab(key) }}
-                >
-                  <span>{t(tabLabels[key])}</span>
-                  <span className="omnimux-publish-accounts-tab-count">{counts[key]}</span>
-                </button>
-              ))}
             </div>
 
             {phase === 'loading' ? (

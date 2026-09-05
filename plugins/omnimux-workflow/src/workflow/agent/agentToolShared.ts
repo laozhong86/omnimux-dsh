@@ -73,6 +73,11 @@ export interface WorkflowAgentDeps {
    * When present, tools may default workspace_id from view.extra.workspaceId.
    */
   getActiveView?: WorkbenchMailboxSeat['getActiveView'];
+  /**
+   * Optional Catalog v1.1 provider (hub `modelCatalog` seam DTO). Read at
+   * mutation time — the compat kernel fails closed when it returns null.
+   */
+  getCatalog?: () => unknown;
 }
 
 type FieldSpec = Record<string, unknown> & { required?: boolean | string[] };
