@@ -201,7 +201,7 @@ test('projectChatRows: full text directory with brand/role/input derived from op
 test('projectDirectoryRows: media groups project every contracted model (listed or not)', () => {
   const index = freshIndex();
   assert.equal(projectDirectoryRows(index, 'image').length, 12);
-  assert.equal(projectDirectoryRows(index, 'video').length, 16);
+  assert.equal(projectDirectoryRows(index, 'video').length, 17);
   assert.equal(projectDirectoryRows(index, 'audio').length, 3);
   // whisper-1 stays in the audio management directory but its output is text
   const audio = projectDirectoryRows(index, 'audio');

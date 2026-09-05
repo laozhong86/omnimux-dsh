@@ -54,7 +54,7 @@ test('fingerprint：mediaAssets 只含 image/video/audio；signature 随内容�
 test('contract view：v1.1 models[] 规范化 + alias 归一 + 稳定 order', () => {
   const view = buildContractView(createCompatTestCatalog());
   assert.equal(view.available, true);
-  assert.equal(view.models.length, 8);
+  assert.equal(view.models.length, 9);
   assert.equal(view.models[1].id, 'img-ref');
   assert.equal(view.models[1].order, 1);
   const viaAlias = resolveModelView(view, 'alias-img-wire');
@@ -109,6 +109,13 @@ test('legacy operation map：读时映射 canonical operation（string + metadat
   assert.equal(mapLegacyOperation('i2v'), 'first_frame');
   assert.equal(mapLegacyOperation('t2i'), 'text_to_image');
   assert.equal(mapLegacyOperation('digital_human'), 'digital_human');
+  assert.equal(mapLegacyOperation('end_frame'), 'end_frame');
+  assert.equal(mapLegacyOperation('endframe'), 'end_frame');
+  assert.equal(mapLegacyOperation('end-frame'), 'end_frame');
+  assert.notEqual(mapLegacyOperation('endframe'), 'first_frame');
+  assert.notEqual(mapLegacyOperation('endframe'), 'first_last_frame');
+  assert.equal(mapLegacyOperation('i2v'), 'first_frame');
+  assert.notEqual(mapLegacyOperation('i2v'), 'end_frame');
   assert.equal(mapLegacyOperation('some_future_op'), 'some_future_op');
   assert.equal(mapLegacyOperation(''), '');
   assert.equal(Object.keys(LEGACY_OPERATION_MAP).length > 0, true);
@@ -187,6 +194,32 @@ test('slot matcher：显式 targetSlot 优先于一切；未知槽 → role_conf
   const bad = matchOperationInputs(op, fp([img({ targetSlot: 'nope' })]));
   assert.equal(bad.accepts, false);
   assert.equal(bad.rejections[0].code, 'role_conflict');
+});
+
+
+test('slot matcher A1：旧 FLF targetSlot=last_frame 切到 end_frame 不得静默错误绑定 (#567)', () => {
+  const endOp = opView('vid-endframe', 'end_frame');
+  assert.ok(endOp, 'fixture must expose end_frame op');
+  // Stale FLF edge still points at last_frame slot name which end_frame op does not own.
+  const stale = matchOperationInputs(endOp, fp([img({ targetSlot: 'last_frame', role: 'last_frame', edgeId: 'e-stale' })]));
+  assert.equal(stale.accepts, false, 'stale last_frame targetSlot must not bind on end_frame');
+  assert.equal(stale.rejections[0].code, 'role_conflict');
+});
+
+test('slot matcher A1：canonical end_frame 新边 targetSlot=end_frame + role=last_frame 可绑定 (#567)', () => {
+  const endOp = opView('vid-endframe', 'end_frame');
+  const ok = matchOperationInputs(endOp, fp([
+    img({ targetSlot: 'end_frame', role: 'last_frame', edgeId: 'e-end' }),
+  ]));
+  assert.equal(ok.accepts, true);
+  assert.equal(ok.bindings.length, 1);
+  assert.equal(ok.bindings[0].slot, 'end_frame');
+  assert.equal(ok.bindings[0].role, 'last_frame');
+  // targetSlot wins: wrong role still binds to explicit end_frame slot when present
+  const bySlot = matchOperationInputs(endOp, fp([img({ targetSlot: 'end_frame', edgeId: 'e2' })]));
+  assert.equal(bySlot.accepts, true);
+  assert.equal(bySlot.bindings[0].slot, 'end_frame');
+  assert.equal(bySlot.bindings[0].role, 'last_frame');
 });
 
 test('slot matcher：必填窄槽先于通用 reference，分配确定（首帧→尾帧）', () => {

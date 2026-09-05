@@ -382,6 +382,27 @@ describe('SubmitGuard vendor mapper exclusivity', () => {
     assert.equal('reference_images' in mapped.vendorPayload, false)
   })
 
+  it('end_frame maps the end_frame/last_frame binding to image_tail only', () => {
+    const op = index.get('minimax-h3-endframe').operations.find((candidate) => candidate.id === 'end_frame')
+    const assigned = assignAndValidateSlots(op, [
+      { type: 'image', role: 'last_frame', targetSlot: 'end_frame', pathOrUrl: 'https://end.png', mime: 'image/png', sizeBytes: 100 },
+    ], { prompt: 'end here' })
+    assert.equal(assigned.ok, true)
+    assert.deepEqual(assigned.bindings.map(({ slot, role }) => ({ slot, role })), [{ slot: 'end_frame', role: 'last_frame' }])
+    const mapped = mapValidatedPlanToVendor({
+      operation: op,
+      profile: videoProfile,
+      modelId: 'minimax-h3-endframe',
+      prompt: 'end here',
+      bindings: assigned.bindings,
+      bySlot: assigned.bySlot,
+    })
+    assert.equal(mapped.ok, true)
+    assert.equal(mapped.vendorPayload.image_tail, 'https://end.png')
+    assert.equal('image' in mapped.vendorPayload, false)
+    assert.equal('reference_images' in mapped.vendorPayload, false)
+  })
+
   it('digital_human maps image + audioTrack only', () => {
     const op = { id: 'digital_human', output: { type: 'video' }, inputs: [] }
     const mapped = mapValidatedPlanToVendor({

@@ -72,6 +72,7 @@ export const DEFAULT_PROFILE_PAYLOADS = Object.freeze({
      * first_frame → only image
      * video_multi_ref → only reference_images
      * first_last_frame → image + image_tail
+     * end_frame → image_tail only
      * text_to_video → prompt (+ optional duration/aspect)
      */
     operationVendorShapes: Object.freeze({
@@ -80,6 +81,10 @@ export const DEFAULT_PROFILE_PAYLOADS = Object.freeze({
       first_last_frame: Object.freeze({
         allow: Object.freeze(['prompt', 'image', 'image_tail', 'duration', 'aspect_ratio', 'resolution']),
         require: Object.freeze(['image', 'image_tail']),
+      }),
+      end_frame: Object.freeze({
+        allow: Object.freeze(['prompt', 'image_tail', 'duration', 'aspect_ratio', 'resolution']),
+        require: Object.freeze(['image_tail']),
       }),
       video_multi_ref: Object.freeze({
         allow: Object.freeze(['prompt', 'reference_images', 'duration', 'aspect_ratio', 'resolution']),
@@ -245,7 +250,13 @@ export function mapValidatedPlanToVendor(args) {
 
   if (profileId === 'videoGenerate' || profile.seam === 'videoGenerate' && profileId !== 'videoDigitalHuman') {
     // Mutual exclusion by operation
-    if (opId === 'first_frame' || (firstFrames.length && !lastFrames.length && opId !== 'video_multi_ref' && opId !== 'first_last_frame')) {
+    if (opId === 'end_frame') {
+      const tail = lastFrames[0]
+      if (tail) {
+        vendor.image_tail = tail
+        logical.image_tail = tail
+      }
+    } else if (opId === 'first_frame' || (firstFrames.length && !lastFrames.length && opId !== 'video_multi_ref' && opId !== 'first_last_frame')) {
       const img = firstFrames[0] || genericImages[0]
       if (img) {
         vendor.image = img

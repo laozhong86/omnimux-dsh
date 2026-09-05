@@ -21,6 +21,7 @@ subsystem: "global"
 
 | 状态 | 文件名 | 标题 | 模块 | 维护/生效日期 | 核心摘要 |
 |---|---|---|---|---|---|
+| `draft` | [2026-09-05-minimax-h3-end-frame-design.md](2026-09-05-minimax-h3-end-frame-design.md) | 增量设计：#567 MiniMax H3 end-frame 独立 operation/slot/profile/wire | `omnimux/catalog` | 2026-09-05 | BI-2/#567 draft：裁决第 18 op=`end_frame`（禁塞 first_frame/flf）；slot=`end_frame` role=`last_frame`；legacy `endframe`→`end_frame`；复用 `videoGenerate`；model=`minimax-h3-endframe`；#566 `image_tail` 对 end-only 仅 H1 中等假设；schema 17→18；DoD=expressibility+keyless，非 C3 listed；live 硬顶≤8/shape≤3；图：`2026-09-05-minimax-h3-end-frame-*.mermaid`。 |
 | `accepted` | [2026-09-05-inspiration-cover-repair.md](2026-09-05-inspiration-cover-repair.md) | 云灵感过期封面修复 | `omnimux` | 2026-09-05 | #584：原 ID 备份、官方来源恢复、持久媒体上传、只更新 cover_key、冲突检查与真实浏览器回读。 |
 | `accepted` | [2026-09-05-builtin-browser-qa.md](2026-09-05-builtin-browser-qa.md) | Codex 内置浏览器验收适配 | `qa` | 2026-09-05 | #581；唯一请求、共享 Stage 探针、实际运行产物证明与严格证据消费。 |
 | `draft` | [2026-09-05-wan-3-ref-wire-design.md](2026-09-05-wan-3-ref-wire-design.md) | 增量设计：#569 Wan 3.0 reference 系列 wire 与 mapper/探针路径 | `omnimux/catalog` | 2026-09-05 | BI-4/#569 draft（QA 不升 accepted）：multi-ref body 未钉；H1=`reference_images:[{url}]`；POST 硬顶每 ref≤10/两 ref≤20/对照≤8/会话≤28；B≤3 C≤2 D≤3；首个 OK-live 即停；A-auth/C-channel 与 F/M-unknown 分离且不否定 wire；prime-ref 无同 shape 豁免；任何省略 3.0 的短名均禁止；无 wire 证据不 listed。 |

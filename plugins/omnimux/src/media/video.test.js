@@ -390,6 +390,55 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.equal('references' in input, false)
   })
 
+  it('end_frame only-last maps image_tail without inventing image (#567 M1/M2/M3)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'end-frame only',
+      model: 'minimax-h3-endframe',
+      references: [
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
+      ],
+    })
+    assert.equal(input.image_tail, 'https://example.com/end-only.png')
+    assert.equal('image' in input, false, 'must not invent first/image for end-only')
+    assert.equal('reference_images' in input, false)
+    assert.equal('images' in input, false)
+    assert.equal('references' in input, false)
+    assert.notEqual(input.image_tail, input.image)
+  })
+
+  it('executeOmnimuxVideo rejects draft end-frame before submit (#567 M7)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-endframe-'))
+    const dest = join(dir, 'out.mp4')
+    let postCalls = 0
+    await assert.rejects(
+      executeOmnimuxVideo({
+        prompt: 'end frame only',
+        dest,
+        model: 'minimax-h3-endframe',
+        operation: 'end_frame',
+        references: [
+          { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
+        ],
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        fetcher: async (url, init) => {
+          if (String(url) === 'https://example.com/end-only.png') {
+            return {
+              ok: true,
+              status: 200,
+              headers: { get() { return 'image/png' } },
+              arrayBuffer: async () => Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+            }
+          }
+          if (init?.method === 'POST') postCalls += 1
+          throw new Error(`unexpected request: ${String(url)}`)
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(postCalls, 0)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('falls back to request.image when there are no usable references', () => {
     const input = mapOmnimuxInput('video', {
       prompt: 'talk',
