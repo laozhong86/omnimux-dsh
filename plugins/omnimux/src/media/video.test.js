@@ -333,14 +333,46 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     assert.equal('image_tail' in input, false)
   })
 
-  it('executeOmnimuxVideo preserves image + image_tail on the runtime POST input (#566)', async () => {
+  it('executeOmnimuxVideo rejects unlisted FLF (kling-v3 / #566 wire only, #468 guard)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-flf-'))
+    const dest = join(dir, 'out.mp4')
+    let vendorCalls = 0
+    await assert.rejects(
+      () => executeOmnimuxVideo({
+        prompt: 'morph first to last',
+        dest,
+        model: 'kling-v3',
+        operation: 'first_last_frame',
+        references: [
+          { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first.png' },
+          { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last.png' },
+        ],
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        runtime: {
+          async execute() {
+            vendorCalls += 1
+            return {
+              taskId: 'task-flf',
+              outputs: [{ type: 'video', url: 'https://cdn.example/flf.mp4' }],
+            }
+          },
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(vendorCalls, 0, 'unlisted FLF must not reach vendor')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('executeOmnimuxVideo preserves image + image_tail when guard bypassed (mapper wire #566)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-flf-bypass-'))
     const dest = join(dir, 'out.mp4')
     let capturedReq
     const result = await executeOmnimuxVideo({
       prompt: 'morph first to last',
       dest,
       model: 'kling-v3',
+      bypassSubmitGuard: true,
       references: [
         { role: 'first_frame', type: 'image', pathOrUrl: 'https://example.com/first.png' },
         { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/last.png' },
@@ -447,14 +479,44 @@ describe('mapOmnimuxInput digital_human audioTrack passthrough (#538)', () => {
     assert.equal('audioTrack' in input, false)
   })
 
-  it('executeOmnimuxVideo forwards audioTrack to the runtime for kling-avatar', async () => {
+  it('executeOmnimuxVideo rejects draft kling-avatar even when seam can carry audioTrack (#468)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'omnimux-avatar-'))
+    const dest = join(dir, 'out.mp4')
+    let vendorCalls = 0
+    await assert.rejects(
+      () => executeOmnimuxVideo({
+        prompt: 'speak',
+        dest,
+        model: 'kling-avatar',
+        operation: 'digital_human',
+        image: 'https://example.com/face.png',
+        audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/voice.mp3' },
+        env: { OMNIMUX_API_KEY: 'sk-test' },
+        runtime: {
+          async execute() {
+            vendorCalls += 1
+            return {
+              taskId: 'task-avatar',
+              outputs: [{ type: 'video', url: 'https://cdn.example/avatar.mp4' }],
+            }
+          },
+        },
+      }),
+      (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+    )
+    assert.equal(vendorCalls, 0)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('executeOmnimuxVideo forwards audioTrack for kling-avatar when guard bypassed (mapper #538)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-avatar-bypass-'))
     const dest = join(dir, 'out.mp4')
     let capturedReq
     const result = await executeOmnimuxVideo({
       prompt: 'speak',
       dest,
       model: 'kling-avatar',
+      bypassSubmitGuard: true,
       image: 'https://example.com/face.png',
       audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/voice.mp3' },
       env: { OMNIMUX_API_KEY: 'sk-test' },
@@ -488,7 +550,7 @@ describe('mapOmnimuxInput digital_human audioTrack passthrough (#538)', () => {
       prompt: 'speak',
       dest,
       model: 'seedance-2-0-fast',
-      audioTrack: { role: 'audio_track', type: 'audio', pathOrUrl: '/local/voice.mp3' },
+      operation: 'text_to_video',
       env: { OMNIMUX_API_KEY: 'sk-test' },
       runtime: {
         async execute(req) {

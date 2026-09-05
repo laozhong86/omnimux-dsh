@@ -283,6 +283,8 @@ describe('omnimux image helpers', () => {
     const result = await executeOmnimuxImage({
       prompt: 'a city with references',
       dest,
+      // multi_reference not listed on gpt-image-2 — mapper wire test bypasses admission
+      bypassSubmitGuard: true,
       env: { OMNIMUX_API_KEY: 'sk-test' },
       references: [
         { role: 'reference', type: 'image', pathOrUrl: '/tmp/ref1.png' },

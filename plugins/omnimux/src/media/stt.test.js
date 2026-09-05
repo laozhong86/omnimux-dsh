@@ -75,12 +75,31 @@ describe('executeOmnimuxSpeechToText', () => {
     )
   })
 
-  it('refuses to execute without a key', async () => {
+  it('refuses to execute without a key (protocol path; guard bypassed)', async () => {
     await withTempAudio(async (file) => {
       await assert.rejects(
-        () => executeOmnimuxSpeechToText({ audio: file, env: {} }),
+        () => executeOmnimuxSpeechToText({ audio: file, env: {}, bypassSubmitGuard: true }),
         (error) => error instanceof OmnimuxError && error.code === 'needs-omnimux',
       )
+    })
+  })
+
+  it('rejects draft whisper-1 before HTTP even when seam exists (#468)', async () => {
+    await withTempAudio(async (file) => {
+      let vendorCalls = 0
+      await assert.rejects(
+        () => executeOmnimuxSpeechToText({
+          audio: file,
+          operation: 'speech_to_text',
+          env: { OMNIMUX_API_KEY: 'sk-stt' },
+          fetcher: async () => {
+            vendorCalls += 1
+            return { ok: true, status: 200, json: async () => ({ text: 'nope' }) }
+          },
+        }),
+        (error) => error instanceof OmnimuxError && error.code === 'omnimux-invalid-request',
+      )
+      assert.equal(vendorCalls, 0)
     })
   })
 
@@ -89,6 +108,7 @@ describe('executeOmnimuxSpeechToText', () => {
       const captured = {}
       const result = await executeOmnimuxSpeechToText({
         audio: file,
+        bypassSubmitGuard: true,
         env: { OMNIMUX_API_KEY: 'sk-stt' },
         fetcher: sttFetcher(captured),
       })
@@ -114,6 +134,7 @@ describe('executeOmnimuxSpeechToText', () => {
       await executeOmnimuxSpeechToText({
         audio: file,
         model: 'whisper-1',
+        bypassSubmitGuard: true,
         env: { OMNIMUX_API_KEY: 'sk-stt', OMNIMUX_STT_MODEL: 'whisper-1' },
         fetcher: sttFetcher(captured),
       })
@@ -126,6 +147,7 @@ describe('executeOmnimuxSpeechToText', () => {
     const result = await executeOmnimuxSpeechToText({
       audio: `data:audio/mpeg;base64,${AUDIO_BYTES.toString('base64')}`,
       language: 'zh',
+      bypassSubmitGuard: true,
       env: { OMNIMUX_API_KEY: 'sk-stt' },
       fetcher: sttFetcher(captured),
     })
@@ -138,6 +160,7 @@ describe('executeOmnimuxSpeechToText', () => {
     const urls = []
     const result = await executeOmnimuxSpeechToText({
       audio: 'https://cdn.example.com/voice/note.m4a',
+      bypassSubmitGuard: true,
       env: { OMNIMUX_API_KEY: 'sk-stt' },
       fetcher: async (url, init) => {
         urls.push(String(url))
@@ -162,6 +185,7 @@ describe('executeOmnimuxSpeechToText', () => {
       const captured = {}
       const result = await executeOmnimuxSpeechToText({
         audio: file,
+        bypassSubmitGuard: true,
         env: {},
         store: { resolve: async () => 'pat-stt-token' },
         fetcher: sttFetcher(captured),
@@ -176,6 +200,7 @@ describe('executeOmnimuxSpeechToText', () => {
       await assert.rejects(
         () => executeOmnimuxSpeechToText({
           audio: file,
+          bypassSubmitGuard: true,
           env: { OMNIMUX_API_KEY: 'sk-stt' },
           fetcher: sttFetcher({}, { error: { message: 'insufficient quota' } }, 429),
         }),
@@ -189,6 +214,7 @@ describe('executeOmnimuxSpeechToText', () => {
       await assert.rejects(
         () => executeOmnimuxSpeechToText({
           audio: file,
+          bypassSubmitGuard: true,
           env: { OMNIMUX_API_KEY: 'sk-stt' },
           fetcher: sttFetcher({}, { error: { message: 'boom' } }, 500),
         }),
@@ -202,6 +228,7 @@ describe('executeOmnimuxSpeechToText', () => {
       await assert.rejects(
         () => executeOmnimuxSpeechToText({
           audio: file,
+          bypassSubmitGuard: true,
           env: { OMNIMUX_API_KEY: 'sk-stt' },
           fetcher: sttFetcher({}, { data: {} }),
         }),
@@ -214,6 +241,7 @@ describe('executeOmnimuxSpeechToText', () => {
     await withTempAudio(async (file) => {
       const result = await executeOmnimuxSpeechToText({
         audio: file,
+        bypassSubmitGuard: true,
         env: { OMNIMUX_API_KEY: 'sk-stt' },
         fetcher: async () => ({
           ok: true,

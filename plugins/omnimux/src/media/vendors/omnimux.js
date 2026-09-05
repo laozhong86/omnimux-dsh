@@ -115,6 +115,8 @@ export function pickTaskStatus(raw) {
 
 /**
  * Map a capability request onto the OmniMux OpenAI-compat body.
+ * When `guardPlan.vendorPayload` is present (SubmitGuard #468), prefer that
+ * profile-constrained body and only fill gaps from legacy heuristics.
  * @param {string} capability
  * @param {{
  *   prompt: string,
@@ -130,10 +132,20 @@ export function pickTaskStatus(raw) {
  *   instrumental?: boolean,
  *   speed?: number,
  *   aspectRatio?: string,
- *   resolution?: string
+ *   resolution?: string,
+ *   operation?: string,
+ *   guardPlan?: { vendorPayload?: Record<string, unknown>, operationId?: string, profileId?: string, modelId?: string },
  * }} request
  */
 export function mapOmnimuxInput(capability, request) {
+  // Profile-validated payload from SubmitGuard — fail-closed shape already enforced.
+  if (request.guardPlan?.vendorPayload && typeof request.guardPlan.vendorPayload === 'object') {
+    const fromGuard = { ...request.guardPlan.vendorPayload }
+    // Ensure model wire id is not injected here (protocol layer owns model).
+    if (fromGuard.prompt === undefined && request.prompt) fromGuard.prompt = request.prompt
+    return fromGuard
+  }
+
   const input = { prompt: request.prompt }
   if (request.duration) input.duration = request.duration
 

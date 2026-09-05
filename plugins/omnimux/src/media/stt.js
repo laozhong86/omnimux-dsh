@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { OmnimuxError } from './errors.js'
 import { classifyQuotaFailure } from '../errors/quota-classifier.js'
+import {
+  assertGuardOutput,
+  assertGuardSubmit,
+} from '../catalog/contract/submit-guard/index.js'
 import { parseMediaConfig, resolveMediaAuth, resolveMediaRoute } from './route.js'
 import { pickTranscriptionText, TRANSCRIPTION_PATH } from './vendors/omnimux.js'
 
@@ -135,6 +139,33 @@ export async function executeOmnimuxSpeechToText(input) {
   }
   const media = parseMediaConfig(input.media)
   const route = resolveMediaRoute(STT_CAPABILITY, input, media, input.env)
+
+  // SubmitGuard (#468): whisper/STT must be listed+verified+live. Seam presence alone
+  // does not admit draft models (whisper-1 remains draft → reject before HTTP).
+  let guardPlan = null
+  if (!input.bypassSubmitGuard) {
+    const audioPath = input.audio.trim()
+    /** @type {Record<string, object>} */
+    const assetMeta = { ...(input.assetMeta && typeof input.assetMeta === 'object' ? input.assetMeta : {}) }
+    if (!assetMeta[audioPath]) {
+      // Defaults so size/duration ceilings do not mask admission (draft) failures;
+      // callers with real metadata should pass assetMeta.
+      assetMeta[audioPath] = { mime: 'audio/mp3', sizeBytes: 1024, durationSec: 1 }
+    }
+    guardPlan = assertGuardSubmit(
+      {
+        model: route.modelId,
+        operation: input.operation ?? 'speech_to_text',
+        audio: audioPath,
+        language: input.language,
+        assetMeta,
+        seam: 'speechToText',
+        capability: 'stt',
+      },
+      { seam: 'speechToText', capability: 'stt', outputType: 'text' },
+    )
+  }
+
   const auth = await resolveMediaAuth(route, {
     env: input.env,
     store: input.store,
@@ -198,5 +229,9 @@ export async function executeOmnimuxSpeechToText(input) {
   if (!text) {
     throw new OmnimuxError('omnimux-invalid-response', 'speech-to-text response carried no text')
   }
-  return { mode: 'live', model: route.modelId, text }
+  const result = { mode: 'live', model: route.modelId, text }
+  if (guardPlan) {
+    assertGuardOutput(guardPlan, result, { capability: 'stt' })
+  }
+  return result
 }

@@ -40,6 +40,8 @@ describe('omnimux audio helpers', () => {
     const result = await executeOmnimuxAudio({
       prompt: 'a piano melody',
       dest,
+      // suno text_to_music is not listed — protocol path uses bypass; admission covered in submit-guard tests
+      bypassSubmitGuard: true,
       env: {},
       store: {
         resolve: async () => 'pat-login-token',

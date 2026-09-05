@@ -1,4 +1,8 @@
 import { OmnimuxError } from '../media/errors.js'
+import {
+  assertGuardOutput,
+  assertGuardSubmit,
+} from '../catalog/contract/submit-guard/index.js'
 import { parseTextConfig, resolveTextRoute } from './catalog.js'
 import { completeTextViaChat } from './chat.js'
 import { loadTextImage } from './image.js'
@@ -9,9 +13,15 @@ import { loadTextVideo, toVideoImageUrlPart } from './video.js'
  * Video path: bypass stream + attachments and POST chat completions with
  * `image_url` + `data:video/…` (spike-locked protocol). Not a chat turn: no
  * tools, no parent messages, no dest, no poll.
+ *
+ * SubmitGuard (#468) admits model/operation against the contract index before
+ * the llm/chat path runs. Neutral adapter: does not change the public text API
+ * shape; optional `operation` may be passed explicitly.
+ *
  * @param {{
  *   prompt?: string,
  *   model?: string,
+ *   operation?: string,
  *   image?: string,
  *   video?: string,
  *   system?: string,
@@ -27,6 +37,8 @@ import { loadTextVideo, toVideoImageUrlPart } from './video.js'
  *   fetcher?: typeof fetch,
  *   apiKey?: string,
  *   baseUrl?: string,
+ *   assetMeta?: object,
+ *   bypassSubmitGuard?: boolean,
  * }} input
  */
 export async function executeOmnimuxText(input) {
@@ -47,9 +59,53 @@ export async function executeOmnimuxText(input) {
     : route.maxTokens
   const system = typeof input.system === 'string' ? input.system.trim() : ''
 
+  let guardPlan = null
+  if (!input.bypassSubmitGuard) {
+    // Vision path needs MIME metadata when contract declares allowedMimes.
+    // For path/URL without caller metadata, supply a conservative default so
+    // listed vision_chat can proceed (callers may override via assetMeta).
+    /** @type {Record<string, object>} */
+    const assetMeta = { ...(input.assetMeta && typeof input.assetMeta === 'object' ? input.assetMeta : {}) }
+    if (image && !assetMeta[image]) {
+      assetMeta[image] = { mime: 'image/png', sizeBytes: 1024 }
+    }
+    // Native video-on-text is a hub protocol special (image_url + data:video), not a
+    // listed contract media slot today. Keep it off the slot matcher so chat/vision
+    // admission still works; video remains on the execute path below.
+    guardPlan = assertGuardSubmit(
+      {
+        prompt,
+        model: route.modelId,
+        operation: input.operation,
+        image: image || undefined,
+        // intentionally omit video from guard assets
+        system,
+        maxTokens,
+        assetMeta,
+        seam: 'textComplete',
+        capability: 'text',
+      },
+      {
+        seam: 'textComplete',
+        capability: 'text',
+        outputType: 'text',
+        gateAllows: gate
+          ? (modelId) => {
+              // Prefer gate.models when present; unknown gate shape → allow.
+              const models = gate.models
+              if (models && typeof models === 'object' && modelId in models) {
+                return models[modelId] !== false
+              }
+              return true
+            }
+          : undefined,
+      },
+    )
+  }
+
   if (video) {
     const packed = await loadTextVideo(video, { signal: input.signal })
-    return completeTextViaChat({
+    const result = await completeTextViaChat({
       model: route.modelId,
       prompt,
       system,
@@ -61,6 +117,8 @@ export async function executeOmnimuxText(input) {
       apiKey: input.apiKey,
       baseUrl: input.baseUrl,
     })
+    if (guardPlan) assertGuardOutput(guardPlan, result, { capability: 'text' })
+    return result
   }
 
   if (!input.llm || typeof input.llm.stream !== 'function') {
@@ -114,5 +172,7 @@ export async function executeOmnimuxText(input) {
   if (!assembled.trim()) {
     throw new OmnimuxError('omnimux-invalid-response', 'text complete produced no text')
   }
-  return { mode: 'live', model: route.modelId, text: assembled }
+  const result = { mode: 'live', model: route.modelId, text: assembled }
+  if (guardPlan) assertGuardOutput(guardPlan, result, { capability: 'text' })
+  return result
 }
