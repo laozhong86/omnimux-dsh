@@ -217,54 +217,54 @@ test('ensureComposerCompactChrome injects the style id and the CSS fragments', (
   assert.equal(again, style)
 })
 
-test('composer scrollport never scrolls horizontally but keeps vertical scroll (#517)', () => {
+test('icon toolbar nowrap selector does not match grow (#517)', () => {
   const { doc } = setupDoc()
   const style = ensureComposerCompactChrome(doc)
   const css = style.textContent
 
-  // 1) The official draft scrollport is addressed by its STABLE data
-  //    attribute (never a CSS-module hash). Horizontal axis must be
-  //    hidden/clip (no horizontal scrollbar, no programmatic x-scroll)
-  //    while the vertical axis stays `auto` so long drafts keep scrolling.
-  const scrollRule = css.match(
-    /\[data-composer-card\] \[data-input-scroll\]\{([^}]*)\}/,
+  // Toolbar nowrap is scoped to the card's DIRECT-CHILD row that hosts tools.
+  // A descendant [class*="row"] also matches hash_grow ("grow" contains "row")
+  // and is the real source of the 360px horizontal scrollbar.
+  const toolbarRule = css.match(
+    /html\[data-omnimux-composer-density='icon'\] \[data-composer-card\] > \[class\*="row"\]:has\(> \[class\*="tools"\]\)\{([^}]*)\}/,
   )?.[1]
-  assert.ok(scrollRule, 'scrollport rule must target the stable [data-input-scroll] node')
-  assert.match(scrollRule, /overflow-x:(hidden|clip)/)
-  assert.match(scrollRule, /overflow-y:auto/)
-  // The fix must be structural (no scroll range), not a scrollbar-hiding
-  // hack that still allows horizontal movement.
-  assert.doesNotMatch(css, /data-input-scroll[^\n]*::-webkit-scrollbar/)
-  assert.doesNotMatch(scrollRule, /display:\s*none/)
+  assert.ok(toolbarRule, 'toolbar nowrap must target the card direct-child row that has tools')
+  assert.match(toolbarRule, /flex-wrap:nowrap/)
+  assert.match(toolbarRule, /white-space:nowrap/)
 
-  // 2) The empty-state nowrap placeholder / grow wrapper must not propagate
-  //    intrinsic horizontal overflow into the scrollport (that is what made
-  //    scrollWidth 325 > clientWidth 314 on a 360px conversation column).
-  const growRule = css.match(
-    /\[data-input-scroll\] > \[class\*="grow"\]\{([^}]*)\}/,
-  )?.[1]
-  assert.ok(growRule, 'grow rule must constrain horizontal intrinsic overflow')
-  assert.match(growRule, /overflow-x:(hidden|clip)/)
-  assert.match(growRule, /max-width:100%/)
-  assert.match(growRule, /min-width:0/)
+  // The old broad descendant selector is forbidden.
+  assert.doesNotMatch(
+    css,
+    /html\[data-omnimux-composer-density='icon'\] \[data-composer-card\] \[class\*="row"\]\{/,
+  )
 
-  // 3) The editable draft surface keeps wrapping long tokens — the user
-  //    input must never be clipped or go nowrap. Compatible with both host
-  //    shapes: contenteditable (current) and textarea (older versions).
-  const editableRule = css.match(
-    /\[data-input-scroll\] :is\(\[contenteditable='true'\],\[data-composer-input='true'\],textarea\)\{([^}]*)\}/,
-  )?.[1]
-  assert.ok(editableRule, 'editable wrap rule must target the stable composer input semantics')
-  assert.match(editableRule, /white-space:pre-wrap/)
-  assert.match(editableRule, /word-break:break-word/)
-  assert.match(editableRule, /overflow-wrap:anywhere/)
-  assert.doesNotMatch(editableRule, /white-space:nowrap/)
+  // Do not paper over the nowrap leak with a scrollport clip workaround.
+  assert.doesNotMatch(
+    css,
+    /\[data-composer-card\] \[data-input-scroll\]\{[^}]*overflow-x:(hidden|clip)/,
+  )
 
-  // 4) The fix must not turn the whole scrollport into overflow:hidden
-  //    (that would kill vertical scrolling of long drafts) — the two axes
-  //    must be declared independently.
-  assert.doesNotMatch(scrollRule, /overflow:hidden/)
-  assert.doesNotMatch(scrollRule, /overflow:clip/)
+  // Structural proof with hashed class names: hash_grow contains "row" so a
+  // descendant [class*="row"] would match it; the scoped direct-child + tools
+  // guard does not.
+  const card = { children: [] }
+  const grow = { className: 'bTetRa_grow', parent: null, children: [] }
+  const scroll = { className: 'bTetRa_scroll', parent: card, children: [grow] }
+  const tools = { className: 'bTetRa_tools', parent: null, children: [] }
+  const row = { className: 'bTetRa_row', parent: card, children: [tools] }
+  grow.parent = scroll
+  tools.parent = row
+  card.children = [scroll, row]
+
+  const containsRow = (el) => el.className.includes('row')
+  const hasDirectTools = (el) => el.children.some((c) => c.className.includes('tools'))
+  const isDirectChild = (el) => el.parent === card
+  const matchesScoped = (el) => isDirectChild(el) && containsRow(el) && hasDirectTools(el)
+
+  assert.equal(containsRow(grow), true, 'grow contains substring row')
+  assert.equal(containsRow(row), true)
+  assert.equal(matchesScoped(grow), false, 'grow is not a card direct-child with tools')
+  assert.equal(matchesScoped(row), true, 'toolbar row is the intended target')
 })
 
 test('ensureComposerCompactChrome is idempotent and copies CSS once', () => {
