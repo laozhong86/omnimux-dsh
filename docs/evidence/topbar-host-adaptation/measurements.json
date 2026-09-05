@@ -1,0 +1,2300 @@
+{
+  "schemaVersion": 1,
+  "stage": "topbar",
+  "status": "partial",
+  "environment": {
+    "url": "http://127.0.0.1:44200/",
+    "kind": "isolated-L2",
+    "hostMode": "browser"
+  },
+  "baseline": {
+    "url": "http://127.0.0.1:45120/",
+    "modified": false,
+    "measurement": {
+      "bars": [
+        {
+          "cx": 631,
+          "cy": 17,
+          "height": 34,
+          "left": "0px",
+          "right": "72px",
+          "width": 700,
+          "x": 281,
+          "y": 0
+        },
+        {
+          "cx": 20,
+          "cy": 986.4000244140624,
+          "height": 34,
+          "left": "0px",
+          "right": "40px",
+          "width": 40,
+          "x": 0,
+          "y": 969.4000244140624
+        }
+      ],
+      "buttons": [
+        {
+          "cx": 0,
+          "cy": 0,
+          "disabled": false,
+          "display": "none",
+          "height": 0,
+          "hit": false,
+          "icons": [],
+          "label": null,
+          "radius": "6px",
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "cx": 925,
+          "cy": 17,
+          "disabled": false,
+          "display": "flex",
+          "height": 28,
+          "hit": true,
+          "icons": [
+            {
+              "cx": 925,
+              "cy": 17,
+              "height": 16,
+              "width": 16,
+              "x": 917,
+              "y": 9
+            }
+          ],
+          "label": "展开底部面板",
+          "radius": "50%",
+          "width": 28,
+          "x": 911,
+          "y": 3
+        },
+        {
+          "cx": 957,
+          "cy": 17,
+          "disabled": false,
+          "display": "flex",
+          "height": 28,
+          "hit": true,
+          "icons": [
+            {
+              "cx": 957,
+              "cy": 17,
+              "height": 16,
+              "width": 16,
+              "x": 949,
+              "y": 9
+            }
+          ],
+          "label": "折叠侧边栏",
+          "radius": "50%",
+          "width": 28,
+          "x": 943,
+          "y": 3
+        },
+        {
+          "cx": 298,
+          "cy": 16.5,
+          "disabled": false,
+          "display": "flex",
+          "height": 22,
+          "hit": true,
+          "icons": [
+            {
+              "cx": 298,
+              "cy": 16.5,
+              "height": 16,
+              "width": 16,
+              "x": 290,
+              "y": 8.5
+            }
+          ],
+          "label": "新建标签页",
+          "radius": "5px",
+          "width": 22,
+          "x": 287,
+          "y": 5.5
+        },
+        {
+          "cx": 17,
+          "cy": 985.9000244140624,
+          "disabled": false,
+          "display": "flex",
+          "height": 22,
+          "hit": false,
+          "icons": [
+            {
+              "cx": 17,
+              "cy": 985.9000244140624,
+              "height": 16,
+              "width": 16,
+              "x": 9,
+              "y": 977.9000244140624
+            }
+          ],
+          "label": "新建标签页",
+          "radius": "5px",
+          "width": 22,
+          "x": 6,
+          "y": 974.9000244140624
+        },
+        {
+          "cx": 100,
+          "cy": 20,
+          "disabled": false,
+          "display": "flex",
+          "height": 32,
+          "hit": true,
+          "icons": [
+            {
+              "cx": 100,
+              "cy": 20,
+              "height": 16,
+              "width": 16,
+              "x": 92,
+              "y": 12
+            }
+          ],
+          "label": "打开侧边栏",
+          "radius": "8px",
+          "width": 32,
+          "x": 84,
+          "y": 4
+        },
+        {
+          "cx": 140,
+          "cy": 20,
+          "disabled": false,
+          "display": "flex",
+          "height": 32,
+          "hit": true,
+          "icons": [
+            {
+              "cx": 140,
+              "cy": 20,
+              "height": 16,
+              "width": 16,
+              "x": 132,
+              "y": 12
+            }
+          ],
+          "label": "新建会话",
+          "radius": "8px",
+          "width": 32,
+          "x": 124,
+          "y": 4
+        }
+      ],
+      "host": {
+        "mode": null,
+        "platform": null
+      },
+      "leftCollapsed": true,
+      "viewport": {
+        "height": 964,
+        "width": 981
+      }
+    }
+  },
+  "geometryAssertions": [
+    {
+      "case": "web-collapsed-981",
+      "controls": 5,
+      "dimensionsPass": true,
+      "centerlinePass": true,
+      "hitTestPass": true
+    },
+    {
+      "case": "web-expanded-workbench-981",
+      "controls": 4,
+      "dimensionsPass": true,
+      "centerlinePass": true,
+      "hitTestPass": true
+    },
+    {
+      "case": "assets-three-controls-981",
+      "controls": 5,
+      "dimensionsPass": true,
+      "centerlinePass": true,
+      "hitTestPass": true
+    },
+    {
+      "case": "web-collapsed-768",
+      "controls": 6,
+      "dimensionsPass": true,
+      "centerlinePass": true,
+      "hitTestPass": true
+    }
+  ],
+  "cases": [
+    {
+      "name": "web-collapsed-981",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 757.5,
+            "cy": 20.5,
+            "height": 41,
+            "left": "0px",
+            "right": "88px",
+            "width": 447,
+            "x": 534,
+            "y": 0
+          },
+          {
+            "cx": 266,
+            "cy": 986.4000244140624,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 532,
+            "x": 0,
+            "y": 969.4000244140624
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 0,
+            "cy": 0,
+            "disabled": false,
+            "display": "none",
+            "height": 0,
+            "hit": false,
+            "icons": [],
+            "label": null,
+            "radius": "8px",
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "cx": 917,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 917,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 909,
+                "y": 12
+              }
+            ],
+            "label": "展开底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 901,
+            "y": 4
+          },
+          {
+            "cx": 957,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 957,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 949,
+                "y": 12
+              }
+            ],
+            "label": "折叠侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 941,
+            "y": 4
+          },
+          {
+            "cx": 556,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 556,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 548,
+                "y": 12
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "8px",
+            "width": 32,
+            "x": 540,
+            "y": 4
+          },
+          {
+            "cx": 17,
+            "cy": 985.9000244140624,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 17,
+                "cy": 985.9000244140624,
+                "height": 16,
+                "width": 16,
+                "x": 9,
+                "y": 977.9000244140624
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 6,
+            "y": 974.9000244140624
+          },
+          {
+            "cx": 24,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 24,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 16,
+                "y": 12
+              }
+            ],
+            "label": "打开侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 8,
+            "y": 4
+          },
+          {
+            "cx": 64,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 64,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 56,
+                "y": 12
+              }
+            ],
+            "label": "新建会话",
+            "radius": "8px",
+            "width": 32,
+            "x": 48,
+            "y": 4
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": true,
+        "viewport": {
+          "height": 964,
+          "width": 981
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/web-collapsed-981.png"
+    },
+    {
+      "name": "new-session-menu",
+      "menu": "新建会话\n创建项目"
+    },
+    {
+      "name": "bottom-open-981",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 757.5,
+            "cy": 20.5,
+            "height": 41,
+            "left": "0px",
+            "right": "88px",
+            "width": 447,
+            "x": 534,
+            "y": 0
+          },
+          {
+            "cx": 266,
+            "cy": 762,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 532,
+            "x": 0,
+            "y": 745
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 0,
+            "cy": 0,
+            "disabled": false,
+            "display": "none",
+            "height": 0,
+            "hit": false,
+            "icons": [],
+            "label": null,
+            "radius": "8px",
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "cx": 917,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 917,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 909,
+                "y": 12
+              }
+            ],
+            "label": "折叠底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 901,
+            "y": 4
+          },
+          {
+            "cx": 957,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 957,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 949,
+                "y": 12
+              }
+            ],
+            "label": "折叠侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 941,
+            "y": 4
+          },
+          {
+            "cx": 556,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 556,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 548,
+                "y": 12
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "8px",
+            "width": 32,
+            "x": 540,
+            "y": 4
+          },
+          {
+            "cx": 24,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 24,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 16,
+                "y": 12
+              }
+            ],
+            "label": "打开侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 8,
+            "y": 4
+          },
+          {
+            "cx": 64,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 64,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 56,
+                "y": 12
+              }
+            ],
+            "label": "新建会话",
+            "radius": "8px",
+            "width": 32,
+            "x": 48,
+            "y": 4
+          },
+          {
+            "cx": 91.8125,
+            "cy": 761.5,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 91.8125,
+                "cy": 761.5,
+                "height": 16,
+                "width": 16,
+                "x": 83.8125,
+                "y": 753.5
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 80.8125,
+            "y": 750.5
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": true,
+        "viewport": {
+          "height": 964,
+          "width": 981
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/bottom-open-981.png"
+    },
+    {
+      "name": "bottom-content-limitation",
+      "message": "[dsh-better-sidebar] chunk \"terminal\": client module system unavailable"
+    },
+    {
+      "name": "right-closed-981",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 1214.4599609375,
+            "cy": 17,
+            "height": 34,
+            "left": "0px",
+            "right": "0px",
+            "width": 447,
+            "x": 990.9599609375,
+            "y": 0
+          },
+          {
+            "cx": 490.5,
+            "cy": 986.4000244140624,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 981,
+            "x": 0,
+            "y": 969.4000244140624
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 0,
+            "cy": 0,
+            "disabled": false,
+            "display": "none",
+            "height": 0,
+            "hit": false,
+            "icons": [],
+            "label": null,
+            "radius": "8px",
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "cx": 917,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 917,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 909,
+                "y": 12
+              }
+            ],
+            "label": "展开底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 901,
+            "y": 4
+          },
+          {
+            "cx": 957,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 957,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 949,
+                "y": 12
+              }
+            ],
+            "label": "展开侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 941,
+            "y": 4
+          },
+          {
+            "cx": 1007.9599609375,
+            "cy": 16.5,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 1007.9599609375,
+                "cy": 16.5,
+                "height": 16,
+                "width": 16,
+                "x": 999.9599609375,
+                "y": 8.5
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 996.9599609375,
+            "y": 5.5
+          },
+          {
+            "cx": 24,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 24,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 16,
+                "y": 12
+              }
+            ],
+            "label": "打开侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 8,
+            "y": 4
+          },
+          {
+            "cx": 64,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 64,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 56,
+                "y": 12
+              }
+            ],
+            "label": "新建会话",
+            "radius": "8px",
+            "width": 32,
+            "x": 48,
+            "y": 4
+          },
+          {
+            "cx": 91.8125,
+            "cy": 985.9000244140624,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 91.8125,
+                "cy": 985.9000244140624,
+                "height": 16,
+                "width": 16,
+                "x": 83.8125,
+                "y": 977.9000244140624
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 80.8125,
+            "y": 974.9000244140624
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": true,
+        "viewport": {
+          "height": 964,
+          "width": 981
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/right-closed-981.png"
+    },
+    {
+      "name": "web-left-expanded-981",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 1214.4599609375,
+            "cy": 17,
+            "height": 34,
+            "left": "0px",
+            "right": "0px",
+            "width": 447,
+            "x": 990.9599609375,
+            "y": 0
+          },
+          {
+            "cx": 630.5,
+            "cy": 986.4000244140624,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 701,
+            "x": 280,
+            "y": 969.4000244140624
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 0,
+            "cy": 0,
+            "disabled": false,
+            "display": "none",
+            "height": 0,
+            "hit": false,
+            "icons": [],
+            "label": null,
+            "radius": "8px",
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "cx": 917,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 917,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 909,
+                "y": 12
+              }
+            ],
+            "label": "展开底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 901,
+            "y": 4
+          },
+          {
+            "cx": 957,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 957,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 949,
+                "y": 12
+              }
+            ],
+            "label": "展开侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 941,
+            "y": 4
+          },
+          {
+            "cx": 1007.9599609375,
+            "cy": 16.5,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 1007.9599609375,
+                "cy": 16.5,
+                "height": 16,
+                "width": 16,
+                "x": 999.9599609375,
+                "y": 8.5
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 996.9599609375,
+            "y": 5.5
+          },
+          {
+            "cx": 256,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 256,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 248,
+                "y": 12
+              }
+            ],
+            "label": "收起侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 240,
+            "y": 4
+          },
+          {
+            "cx": 371.8125,
+            "cy": 985.9000244140624,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 371.8125,
+                "cy": 985.9000244140624,
+                "height": 16,
+                "width": 16,
+                "x": 363.8125,
+                "y": 977.9000244140624
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 360.8125,
+            "y": 974.9000244140624
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": false,
+        "viewport": {
+          "height": 964,
+          "width": 981
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/web-left-expanded-981.png"
+    },
+    {
+      "name": "web-expanded-workbench-981",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 811,
+            "cy": 20.5,
+            "height": 41,
+            "left": "0px",
+            "right": "88px",
+            "width": 340,
+            "x": 641,
+            "y": 0
+          },
+          {
+            "cx": 459.50390625,
+            "cy": 986.4000244140624,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 359.0078125,
+            "x": 280,
+            "y": 969.4000244140624
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 0,
+            "cy": 0,
+            "disabled": false,
+            "display": "none",
+            "height": 0,
+            "hit": false,
+            "icons": [],
+            "label": null,
+            "radius": "8px",
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "cx": 917,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 917,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 909,
+                "y": 12
+              }
+            ],
+            "label": "展开底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 901,
+            "y": 4
+          },
+          {
+            "cx": 957,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 957,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 949,
+                "y": 12
+              }
+            ],
+            "label": "折叠侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 941,
+            "y": 4
+          },
+          {
+            "cx": 663,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 663,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 655,
+                "y": 12
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "8px",
+            "width": 32,
+            "x": 647,
+            "y": 4
+          },
+          {
+            "cx": 371.8125,
+            "cy": 985.9000244140624,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 371.8125,
+                "cy": 985.9000244140624,
+                "height": 16,
+                "width": 16,
+                "x": 363.8125,
+                "y": 977.9000244140624
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 360.8125,
+            "y": 974.9000244140624
+          },
+          {
+            "cx": 256,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 256,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 248,
+                "y": 12
+              }
+            ],
+            "label": "收起侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 240,
+            "y": 4
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": false,
+        "viewport": {
+          "height": 964,
+          "width": 981
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/web-expanded-workbench-981.png"
+    },
+    {
+      "name": "new-tab-menu",
+      "items": [
+        "创作画布",
+        "文件",
+        "视频剪辑",
+        "项目",
+        "资产库",
+        "产品库",
+        "账号",
+        "灵感库",
+        "发布",
+        "源代码管理",
+        "数据分析",
+        "插件市场",
+        "任务管理",
+        "终端",
+        "浏览器"
+      ]
+    },
+    {
+      "name": "assets-three-controls-981",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 631,
+            "cy": 20.5,
+            "height": 41,
+            "left": "0px",
+            "right": "128px",
+            "width": 700,
+            "x": 281,
+            "y": 0
+          },
+          {
+            "cx": 300,
+            "cy": 986.4000244140624,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 40,
+            "x": 280,
+            "y": 969.4000244140624
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 877,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 877,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 869,
+                "y": 12
+              }
+            ],
+            "label": "全屏铺满右侧栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 861,
+            "y": 4
+          },
+          {
+            "cx": 917,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 917,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 909,
+                "y": 12
+              }
+            ],
+            "label": "展开底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 901,
+            "y": 4
+          },
+          {
+            "cx": 957,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 957,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 949,
+                "y": 12
+              }
+            ],
+            "label": "折叠侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 941,
+            "y": 4
+          },
+          {
+            "cx": 394,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 394,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 386,
+                "y": 12
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "8px",
+            "width": 32,
+            "x": 378,
+            "y": 4
+          },
+          {
+            "cx": 371.8125,
+            "cy": 985.9000244140624,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 371.8125,
+                "cy": 985.9000244140624,
+                "height": 16,
+                "width": 16,
+                "x": 363.8125,
+                "y": 977.9000244140624
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 360.8125,
+            "y": 974.9000244140624
+          },
+          {
+            "cx": 256,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 256,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 248,
+                "y": 12
+              }
+            ],
+            "label": "收起侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 240,
+            "y": 4
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": false,
+        "viewport": {
+          "height": 964,
+          "width": 981
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/assets-three-controls-981.png"
+    },
+    {
+      "name": "assets-stage",
+      "text": "资产中心\n\n沉淀可复用的角色、场景、风格包、道具等素材，在新的创作页空间中快速调用\n\n添加资产\n导入资产包\nSelect\n\n暂无创作资产。点击「添加资产」开始构建资产库。\n\n添加资产"
+    },
+    {
+      "name": "web-collapsed-768",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 418,
+            "cy": 20.5,
+            "height": 41,
+            "left": "21px",
+            "right": "128px",
+            "width": 700,
+            "x": 68,
+            "y": 0
+          },
+          {
+            "cx": 300,
+            "cy": 986.4000244140624,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 40,
+            "x": 280,
+            "y": 969.4000244140624
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 664,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 664,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 656,
+                "y": 12
+              }
+            ],
+            "label": "显示会话栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 648,
+            "y": 4
+          },
+          {
+            "cx": 704,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 704,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 696,
+                "y": 12
+              }
+            ],
+            "label": "展开底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 688,
+            "y": 4
+          },
+          {
+            "cx": 744,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 744,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 736,
+                "y": 12
+              }
+            ],
+            "label": "折叠侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 728,
+            "y": 4
+          },
+          {
+            "cx": 202,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 202,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 194,
+                "y": 12
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "8px",
+            "width": 32,
+            "x": 186,
+            "y": 4
+          },
+          {
+            "cx": 371.8125,
+            "cy": 985.9000244140624,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 371.8125,
+                "cy": 985.9000244140624,
+                "height": 16,
+                "width": 16,
+                "x": 363.8125,
+                "y": 977.9000244140624
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 360.8125,
+            "y": 974.9000244140624
+          },
+          {
+            "cx": 24,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 24,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 16,
+                "y": 12
+              }
+            ],
+            "label": "打开侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 8,
+            "y": 4
+          },
+          {
+            "cx": 64,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 64,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 56,
+                "y": 12
+              }
+            ],
+            "label": "新建会话",
+            "radius": "8px",
+            "width": 32,
+            "x": 48,
+            "y": 4
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": true,
+        "viewport": {
+          "height": 964,
+          "width": 768
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/web-collapsed-768.png"
+    },
+    {
+      "name": "web-responsive-767",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 384,
+            "cy": 20.5,
+            "height": 41,
+            "left": "88px",
+            "right": "88px",
+            "width": 766,
+            "x": 1,
+            "y": 0
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 703,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 703,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 695,
+                "y": 12
+              }
+            ],
+            "label": "显示会话栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 687,
+            "y": 4
+          },
+          {
+            "cx": 743,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 743,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 735,
+                "y": 12
+              }
+            ],
+            "label": "折叠侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 727,
+            "y": 4
+          },
+          {
+            "cx": 276.8125,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 276.8125,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 268.8125,
+                "y": 12
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "8px",
+            "width": 32,
+            "x": 260.8125,
+            "y": 4
+          },
+          {
+            "cx": 24,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 24,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 16,
+                "y": 12
+              }
+            ],
+            "label": "打开侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 8,
+            "y": 4
+          },
+          {
+            "cx": 64,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 64,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 56,
+                "y": 12
+              }
+            ],
+            "label": "新建会话",
+            "radius": "8px",
+            "width": 32,
+            "x": 48,
+            "y": 4
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": true,
+        "viewport": {
+          "height": 964,
+          "width": 767
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/web-responsive-767.png"
+    },
+    {
+      "name": "responsive-existing-behavior",
+      "width": 767,
+      "bottomButtonRemoved": true,
+      "bottomTerminalMigrated": true
+    },
+    {
+      "name": "stage-exclusivity",
+      "assetsVisible": false,
+      "productsVisible": true,
+      "productsText": "商品与产品库\n\n管理商品标品（SPU/SKU）与数字产品资产，供 Agent 在创作中精准调用\n\n添加产品"
+    },
+    {
+      "name": "products-stage-981",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 631,
+            "cy": 20.5,
+            "height": 41,
+            "left": "0px",
+            "right": "128px",
+            "width": 700,
+            "x": 281,
+            "y": 0
+          },
+          {
+            "cx": 300,
+            "cy": 986.4000244140624,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 40,
+            "x": 280,
+            "y": 969.4000244140624
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 877,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 877,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 869,
+                "y": 12
+              }
+            ],
+            "label": "显示会话栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 861,
+            "y": 4
+          },
+          {
+            "cx": 917,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 917,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 909,
+                "y": 12
+              }
+            ],
+            "label": "展开底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 901,
+            "y": 4
+          },
+          {
+            "cx": 957,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 957,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 949,
+                "y": 12
+              }
+            ],
+            "label": "折叠侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 941,
+            "y": 4
+          },
+          {
+            "cx": 559.8125,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 559.8125,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 551.8125,
+                "y": 12
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "8px",
+            "width": 32,
+            "x": 543.8125,
+            "y": 4
+          },
+          {
+            "cx": 24,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 24,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 16,
+                "y": 12
+              }
+            ],
+            "label": "打开侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 8,
+            "y": 4
+          },
+          {
+            "cx": 64,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 64,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 56,
+                "y": 12
+              }
+            ],
+            "label": "新建会话",
+            "radius": "8px",
+            "width": 32,
+            "x": 48,
+            "y": 4
+          },
+          {
+            "cx": 297,
+            "cy": 985.9000244140624,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 297,
+                "cy": 985.9000244140624,
+                "height": 16,
+                "width": 16,
+                "x": 289,
+                "y": 977.9000244140624
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 286,
+            "y": 974.9000244140624
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": true,
+        "viewport": {
+          "height": 964,
+          "width": 981
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/products-stage-981.png"
+    },
+    {
+      "name": "sidebar-stage-navigation",
+      "assetsVisible": true,
+      "productsVisible": false
+    },
+    {
+      "name": "sidebar-assets-981",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 631,
+            "cy": 20.5,
+            "height": 41,
+            "left": "0px",
+            "right": "128px",
+            "width": 700,
+            "x": 281,
+            "y": 0
+          },
+          {
+            "cx": 300,
+            "cy": 986.4000244140624,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 40,
+            "x": 280,
+            "y": 969.4000244140624
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 877,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 877,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 869,
+                "y": 12
+              }
+            ],
+            "label": "显示会话栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 861,
+            "y": 4
+          },
+          {
+            "cx": 917,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 917,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 909,
+                "y": 12
+              }
+            ],
+            "label": "展开底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 901,
+            "y": 4
+          },
+          {
+            "cx": 957,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 957,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 949,
+                "y": 12
+              }
+            ],
+            "label": "折叠侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 941,
+            "y": 4
+          },
+          {
+            "cx": 559.8125,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 559.8125,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 551.8125,
+                "y": 12
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "8px",
+            "width": 32,
+            "x": 543.8125,
+            "y": 4
+          },
+          {
+            "cx": 256,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 256,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 248,
+                "y": 12
+              }
+            ],
+            "label": "收起侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 240,
+            "y": 4
+          },
+          {
+            "cx": 297,
+            "cy": 985.9000244140624,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 297,
+                "cy": 985.9000244140624,
+                "height": 16,
+                "width": 16,
+                "x": 289,
+                "y": 977.9000244140624
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 286,
+            "y": 974.9000244140624
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": false,
+        "viewport": {
+          "height": 964,
+          "width": 981
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/sidebar-assets-981.png"
+    },
+    {
+      "name": "assets-collapsed-final-981",
+      "measurement": {
+        "bars": [
+          {
+            "cx": 631,
+            "cy": 20.5,
+            "height": 41,
+            "left": "0px",
+            "right": "128px",
+            "width": 700,
+            "x": 281,
+            "y": 0
+          },
+          {
+            "cx": 300,
+            "cy": 986.4000244140624,
+            "height": 34,
+            "left": "0px",
+            "right": "40px",
+            "width": 40,
+            "x": 280,
+            "y": 969.4000244140624
+          }
+        ],
+        "buttons": [
+          {
+            "cx": 877,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 877,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 869,
+                "y": 12
+              }
+            ],
+            "label": "显示会话栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 861,
+            "y": 4
+          },
+          {
+            "cx": 917,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 917,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 909,
+                "y": 12
+              }
+            ],
+            "label": "展开底部面板",
+            "radius": "8px",
+            "width": 32,
+            "x": 901,
+            "y": 4
+          },
+          {
+            "cx": 957,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 957,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 949,
+                "y": 12
+              }
+            ],
+            "label": "折叠侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 941,
+            "y": 4
+          },
+          {
+            "cx": 559.8125,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 559.8125,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 551.8125,
+                "y": 12
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "8px",
+            "width": 32,
+            "x": 543.8125,
+            "y": 4
+          },
+          {
+            "cx": 24,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 24,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 16,
+                "y": 12
+              }
+            ],
+            "label": "打开侧边栏",
+            "radius": "8px",
+            "width": 32,
+            "x": 8,
+            "y": 4
+          },
+          {
+            "cx": 297,
+            "cy": 985.9000244140624,
+            "disabled": false,
+            "display": "flex",
+            "height": 22,
+            "hit": false,
+            "icons": [
+              {
+                "cx": 297,
+                "cy": 985.9000244140624,
+                "height": 16,
+                "width": 16,
+                "x": 289,
+                "y": 977.9000244140624
+              }
+            ],
+            "label": "新建标签页",
+            "radius": "5px",
+            "width": 22,
+            "x": 286,
+            "y": 974.9000244140624
+          },
+          {
+            "cx": 64,
+            "cy": 20,
+            "disabled": false,
+            "display": "flex",
+            "height": 32,
+            "hit": true,
+            "icons": [
+              {
+                "cx": 64,
+                "cy": 20,
+                "height": 16,
+                "width": 16,
+                "x": 56,
+                "y": 12
+              }
+            ],
+            "label": "新建会话",
+            "radius": "8px",
+            "width": 32,
+            "x": 48,
+            "y": 4
+          }
+        ],
+        "host": {
+          "mode": null,
+          "platform": null
+        },
+        "leftCollapsed": true,
+        "viewport": {
+          "height": 964,
+          "width": 981
+        }
+      },
+      "screenshot": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh-wt-topbar-host-adaptation/docs/evidence/topbar-host-adaptation/assets-collapsed-final-981.png"
+    },
+    {
+      "name": "new-session-action",
+      "composerVisible": true,
+      "menuCount": 1
+    }
+  ],
+  "limitations": [
+    "45120 has not loaded this unmerged worktree; no after-change public Dev acceptance.",
+    "Actual macOS desktop host not inspected; host inset branch is covered by unit tests only.",
+    "L2 terminal panel opens but content reports client module system unavailable.",
+    "New-session menu action exposes composer but the menu remains open; Escape closes it. Cause and baseline parity are unverified."
+  ]
+}
