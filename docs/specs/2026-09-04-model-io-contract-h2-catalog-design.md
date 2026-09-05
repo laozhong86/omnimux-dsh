@@ -19,6 +19,7 @@ tags:
 supersedes: []
 superseded_by: null
 related:
+  - "docs/specs/2026-09-05-model-contract-docs-first.md"
   - "docs/specs/2026-09-04-model-io-contract-h2-catalog-prd.md"
   - "docs/specs/2026-09-04-model-io-contract-compatibility-design.md"
   - "docs/specs/2026-09-04-model-io-contract-compatibility-prd.md"
@@ -31,12 +32,14 @@ related:
 
 # 增量系统设计：H2 审计 43 模型并切换 Catalog v1.1 契约投影
 
+> **2026-09-05 当前方法**：[模型合同文档优先方法修订](2026-09-05-model-contract-docs-first.md) 与 [模型 API 权威](../contracts/model-api-authority.md) 取代本文关于存在性、最小生成、边界探测、样本上限、真实执行和按执行翻转 `listed` 的可执行指令。本文保留原模型范围、历史快照与已发生执行；它们不得被当作当前输入合同。具体 EvoLink/APIMart 模型 API 文档未说明的字段、角色、数量、格式、时长和模式均为未知，不得猜测、试探或跨渠道借用。
+
 > **文档地位**：L2 增量设计（Epic #463 / Issue #465）。**只描述相对 H1（#464 / PR #485 @ `b5652a1`）的增量**；契约 schema、op 级状态机、admission、fingerprint、CLI fail-closed 等以 H1 正式设计为准，本文不推倒。
 > **作者**：高见远（架构师） · 2026-09-04
 > **工作树**：`omnimux-dsh-wt-model-contract-catalog-465` / 分支 `agent/omnimux-model-contract-catalog-issue-465`
 > **术语**：`omnimux` 一律称**执行中枢**；禁止称「网关」。
-> **阶段边界**：H2 = 43 ID 全处置 + 逐 op 补证 + runtime 限制对账（取更严）+ `buildModelCatalog` 切契约投影 + 旧 JS 能力表 facade 化 + coverage `--strict` 转红灯门禁。**不做** Workflow 画布/UI（W1–W3）、Hub submit guard（H3）、ASR 真 seam、Prod 物化。
-> **铁律复述**：无证据不得 listed；whisper-1 / kling-avatar unavailable；extra 三 YAML（deepseek-r1 / deepseek-v3 / gpt-4o）删除或明确 alias；fingerprint 敏感；H2 起 `--strict` 对 coverage 失败；R1 人工合入；不写 Prod；Batch A 仅三 op 且仓内无独立 live 证据文件则保持 draft。
+> **阶段边界**：H2 的 43 ID 处置、Catalog 投影、facade 与 coverage 是历史实现范围。逐 op 真实补证与“取更严”限制计划已替代；输入合同现按渠道官方 API 文档确定，文档缺项标未知。
+> **当前解释**：现有 `listed` 与 `execution.live` 检查是实现事实，不能作为渠道合同或发起真实请求的理由。H2 的处置、alias、fingerprint 与 coverage 历史事实仍保留；渠道字段和模式按当前 L1 合同重新核对。
 
 ---
 
@@ -49,7 +52,7 @@ related:
 | # | 难点 | H2 设计对策 |
 |---|---|---|
 | H2-C1 | **43 个 runtime ID 全处置不可无声遗漏** | 新增机器真源 **`dispositions.json`**：每个 runtime ID 一行处置（canonical / alias / draft / unavailable / deprecated / quarantine）+ reason + evidenceRef。coverage auditor 由「diff YAML」升级为「**处置表驱动**」：runtime ID 无处置行 = error；处置与 YAML 状态不一致 = error。H2 起 `--strict` 因此可对 coverage 失败 |
-| H2-C2 | **YAML 已声明 ≠ verified+live** | listed 判定**不变**（H1 五元：`contractComplete ∧ research=verified ∧ execution=live ∧ profile 相容 ∧ gate`）。H2 只允许在 YAML op 上把 `research.status` 改 `verified`（**必须** `docUrl` + `verifiedAt` dated 证据引用）且 `execution.status` 改 `live`。**禁止**批量脚本把 draft 翻 verified；每条变更必须能在 diff 中逐行审出证据字段 |
+| H2-C2 | **YAML 已声明 ≠ verified+live** | listed 的五元判定是当前实现事实。它不决定渠道字段或模式，也不授权真实请求；文档支持、离线实现验证和历史执行须分列。任何未来状态变更另行审查，本次不改 YAML 或 `listed` |
 | H2-C3 | **Catalog 权威切换且旧消费方不断裂** | 新增 **投影模块 `project.js`**：`ContractIndex → Catalog v1.1 DTO`。权威 = 扁平 `models[]`（透传 operations/inputs/output/research/execution/aliases/parameters/schemaVersion + disposition 治理字段）；兼容四列表 `text/image/video/audio` **仅**按可见 operation 的 `output.type` 派生。`buildModelCatalog()` 改调投影；导出行形状与 defaults 解析对外保持兼容 |
 | H2-C4 | **旧 JS 能力表绞杀且解析失败不得回退** | `media/catalog.js` / `text/catalog.js` 中硬编码 SPECS/CHAT_MODELS 行数据 **删除**，改为 facade：模块加载时调用投影派生同名导出。**契约加载/解析/admission 失败 → 顶层 throw（fail-closed）**，hub 启动失败可定位；**不存在**「catch 后回退旧表」代码路径——旧表已物理删除，无表可回退 |
 | H2-C5 | **冲突限制取更严** | YAML 与 runtime JS 行为不一致处（Grok video 参考图 max、Seedance multi-ref），在验证完成前 YAML 写**更严**值（Grok video `max: 1`；Seedance multi-ref 单图/首帧），`limitSource.kind` 标 `policy_conservative` 并 notes 注明「runtime 对账取更严，待 dated 复测放宽」。**禁止**捏造 official 上限 |
@@ -253,7 +256,7 @@ M2（本 Issue）= 投影切换 + facade；M3–M5（W3/H3）= workflow BUILTIN 
 
 ---
 
-## 5. 43 ID 处置表落地机制
+## 5. 历史 43 ID 处置设计（输入合同部分已替代）
 
 ### 5.1 `dispositions.json` 形状
 
@@ -536,7 +539,7 @@ H2 交付盒（相对 H1）：
 - 不引入 ajv/zod/其他运行时依赖
 ```
 
-## 10. Task List（有序 · 依赖 · 每个可独立验证）
+## 10. 历史任务列表（输入合同部分已替代）
 
 ### T01 — 43 ID 处置表机器真源 + YAML 审计落地
 

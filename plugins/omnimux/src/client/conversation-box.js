@@ -112,11 +112,12 @@ html[data-dsh-product-stage] [role="treeitem"][aria-selected="true"]{background:
 html[data-dsh-product-stage] .dshDesktopConversationSurface > *:not([data-slot="shell.overlay"]),
 html[data-dsh-product-stage] [data-slot="conversation.content"],
 html[data-dsh-product-stage] [data-slot="input.trigger"] {visibility:hidden!important;}
-/* Topbar sidebar toggle: traffic lights → toggle → workbench tabBar (plugin CSS only). */
+/* Shared topbar geometry; native window gutters come from the host-aware layout. */
 html[data-omnimux-sidebar-toggle-topbar]{
-  --omnimux-topbar-toggle-left:78px;
-  --omnimux-topbar-toggle-size:36px;
+  --omnimux-topbar-toggle-left:8px;
+  --omnimux-topbar-toggle-size:32px;
   --omnimux-topbar-toggle-gap:8px;
+  --omnimux-topbar-toggle-top:4px;
   --omnimux-topbar-toggle-end:calc(var(--omnimux-topbar-toggle-left) + var(--omnimux-topbar-toggle-size) + var(--omnimux-topbar-toggle-gap));
   --omnimux-tabbar-pad-left:0px;
 }
@@ -153,6 +154,26 @@ html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-topbar-new-session="1"]:h
 }
 html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-topbar-new-session="1"] svg{
   display:block;width:16px;height:16px;
+}
+html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] [class*="toggleCluster"]{
+  right:8px;
+  gap:var(--omnimux-topbar-toggle-gap)!important;
+  align-items:center;
+}
+html[data-omnimux-sidebar-toggle-topbar] body:is(:not([data-dsh-title-bar-compat]),[data-dsh-desktop-platform="darwin"]) [data-dsh-better-sidebar] [class*="toggleCluster"]{
+  top:var(--omnimux-topbar-toggle-top)!important;
+}
+html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] [class*="toggleCluster"] > button,
+html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] > [class*="panel"]:not([class*="bottom"]):not([class*="Hidden"]) [class*="tabBarPlus"]{
+  width:var(--omnimux-topbar-toggle-size)!important;
+  height:var(--omnimux-topbar-toggle-size)!important;
+  padding:0!important;
+  flex-shrink:0;
+  border-radius:8px!important;
+}
+html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] [class*="toggleCluster"] > button svg,
+html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] > [class*="panel"]:not([class*="bottom"]):not([class*="Hidden"]) [class*="tabBarPlus"] svg{
+  width:16px;height:16px;
 }
 /* Icon swap: collapse glyph while expanded, expand glyph while collapsed. */
 html[data-omnimux-sidebar-toggle-topbar] [data-omnimux-sidebar-toggle-topbar="1"] [data-omnimux-sidebar-toggle-icon]{display:none;}
@@ -196,6 +217,8 @@ html[data-omnimux-sidebar-toggle-topbar] .dshDesktopFrame[data-sidebar-collapsed
    so do not use direct-child combinator > on panel. */
 html[data-omnimux-sidebar-toggle-topbar] [data-dsh-better-sidebar] > [class*="panel"]:not([class*="bottom"]):not([class*="Hidden"]) [class*="tabBar"]:not([class*="Plus"]){
   padding-left:var(--omnimux-tabbar-pad-left,0px)!important;
+  padding-right:var(--omnimux-tabbar-pad-right,0px)!important;
+  height:calc(var(--omnimux-topbar-toggle-size) + 2 * var(--omnimux-topbar-toggle-top) + 1px)!important;
   box-sizing:border-box;
 }
 /* Collapsed left rail: session title shares the top row with traffic lights +
@@ -246,26 +269,7 @@ html[data-omnimux-sidebar-toggle-topbar][data-omnimux-left-collapsed] [data-omni
 export function ensureProductStageChrome() {
   const existing = document.getElementById('dsh-product-stage-chrome')
   if (existing instanceof HTMLStyleElement) {
-    // 失效键：① scoped better-sidebar panel（设置弹窗）；② overlay-scoped idle hide（#344 workbench 白屏）；
-    // ③ settings-above-right-panel（#root:has aria-modal 抬层，避免右栏压住设置）。
-    const text = existing.textContent || ''
-    const stale = !text.includes('data-dsh-better-sidebar] [class*="_panel"]')
-      || !text.includes('[data-slot="shell.overlay"] > [class$="-stage"]')
-      || !text.includes('body[data-dsh-desktop-mode] [class*="tabBar"]')
-      || !text.includes('[class*="sidebarCol"] [class*="logoRow"]')
-      || !text.includes('data-omnimux-sidebar-toggle-topbar')
-      || !text.includes('--omnimux-topbar-toggle-end')
-      || !text.includes('data-omnimux-left-collapsed')
-      || !text.includes('--omnimux-tabbar-pad-left')
-      || !text.includes('grid-template-columns: 0px')
-      // Session title must clear the fixed topbar toggle while left rail is collapsed.
-      // Slot host is a wrapper; the real chrome is the header descendant.
-      || !text.includes('conversation.session.header"] header')
-      || !text.includes('padding-left:var(--omnimux-topbar-toggle-end)')
-      || !text.includes('data-omnimux-topbar-new-session')
-      || !text.includes('--omnimux-topbar-new-session-left')
-      || !text.includes('#root:has([role="dialog"][aria-modal="true"])')
-    if (stale) existing.textContent = PRODUCT_STAGE_CHROME
+    if (existing.textContent !== PRODUCT_STAGE_CHROME) existing.textContent = PRODUCT_STAGE_CHROME
   } else {
     const style = document.createElement('style')
     style.id = 'dsh-product-stage-chrome'

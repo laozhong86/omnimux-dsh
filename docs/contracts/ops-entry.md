@@ -5,44 +5,49 @@ type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-26"
+updated: "2026-09-05"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-workflow"
+subsystem: "global"
 ---
 
 # ops-entry — 插件运维命令唯一入口
 
-> 解决问题：各插件 / 产品树脚本各自一派（`deploy.mjs`、直调 `sync-stable.sh`、文档写旧路径），Agent 不知道走哪条。
-> 真源实现仍在 `product/omnimux-dsh/scripts/`；**对外命令只暴露 fork 的 `yarn omnimux:*`**。
+对外运维命令从 `/Users/x/Desktop/Project/omnimux-desktop-fork` 的 `yarn omnimux:*` 发起；产品仓 `scripts/` 是底层实现，不形成第二套公开入口。权限见 [plugin-git-pr](plugin-git-pr.md)，环境含义见 [dev-pipeline](dev-pipeline.md)。
 
-## 唯一对外入口
+## 公开入口
 
-工作目录：`~/Desktop/Project/omnimux-desktop-fork`
+| 命令 | 行为 |
+|---|---|
+| `yarn omnimux:dev <action> …` | 管理指定 L2 任务环境；action 为 start、stop、ls、rm 或 watch |
+| `yarn omnimux:dev restart-host <task>` | 只重启指定 L2 Host；不碰公共 App |
+| `yarn omnimux:sync <plugin…>` | 默认只写 Dev；只构建/物化点名插件并只读核验受管 shared kit，不改 presets 或 App 包 |
+| `yarn omnimux:sync` | 默认只写 Dev；完整构建/物化并更新既有受管 kit snapshot 与 Agent Presets |
+| `yarn omnimux:doctor` | 运行当前环境诊断；实际覆盖范围与限制见 [dev-pipeline](dev-pipeline.md) |
+| `yarn omnimux:restart <dev-or-prod>` | 重启已明确指定的公共 App；需要该 App 与协调窗口的用户确认 |
+| `yarn omnimux:stage` | 发版前写入桌面 preset；需要发布授权 |
+| `yarn omnimux:path` / `yarn omnimux:help` | 显示解析路径和用法 |
 
-| 命令 | 用途 | 底层（勿直调） |
-|------|------|----------------|
-| `yarn omnimux:dev …` | L2 预发布 Host + 统一 watch（打印 URL/port/`DSH_HOME=…/tasks/<task>`，**Agent 唯一测试入口**） | `scripts/dev-env.sh` + `scripts/watch-plugin.mjs` |
-| `yarn omnimux:dev restart-host <task>` | 原地冷重启 L2 Host（保端口/保数据，Agent 可用） | `scripts/dev-env.sh restart-host` |
-| `yarn omnimux:sync [插件…]` | build + 物化进生产 profile（**零副作用静态落盘，不重启进程**） | `scripts/sync-to-app.sh` → `scripts/sync-stable.sh` |
-| `yarn omnimux:restart dev` | 重启开发版应用 `/Applications/OmniMux Dev.app`（**仅限人类**，Agent 严禁以防撞车） | `pkill -f 'OmniMux Dev'` + `open -a 'OmniMux Dev'` |
-| `yarn omnimux:restart prod` | 手动重启生产版应用 `/Applications/OmniMux.app`（**仅限人类**，Agent 严禁） | `pkill -f OmniMux` + `open -a OmniMux` |
-| `yarn omnimux:doctor` | 三层环境合规自检 | `scripts/dev-doctor.sh` |
-| `yarn omnimux:stage` | 发版前物化进 `preset/plugins/` | `dsh-plugin-desktop` `stage:preset` |
-| `yarn omnimux:path` / `help` | 路径与用法 | `scripts/omnimux.mjs` |
+`sync` 不重启进程。无参数和点名插件同步都默认 `~/.omnimux-dev`；`--prod`、`--all`、正式 App、stage/打包不属于普通交付，必须单独获得发布授权。授权后由 Agent 完成非付款操作。
 
-## 保留但降级的脚本
+公共 App 重启不得使用模糊的“重启一下”。先确认 Dev 或 Prod 以及协调窗口，再执行对应命令并验证目标 PID/窗口；不得默认强杀其它 Agent 或用户正在使用的实例。
 
-| 路径 | 状态 | 说明 |
-|------|------|------|
-| `scripts/sync-stable.sh` | **内部** | 只物化不 build；直调会 stderr 警告；`OMNIMUX_SYNC_VIA=sync-to-app` 时由 sync-to-app 调用 |
-| `scripts/sync-to-app.sh` | 真源 | fork `omnimux:sync` 的实现 |
-| `scripts/dev-env.sh` / `watch-plugin.mjs` | 真源 | fork `omnimux:dev` 的实现 |
-| `plugins/omnimux-workflow/scripts/deploy.mjs` | **废弃转发** | 旧 `npm run deploy` → `sync-to-app.sh omnimux-workflow`；禁止再加私有同步逻辑 |
-| `plugins/omnimux-workflow/scripts/dev.mjs` | **构建 watcher** | 只负责 esbuild watch；由统一 `watch-plugin.mjs` 复用，不是运维入口 |
-| `plugins/*/scripts/build-*.mjs` | **构建** | 产品构建步骤，不是 sync/deploy 入口 |
-| `plugins/omnimux-gallery/scripts/sync-workbuddyskills.mjs` | **数据漏斗** | 重建 catalog，与 App 同步无关 |
+## 内部实现
+
+| 路径 | 角色 |
+|---|---|
+| `scripts/sync-to-app.sh` | build + 目标解析 + 调用稳定物化 |
+| `scripts/sync-stable.sh` | 内部受管 snapshot/pnpm 物化；不得作为日常入口 |
+| `scripts/dev-env.sh` / `scripts/watch-plugin.mjs` | L2 环境与 watch 实现 |
+| `plugins/omnimux-workflow/scripts/dev.mjs` | 插件构建 watcher，不是运维入口 |
+| `plugins/*/scripts/build-*.mjs` | 包内构建步骤，不是 sync/deploy 入口 |
+| `plugins/omnimux-market/scripts/generate-omnimux-skills-catalog.py` | Market catalog 数据生成，不负责 App/profile 同步 |
+
+旧 `plugins/omnimux-gallery/scripts/sync-workbuddyskills.mjs` 已不存在，不得继续引用为可执行入口。
 
 ## 禁止
 
-- MUST NOT 在插件目录新增第二套 `deploy` / `sync-to-profile` / `restart-app` 脚本。
-- MUST NOT 文档再教人直调 `./scripts/sync-stable.sh` 或 `./scripts/dev-env.sh`（写 `yarn omnimux:*`）。
-- MUST NOT 手 `rsync`/`cp` 进 `~/.dsh/profiles/omnimux`。
+- 在插件目录新增私有 deploy、sync-to-profile 或 restart-app 体系；
+- 文档指导日常用户直接调用 `sync-stable.sh` / `dev-env.sh`；
+- 手工 rsync/cp 到 profile，或让命名插件同步顺带改 shared kit、presets 或 App 包；
+- 未确认目标与窗口就重启/强杀公共 App；
+- 未获独立发布授权时使用 `--prod`、`--all`、stage 或正式打包。

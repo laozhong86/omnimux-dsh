@@ -18,6 +18,7 @@ tags:
 supersedes: []
 superseded_by: null
 related:
+  - "docs/specs/2026-09-05-model-contract-docs-first.md"
   - "docs/specs/2026-09-04-model-io-contract-compatibility-prd.md"
   - "docs/specs/2026-09-04-model-io-contract-compatibility-design.md"
   - "docs/contracts/model-capabilities-matrix.md"
@@ -29,6 +30,8 @@ related:
 ---
 
 # 增量 PRD：H2 审计 43 模型并切换 Catalog v1.1 契约投影
+
+> **2026-09-05 当前方法**：[模型合同文档优先方法修订](2026-09-05-model-contract-docs-first.md) 与 [模型 API 权威](../contracts/model-api-authority.md) 取代本文关于存在性、最小生成、边界探测、样本上限、真实执行和按执行翻转 `listed` 的可执行指令。本文保留原模型范围、历史快照与已发生执行；它们不得被当作当前输入合同。具体 EvoLink/APIMart 模型 API 文档未说明的字段、角色、数量、格式、时长和模式均为未知，不得猜测、试探或跨渠道借用。
 
 > **文档地位**：L2 增量 PRD（Epic #463 / Issue #465）。**只描述相对 H1（#464 / PR #485 @ `b5652a1`）的变更**；全模态 I/O 契约原则、operation 原子、可见性三元组、Hide Don't Grey、accepts≠ready 等以 H1 正式 PRD 为准，本文不重复推倒。
 > **作者**：许清楚（产品经理） · 2026-09-04
@@ -178,7 +181,7 @@ H1 已建成 operation 级契约机器真源、admission、coverage auditor，�
 
 ---
 
-## 7. 锁定处置与批次（产品铁律）
+## 7. 历史处置与批次计划（输入合同方法已替代）
 
 ### 7.1 已锁定 quarantine / unavailable（不得推翻）
 
@@ -237,7 +240,7 @@ Batch C  无 seam / 丢字段 / 403 / stale → unavailable | quarantine
 
 ---
 
-## 8. 验收矩阵（DoD · 相对 H1 增量）
+## 8. 历史验收矩阵（输入合同部分已替代）
 
 | # | 完成标准 | 优先级 |
 |---|---|---|

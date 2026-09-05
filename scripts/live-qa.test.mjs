@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { createRequire } from 'node:module'
 import { afterEach, test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { resolveTarget, runLiveQa, validateBrowserReport, verifyL2Runtime } from './live-qa.mjs'
+import { resolveTarget, runLiveQa, verifyL2Runtime } from './live-qa.mjs'
 import { captureStageContract, captureStageContracts, selectStages, STAGE_STATUS } from './live-stage-contracts.mjs'
 import { assertStageState, readStageState, runStageProbe, PROBE_ASSERTIONS, STAGE_ASSERTIONS } from './live-stage-probe.mjs'
 
@@ -191,27 +191,26 @@ test('stage-specific loading and failure markers cannot pass as valid empty cont
   } finally { dom.window.close() }
 })
 
-test('fresh evidence is required even when a child exits zero', () => {
-  const evidenceDir = fixture()
-  const screenshot = join(evidenceDir, 'assets.png')
-  writeFileSync(screenshot, 'test screenshot')
-  const report = { runId: 'new', commitSha: 'head', url: 'http://127.0.0.1:45120/', targets: [target], evidenceDir }
-  const browser = { ...report, requestedUrl: report.url, pass: true, cleanup: { success: true },
-    probe: { targets: [target], assertions: [...STAGE_ASSERTIONS.map((suffix) => `assets:${suffix}`), ...PROBE_ASSERTIONS].map((name) => ({ name, pass: true })), screenshots: [screenshot] } }
-  validateBrowserReport(browser, report, 0)
-  assert.throws(() => validateBrowserReport({ ...browser, runId: 'old' }, report, 0), /Stale/)
-  assert.throws(() => validateBrowserReport(browser, report, 23), /failed/)
-  assert.throws(() => validateBrowserReport({ ...browser, probe: { targets: [], assertions: [] } }, report, 0), /targets/)
-  assert.throws(() => validateBrowserReport({ ...browser, pass: false }, report, 0), /assertions failed/)
-  assert.throws(() => validateBrowserReport({ ...browser, probe: { ...browser.probe, assertions: [{ name: 'homepage', pass: true }] } }, report, 0), /Missing assertion/)
+test('verify:live creates one pending, SHA-bound Codex IAB request and never reports PASS', async () => {
+  const root = fixture()
+  const report = await runLiveQa(['assets'], { root })
+  assert.equal(report.status, 'pending')
+  assert.equal(report.pass, false)
+  assert.ok(report.requestPath)
+  const request = JSON.parse(readFileSync(report.requestPath, 'utf8'))
+  assert.equal(request.runId, report.runId)
+  assert.equal(request.commitSha, report.commitSha)
+  assert.equal(request.url, report.url)
+  assert.equal(request.consumedAt, null)
+  assert.match(request.expiresAt, /T/)
 })
 
 test('CLI argument failures overwrite stale success and retain per-run failure evidence', async () => {
   const root = fixture()
   mkdirSync(join(root, 'docs/evidence'), { recursive: true })
   writeFileSync(join(root, 'docs/evidence/live-qa-report.json'), '{"pass":true,"runId":"old"}')
-  for (const args of [[], ['typo'], ['assets', '--target=dev', '--url=http://127.0.0.1:44200']]) {
-    const report = await runLiveQa(args, { root, collect() { assert.fail('invalid input must not launch browser') } })
+  for (const args of [[], ['typo'], ['assets', '--target=dev', '--url=http://127.0.0.1:44200'], ['assets', '--evidence-dir=../outside']]) {
+    const report = await runLiveQa(args, { root })
     assert.equal(report.pass, false)
     assert.ok(report.errors.length)
     assert.notEqual(report.runId, 'old')
@@ -220,14 +219,7 @@ test('CLI argument failures overwrite stale success and retain per-run failure e
   }
 })
 
-test('a child crash cannot reuse previous browser evidence or turn into a skipped live probe', async () => {
-  const root = fixture()
-  const report = await runLiveQa(['assets'], { root, collect(_command, args) {
-    writeFileSync(join(args[2], 'ego-browser-report.json'), JSON.stringify({ pass: true, runId: 'old' }))
-    return { status: 23 }
-  } })
-  assert.equal(report.pass, false)
-  assert.match(report.errors.join(';'), /exit 23/)
+test('CLI returns exit 2 while its request remains pending', () => {
   const cli = spawnSync(process.execPath, [join(repo, 'scripts/agent-live-qa.mjs'), 'assets', '--target=prod'], { encoding: 'utf8' })
   assert.notEqual(cli.status, 0)
 })

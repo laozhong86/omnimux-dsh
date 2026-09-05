@@ -5,7 +5,7 @@ type: "spec"
 status: "accepted"
 authority: "L2"
 date: "2026-09-04"
-updated: "2026-09-04"
+updated: "2026-09-05"
 authors: ["gao-jianyuan"]
 subsystem: "omnimux/catalog"
 tags:
@@ -20,6 +20,7 @@ tags:
 supersedes: []
 superseded_by: null
 related:
+  - "docs/specs/2026-09-05-model-contract-docs-first.md"
   - "docs/specs/2026-09-04-model-io-contract-compatibility-prd.md"
   - "docs/contracts/model-capabilities-matrix.md"
   - "docs/contracts/hub.md"
@@ -30,6 +31,8 @@ related:
 ---
 
 # 系统设计：全模态模型 I/O 契约 + 画布兼容性与自动适配
+
+> **2026-09-05 当前方法**：[模型合同文档优先方法修订](2026-09-05-model-contract-docs-first.md) 与 [模型 API 权威](../contracts/model-api-authority.md) 取代本文关于存在性、最小生成、边界探测、样本上限、真实执行和按执行翻转 `listed` 的可执行指令。本文保留原模型范围、历史快照与已发生执行；它们不得被当作当前输入合同。具体 EvoLink/APIMart 模型 API 文档未说明的字段、角色、数量、格式、时长和模式均为未知，不得猜测、试探或跨渠道借用。
 
 > **文档地位**：L2 已接受设计（Epic #463 / H1 #464）。实现以本文 + L1 MCC / hub / model-list-ownership 为准；产品行为以正式 PRD 为准。
 > **作者**：高见远（架构师） · 2026-09-04
@@ -54,7 +57,7 @@ related:
 | C1 | **多真源漂移**：`media/catalog.js` + `text/catalog.js` SPECS、四份 YAML 雏形、workflow `BUILTIN_MODEL_CAPABILITIES`、`GenerationMode` 旧别名并行 | H1 建立 **Hub 机器真源**（`operation-registry.json` + `model-capability.schema.json` + YAML specs）；runtime 列表仍走现状，但 admission/verifier **可见缺口**；H2 切投影并绞杀双表 |
 | C2 | **operation 语义分裂**：画布 `GenerationMode = reference \| first_last_frame` ≠ MCC 17 标准 operation | 标准 ID 只存在于 Hub registry；Workflow DTO 用 **`string` + metadata**，**禁止**再复制穷举联合类型；旧值只在读时 `legacyOperationMap` 翻译 |
 | C3 | **output 不可推断**：`speech_to_text` 为 audio→text；文件级 `modality` 不是 output | 每个 `operations[]` **强制显式** `output.type`；Catalog v1.1 权威为 `models[]`，四列表（text/image/video/audio）仅为 **output-driven 兼容投影** |
-| C4 | **体积上限误读为全局 100MB** | **取消**平台全局 hard ceiling（H1 不引入）；每 slot 声明 `maxSizeMb` + `limitSource`；无可信边界 → 该 **operation** 不可 listed |
+| C4 | **体积上限误读为全局 100MB** | **取消**平台全局 hard ceiling（H1 不引入）；每 slot 的数量、MIME、体积、时长和格式均回指具体渠道模型 operation 的官方 API 文档。文档未说明即未知，不以实测样本、拒绝点或 `policy_conservative` 填补，也不据此断言渠道不支持 |
 | C5 | **可见性 ≠ 有 YAML 草稿**；同模型部分 op live、部分 draft | **research / execution / listed 以 operation 为原子**（见 §3.4–§3.5）。Model 层可有 defaults，normalize 后**每个 operation 自有** research/execution；Catalog/coverage 报告 **`listedOperations`**（键 `modelId#operationId`）；`model.listed` 仅派生摘要 `any(op.listed)`，**不得**把未 verified/live 的 op 一并放行 |
 | C6 | **H1 CI 不能因 29 missing 永远红** | verifier 默认 **admission-strict / coverage-audit**：malformed YAML / 非法 registry 引用 = fail；coverage gap = machine-readable report，H1 默认不 exit 1；`--strict` 在 H2 切 coverage |
 | C7 | **跨包铁律** | 契约与 loader 只在 `plugins/omnimux`；workflow **零 hub import**，只消费 `modelCatalog` seam / Host HTTP 桥接载荷 |
@@ -776,7 +779,7 @@ sequenceDiagram
 | **Q11 cache** | sorted names + content hash，不信 mtime。 |
 | **Q12 schema** | JSON Schema normative + JS parity tests。 |
 | **Q13 CLI/CI** | fail-closed exit 2；trap 清理。 |
-| **Q14 runtime 对账** | **非 H1**；H2 做；冲突限制取更严（产品预审）。 |
+| **Q14 runtime 对账** | **非 H1**；后续仅以具体渠道官方 API 文档核对。旧“冲突取更严”是历史预审记录，不能确定渠道限制。 |
 | **Q15 根字段名** | Model capability **canonical = `schemaVersion: "1.1"`**（精确该字面量）。禁止根 `version` 作为正式合同字段。legacy `version` **仅** loader 输入迁移（fixtures）；both/conflict/missing → reject。registry/profile 文档自身 `version` **不改**。 |
 | **Q16 aliases 层级** | **model.aliases** = runtime/wire model ID 归一（主路径）；**operation.aliases** = 可选 legacy operation 名附属声明，非 wire id 真源；全局 legacy op 映射仍 `legacy-operation-map.js`。 |
 | **Q17 profile fake op** | `validateAdapterProfiles`：**每个** `profile.operations[]` ∈ registry；unknown → **`profile_operation_unknown`** error；audit/strict 均 fail；**不可推 H2**。 |
@@ -894,7 +897,7 @@ node scripts/verify-model-contracts.mjs --audit --json
 ### 9.2 H2 交付盒
 
 - 逐 op 证据上架（含 PM 预审强 live 三路径的**独立**审计）
-- runtime constraints 对账（冲突取更严）；Kling Avatar audio 等 mapper
+- runtime constraints 与渠道官方 API 文档的分层对齐；Kling Avatar audio 等 mapper
 - Whisper / Avatar quarantine 直到 seam+专用 profile
 - `list.js` 投影；`--strict` coverage CI
 - 双表绞杀启动
@@ -1053,8 +1056,8 @@ graph TD
 | A1 | runtime id 约 43 为 coverage 分母 | 以 CHAT_MODELS + media SPECS 为准 |
 | A2 | H1 实文件统一 draft，不写入 verified | **已拍板** |
 | A3 | PRD §3.4 仍写「模型（或某 operation 行）」可见性，语义已允许 operation 行；**不改 PRD** | 实现与 MCC/design 以 operation 为准；若 PM 要 PRD 措辞更硬，另开 PM 修订 |
-| A4 | 强 live 三路径证据 | **H2** 补证上架，非 H1 |
-| A5 | Kling Avatar audio / limits 冲突 | **H2** reconcile；H1 quarantine by non-listed |
+| A4 | 强 live 三路径证据 | H1 历史阶段未处理。真实执行不是渠道合同的准据，后续以官方文档和离线实现验证分层处理。 |
+| A5 | Kling Avatar audio / limits 冲突 | H1 保留零 listed 历史状态；后续渠道限制按官方 API 文档核对，mapper 另列实现缺口。 |
 | A6 | primaryOutput 多产出 | 稀有；H2 再定 |
 | A7 | **Contract v1.1 根字段 `schemaVersion`** | **架构已拍板**（§3.2.0 / Q15）。PRD 未显式写出 YAML 根字段名；**本轮架构师不代改 PRD**。建议 PM 在 PRD 契约字段表补一句：`schemaVersion: "1.1"` 为 model capability 文档根必填；与实现/L1 对齐 |
 | A8 | 历史实现/QA 曾用根 `version` 当通过 | **合同漂移，不授权**；以用户批准 shape + 本 R1.1 为准，工程按 §16.5 纠偏 |
@@ -1082,8 +1085,8 @@ graph TD
 
 | 项 | 原因 |
 |---|---|
-| 逐 op 补证上架（含三强 live） | H1 边界：不审计模型事实 |
-| runtime constraints 对账（Grok/Seedance 更严、mapper audio） | 设计 §1 / §9.2；零 listed 已隔离污染 |
+| 逐 op 补证上架（含三强 live） | H1 历史边界：不审计模型事实；后续不以真实请求作为渠道合同或上架发现方法。 |
+| runtime constraints 对账（Grok/Seedance、mapper audio） | 渠道约束以官方 API 文档为准；H1 零 listed 是历史阶段事实。 |
 | buildModelCatalog 投影 / workflow 兼容引擎 | 原 H2/W\* |
 | speechToText live seam | 非目标 |
 | 把 fixtures 外模型标 verified | 禁止在 H1 |

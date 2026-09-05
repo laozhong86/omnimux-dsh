@@ -5,10 +5,10 @@ import { afterEach, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
   buildInspirationPayload,
-  dismissInspirationLibrary,
   isReplicateBusy,
   oneClickReplicate,
   resetReplicateLock,
+  revealConversationForReplicate,
   runExclusive,
 } from './replicate-to-chat.js'
 
@@ -32,18 +32,16 @@ function makeIo(overrides = {}) {
   const clicks = []
   const attaches = []
   const prefills = []
-  const closes = []
+  const reveals = []
   const status = []
   const starts = []
   const io = {
     clicks,
     attaches,
     prefills,
-    closes,
+    reveals,
     status,
     starts,
-    hasSession: () => true,
-    isBlank: () => true,
     async clickNewSession() {
       clicks.push(1)
       return { ok: true, sessionId: 'sess-new' }
@@ -52,12 +50,16 @@ function makeIo(overrides = {}) {
       attaches.push({ sessionId, payload })
       return { ok: true }
     },
-    async prefillPrompt(text) {
-      prefills.push(text)
-      return { ok: true, via: 'prefill' }
+    async prefillPrompt(request) {
+      prefills.push(request.prompt)
+      const attachment = request.attach()
+      if (attachment?.ok === true) return { ok: true, via: 'prefill' }
+      if (attachment?.reason === 'duplicate') return { ok: true, via: 'prefill', duplicate: true }
+      if (attachment?.reason === 'quota-exceeded') return { ok: false, error: 'attach-full' }
+      return { ok: false, error: 'attach-failed' }
     },
-    dismissLibrary() {
-      closes.push(1)
+    revealConversation() {
+      reveals.push(1)
     },
     startReplication() {
       starts.push(1)
@@ -82,8 +84,19 @@ describe('replicate-to-chat.js isolation', () => {
     assert.doesNotMatch(source, /from ['"].*workflow-global/)
     assert.doesNotMatch(source, /omnimux-workflow/)
     assert.doesNotMatch(source, /replicateInspirationToChat/)
+    assert.doesNotMatch(source, /hasAnySession/)
+    assert.doesNotMatch(source, /isBlankSession/)
     assert.doesNotMatch(feedSource, /replicateInspirationToChat/)
     assert.match(feedSource, /oneClickReplicate/)
+  })
+
+  it('product red lines: never closes the library tab, never touches the canvas panel, no store fallback (#552)', () => {
+    // P-1: the inspiration library tab stays open.
+    assert.doesNotMatch(source, /closeTab/)
+    // P-3: the canvas panel open/close authority belongs to the user.
+    assert.doesNotMatch(source, /closePanel/)
+    // The removed close path had a store fallback; it must not come back.
+    assert.doesNotMatch(source, /createSidebarStore/)
   })
 })
 
@@ -99,43 +112,42 @@ describe('buildInspirationPayload', () => {
   })
 })
 
-describe('dismissInspirationLibrary', () => {
-  it('calls onDismissModal then closeTab with the library tab id', () => {
+describe('revealConversationForReplicate', () => {
+  it('calls onDismissModal and reveals the conversation without closing the library tab (#552 P-1)', () => {
     const dismissed = []
     const tabs = []
-    dismissInspirationLibrary({
+    const order = []
+    revealConversationForReplicate({
       onDismissModal: () => dismissed.push(1),
       window: {
         __omnimuxWorkbench: {
           closeTab(id) { tabs.push(id) },
-        },
-      },
-    })
-    assert.deepEqual(dismissed, [1])
-    assert.deepEqual(tabs, ['omnimux-inspiration:library'])
-  })
-
-  it('after closeTab unhides the conversation column (split, not collapsed)', () => {
-    const order = []
-    dismissInspirationLibrary({
-      window: {
-        __omnimuxWorkbench: {
-          closeTab(id) { order.push(`close:${id}`) },
           setConversationCollapsed(next) { order.push(`collapsed:${next}`) },
           setFocus(mode) { order.push(`focus:${mode}`) },
         },
       },
     })
-    assert.deepEqual(order, [
-      'close:omnimux-inspiration:library',
-      'collapsed:false',
-      'focus:split',
-    ])
+    assert.deepEqual(dismissed, [1])
+    assert.deepEqual(tabs, [])
+    assert.deepEqual(order, ['collapsed:false', 'focus:split'])
   })
 
-  it('keeps the right panel open (canvas stays) and reveals split (#531)', () => {
+  it('uncollapses the conversation column with split focus and nothing else', () => {
     const order = []
-    dismissInspirationLibrary({
+    revealConversationForReplicate({
+      window: {
+        __omnimuxWorkbench: {
+          setConversationCollapsed(next) { order.push(`collapsed:${next}`) },
+          setFocus(mode) { order.push(`focus:${mode}`) },
+        },
+      },
+    })
+    assert.deepEqual(order, ['collapsed:false', 'focus:split'])
+  })
+
+  it('keeps the right panel open (canvas stays) and reveals split (#552 P-3)', () => {
+    const order = []
+    revealConversationForReplicate({
       window: {
         __omnimuxWorkbench: {
           closeTab(id) { order.push(`close:${id}`) },
@@ -145,27 +157,28 @@ describe('dismissInspirationLibrary', () => {
         },
       },
     })
-    assert.deepEqual(order, [
-      'close:omnimux-inspiration:library',
-      'collapsed:false',
-      'focus:split',
-    ])
+    assert.deepEqual(order, ['collapsed:false', 'focus:split'])
     assert.ok(!order.includes('closePanel'))
     assert.ok(!order.includes('focus:chat'))
+    assert.ok(!order.some((entry) => entry.startsWith('close:')))
   })
 
-  it('falls back to createSidebarStore().close when closeTab is missing', () => {
-    const closed = []
-    dismissInspirationLibrary({
+  it('replay re-asserts reveal only (0ms/50ms, idempotent geometry)', async () => {
+    const counts = { collapsed: 0, focus: 0, closedTabs: 0 }
+    revealConversationForReplicate({
       window: {
         __omnimuxWorkbench: {
-          createSidebarStore({ tabId }) {
-            return { close() { closed.push(tabId) } }
-          },
+          closeTab() { counts.closedTabs += 1 },
+          setConversationCollapsed() { counts.collapsed += 1 },
+          setFocus() { counts.focus += 1 },
         },
       },
     })
-    assert.deepEqual(closed, ['omnimux-inspiration:library'])
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    // Initial call + two reveal-only replays = 3 assertions each.
+    assert.equal(counts.collapsed, 3)
+    assert.equal(counts.focus, 3)
+    assert.equal(counts.closedTabs, 0)
   })
 })
 
@@ -177,18 +190,7 @@ describe('oneClickReplicate', () => {
     assert.equal(io.starts.length, 0)
   })
 
-  it('noSession never attaches and reports card.cta.noSession', async () => {
-    const io = makeIo({ hasSession: () => false })
-    const result = await oneClickReplicate(ROW, io)
-    assert.deepEqual(result, { ok: false, error: 'noSession' })
-    assert.equal(io.attaches.length, 0)
-    assert.equal(io.clicks.length, 0)
-    assert.equal(io.prefills.length, 0)
-    assert.equal(io.closes.length, 0)
-    assert.equal(io.status.at(-1), 'card.cta.noSession')
-  })
-
-  it('success uses real dismissInspirationLibrary: closeTab then split', async () => {
+  it('success uses real revealConversationForReplicate: split reveal, library tab stays open (#552)', async () => {
     const order = []
     const win = {
       __omnimuxWorkbench: {
@@ -199,22 +201,22 @@ describe('oneClickReplicate', () => {
       },
     }
     const io = makeIo({ isBlank: () => true, window: win })
-    delete io.dismissLibrary
+    delete io.revealConversation
     const result = await oneClickReplicate(ROW, io)
     assert.equal(result.ok, true)
-    assert.equal(order[0], 'close:omnimux-inspiration:library')
+    assert.ok(!order.some((entry) => entry.startsWith('close:')))
+    assert.ok(!order.includes('closePanel'))
     assert.ok(order.includes('collapsed:false'))
     assert.ok(order.includes('focus:split'))
-    assert.ok(!order.includes('closePanel'))
   })
 
-  it('dismisses before prefill so a hidden composer can become visible (#528)', async () => {
+  it('reveals conversation before prefill so a hidden composer can become visible (#528)', async () => {
     const order = []
     const io = makeIo({
       isBlank: () => true,
-      dismissLibrary() {
-        order.push('dismiss')
-        io.closes.push(1)
+      revealConversation() {
+        order.push('reveal')
+        io.reveals.push(1)
       },
       async prefillPrompt(text) {
         order.push('prefill')
@@ -224,20 +226,20 @@ describe('oneClickReplicate', () => {
     })
     const result = await oneClickReplicate(ROW, io)
     assert.equal(result.ok, true)
-    assert.deepEqual(order, ['dismiss', 'prefill'])
+    assert.deepEqual(order, ['reveal', 'prefill'])
   })
 
-  it('blank reuses the session: 0 clicks, 1 attach, 1 prefill, 1 closeTab', async () => {
-    const io = makeIo({ isBlank: () => true })
+  it('blank session clicks official new session once, then attaches and prefills the returned id', async () => {
+    const io = makeIo()
     const result = await oneClickReplicate(ROW, io)
     assert.equal(result.ok, true)
-    assert.equal(result.reused, true)
-    assert.equal(result.clickedNewSession, false)
+    assert.equal(result.clickedNewSession, true)
     assert.equal(result.attached, true)
-    assert.equal(io.clicks.length, 0)
+    assert.equal(io.clicks.length, 1)
     assert.equal(io.attaches.length, 1)
+    assert.equal(io.attaches[0].sessionId, 'sess-new')
+    assert.equal(io.reveals.length, 1)
     assert.equal(io.prefills.length, 1)
-    assert.equal(io.closes.length, 1)
     assert.match(io.prefills[0], /^\/video-deconstruct\n/)
     assert.match(io.prefills[0], /完全复刻原视频脚本和画面/)
     assert.doesNotMatch(io.prefills[0], /inspiration_id/)
@@ -246,31 +248,122 @@ describe('oneClickReplicate', () => {
     assert.equal(io.status.at(-1), null)
   })
 
-  it('non-blank clicks official new session then attach+prefill+close', async () => {
-    const io = makeIo({ isBlank: () => false })
+  it('non-blank session also clicks official new session then attaches, reveals, and prefills', async () => {
+    const io = makeIo()
     const result = await oneClickReplicate(ROW, io)
     assert.equal(result.ok, true)
-    assert.equal(result.reused, false)
     assert.equal(result.clickedNewSession, true)
     assert.equal(io.clicks.length, 1)
     assert.equal(io.attaches.length, 1)
     assert.equal(io.attaches[0].sessionId, 'sess-new')
+    assert.equal(io.reveals.length, 1)
     assert.equal(io.prefills.length, 1)
-    assert.equal(io.closes.length, 1)
   })
 
-  it('missing new-session button is newSessionFailed and does not attach', async () => {
+  it('action-dispatched but unresolved reveals the column and performs zero writes', async () => {
+    const order = []
+    let resolveOfficial
+    const pendingOfficial = new Promise((resolve) => { resolveOfficial = resolve })
     const io = makeIo({
-      isBlank: () => false,
+      clickNewSession() {
+        io.clicks.push(1)
+        return pendingOfficial
+      },
+      revealConversation() {
+        order.push('reveal')
+        io.reveals.push(1)
+      },
+    })
+    const work = oneClickReplicate(ROW, io)
+    await Promise.resolve()
+    assert.deepEqual(order, ['reveal'])
+    assert.equal(io.attaches.length, 0)
+    assert.equal(io.prefills.length, 0)
+    resolveOfficial({ ok: false, error: 'newSessionFailed' })
+    const result = await work
+    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
+    assert.equal(io.attaches.length, 0)
+    assert.equal(io.prefills.length, 0)
+    assert.equal(io.status.at(-1), 'card.cta.newSessionFailed')
+  })
+
+  it('new-session failure never attaches to the prior session', async () => {
+    const io = makeIo({
       async clickNewSession() {
         return { ok: false, error: 'newSessionFailed' }
       },
     })
     const result = await oneClickReplicate(ROW, io)
     assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
+    assert.equal(io.reveals.length, 1)
     assert.equal(io.attaches.length, 0)
     assert.equal(io.prefills.length, 0)
     assert.equal(io.status.at(-1), 'card.cta.newSessionFailed')
+  })
+
+  it('does not attach when the official action returns no new session id', async () => {
+    const io = makeIo({
+      async clickNewSession() {
+        io.clicks.push(1)
+        return { ok: true }
+      },
+    })
+    const result = await oneClickReplicate(ROW, io)
+    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
+    assert.equal(io.clicks.length, 1)
+    assert.equal(io.attaches.length, 0)
+    assert.equal(io.reveals.length, 1)
+    assert.equal(io.prefills.length, 0)
+    assert.equal(io.status.at(-1), 'card.cta.newSessionFailed')
+  })
+
+  it('uses a blank-reused official target explicitly for attachment and prompt', async () => {
+    const io = makeIo({
+      async clickNewSession() {
+        io.clicks.push(1)
+        return { ok: true, sessionId: 'sess-blank-reused', reusedBlank: true }
+      },
+    })
+    const result = await oneClickReplicate(ROW, io)
+    assert.equal(result.ok, true)
+    assert.equal(io.attaches.length, 1)
+    assert.equal(io.attaches[0].sessionId, 'sess-blank-reused')
+    assert.equal(io.prefills.length, 1)
+    assert.match(io.prefills[0], /^\/video-deconstruct\n\n/)
+  })
+
+  it('draft-protected target performs zero attachment writes and exposes the protected state', async () => {
+    const io = makeIo({
+      async prefillPrompt() {
+        io.prefills.push('attempt')
+        return { ok: false, error: 'draft-protected' }
+      },
+    })
+    const result = await oneClickReplicate(ROW, io)
+    assert.deepEqual(result, { ok: false, error: 'draftProtected' })
+    assert.equal(io.attaches.length, 0)
+    assert.deepEqual(io.status.at(-1), 'card.cta.draftProtected')
+  })
+
+  it('fails explicitly when the official attachment store is unavailable', async () => {
+    const events = []
+    const win = {
+      CustomEvent: class CustomEvent {
+        constructor(type, init) {
+          this.type = type
+          this.detail = init.detail
+        }
+      },
+      dispatchEvent(event) {
+        events.push(event)
+        return true
+      },
+    }
+    const io = makeIo({ window: win })
+    delete io.addAttachment
+    const result = await oneClickReplicate(ROW, io)
+    assert.deepEqual(result, { ok: false, error: 'attachFailed' })
+    assert.deepEqual(events, [])
   })
 
   it('second concurrent click returns busy and does not queue', async () => {
@@ -296,7 +389,7 @@ describe('oneClickReplicate', () => {
     assert.equal(isReplicateBusy(), false)
   })
 
-  it('duplicate is treated as attached and continues to prefill', async () => {
+  it('duplicate is treated as attached and continues to reveal+prefill', async () => {
     const io = makeIo({
       addAttachment(sessionId, payload) {
         io.attaches.push({ sessionId, payload })
@@ -307,11 +400,11 @@ describe('oneClickReplicate', () => {
     assert.equal(result.ok, true)
     assert.equal(result.duplicate, true)
     assert.equal(result.attached, true)
+    assert.equal(io.reveals.length, 1)
     assert.equal(io.prefills.length, 1)
-    assert.equal(io.closes.length, 1)
   })
 
-  it('quota-exceeded still prefills but returns attachFull', async () => {
+  it('quota-exceeded returns attachFull after one safe prefill', async () => {
     const io = makeIo({
       addAttachment(sessionId, payload) {
         io.attaches.push({ sessionId, payload })
@@ -320,14 +413,21 @@ describe('oneClickReplicate', () => {
     })
     const result = await oneClickReplicate(ROW, io)
     assert.deepEqual(result, { ok: false, error: 'attachFull' })
+    assert.equal(io.reveals.length, 1)
     assert.equal(io.prefills.length, 1)
-    assert.equal(io.closes.length, 0)
     assert.equal(io.status.at(-1), 'card.cta.attachFull')
   })
 
-  it('prefill failure after attach still dismisses so the conversation column appears (#528)', async () => {
+  it('prefill failure still reveals the conversation and never closes the library (#528)', async () => {
     let sendClicks = 0
+    const closedTabs = []
+    const win = {
+      __omnimuxWorkbench: {
+        closeTab(id) { closedTabs.push(id) },
+      },
+    }
     const io = makeIo({
+      window: win,
       async prefillPrompt() {
         return { ok: false, error: 'composer-missing' }
       },
@@ -340,8 +440,9 @@ describe('oneClickReplicate', () => {
     assert.equal(result.error, 'sendManual')
     assert.equal(io.status.at(-1), 'card.cta.sendManual')
     assert.equal(sendClicks, 0)
-    assert.equal(io.closes.length, 1)
-    assert.equal(io.attaches.length, 1)
+    assert.equal(io.reveals.length, 1)
+    assert.equal(io.attaches.length, 0)
+    assert.deepEqual(closedTabs, [])
   })
 
   it('runExclusive does not queue: two concurrent calls invoke the worker once', async () => {

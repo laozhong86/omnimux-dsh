@@ -16,7 +16,7 @@ tags:
   - "c1-c4"
   - "operation-listed"
 supersedes: []
-superseded_by: null
+superseded_by: "docs/specs/2026-09-05-model-contract-docs-first.md"
 related:
   - "docs/specs/2026-09-05-model-evidence-backfill-prd.md"
   - "docs/specs/2026-09-05-model-evidence-backfill-design.md"
@@ -31,17 +31,19 @@ related:
 
 # 增量设计附录：#530 视频 C1–C4 证据补齐与上架
 
+> **2026-09-05 当前方法**：[模型合同文档优先方法修订](2026-09-05-model-contract-docs-first.md) 与 [模型 API 权威](../contracts/model-api-authority.md) 取代本文关于存在性、最小生成、边界探测、样本上限、真实执行和按执行翻转 `listed` 的可执行指令。本文保留原模型范围、历史快照与已发生执行；它们不得被当作当前输入合同。具体 EvoLink/APIMart 模型 API 文档未说明的字段、角色、数量、格式、时长和模式均为未知，不得猜测、试探或跨渠道借用。
+
 > **文档地位**：L2 增量设计 **附录**（Epic #463 / Issue #530 · 视频增量）。相对 `2026-09-05-model-evidence-backfill-prd.md` / `...-design.md` 的 **PR-C 视频批局部修订与细化**；不推倒 H1/H2 五元判定与 schema。
 > **作者**：高见远（架构师） · 2026-09-05
 > **输入**：许清楚 #530 视频增量范围结论（产品已锁定 C1–C4）
 > **术语**：`omnimux` = **执行中枢**；禁止称「网关」。
-> **合入**：顺序 **C1 → C2 → C3 → C4**；**测不过不 listed**；**一 op 一 evidence**；新 runtime **可**新增 YAML / dispositions 行；**R1 人工合入**；**不写 Prod**；合入前不物化 45120。
+> **当前范围**：C1–C4 和 YAML/dispositions 变更是历史计划，不能执行。视频模式及输入限制以渠道官方 API 文档为准；离线验证与历史真实执行另行记录，本修订不改目录状态。
 
 ---
 
 ## 0. 对 PRD / design 的局部修订声明（必读）
 
-本附录**显式局部修订**原 PRD/design 下列约束。未列出的条款（证据四要素、一 op 一文件、禁止跨模型挪用、`--strict` 常绿、R1、不写 Prod）**全部继承**。
+本附录下列 C1–C4 行保留原模型范围和架构背景，但其中探测、样本、限额、执行状态与上架指令均已替代。渠道文档未说明的模式或字段为未知，不得用这些行补齐。
 
 | # | 原约束（PRD/design） | 本附录修订 | 生效范围 |
 |---|---|---|---|
@@ -177,7 +179,7 @@ N4 = N3                                          # C4 无新 ID（均已在表�
 
 ---
 
-## 3. C1–C4 有序任务、依赖、回滚、listed 增量变量
+## 3. 历史 C1–C4 任务与 listed 计划（已替代，不可执行）
 
 ### 3.1 任务列表（硬上限 5 · 按批分组）
 
@@ -298,7 +300,7 @@ S_batch = { "<id>#<op>" | 四要素齐全 ∧ research=verified ∧ execution=li
 
 ---
 
-## 4. 探针最小请求矩阵与测试素材
+## 4. 历史探针请求矩阵（已替代，不可执行）
 
 ### 4.1 通用协议（继承 design §3）
 
@@ -394,7 +396,7 @@ S_batch = { "<id>#<op>" | 四要素齐全 ∧ research=verified ∧ execution=li
 
 ---
 
-## 6. 安全探测规程
+## 6. 历史安全探测规程（已替代，不可执行）
 
 | 项 | 要求 |
 |---|---|
@@ -409,7 +411,7 @@ S_batch = { "<id>#<op>" | 四要素齐全 ∧ research=verified ∧ execution=li
 
 ---
 
-## 7. 文件列表与实现顺序
+## 7. 历史文件列表与实现顺序（已替代，不可执行）
 
 ### 7.1 本附录相关文件
 
@@ -441,7 +443,7 @@ S_batch = { "<id>#<op>" | 四要素齐全 ∧ research=verified ∧ execution=li
 
 ---
 
-## 8. CI 门禁与证据模板复用
+## 8. 历史 CI 与证据模板（已替代，不可执行）
 
 ### 8.1 每批必跑
 

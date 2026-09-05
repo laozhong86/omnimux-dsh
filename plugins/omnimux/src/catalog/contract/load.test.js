@@ -58,6 +58,11 @@ test('loadAll real specs: 4 files merge without parse errors', () => {
     'kimi-k3#chat',
     'kimi-k3#vision_chat',
     'seedance-2-0-fast#text_to_video',
+    'seedance-2-0-fast#video_multi_ref',
+    'seedance-2-0-mini#text_to_video',
+    'seedance-2-0#text_to_video',
+    'seedance-2-5#text_to_video',
+    'seedance-2-5#video_multi_ref',
   ]);
   // formal specs must not produce schemaVersion admission errors
   assert.ok(

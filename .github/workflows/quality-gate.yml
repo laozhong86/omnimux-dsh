@@ -31,6 +31,23 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install QA verifier dependencies
+        run: |
+          set -euo pipefail
+          QA_DEPS="$(mktemp -d)"
+          export QA_DEPS
+          node --input-type=module - <<'JS'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const { devDependencies } = JSON.parse(readFileSync('package.json', 'utf8'));
+          writeFileSync(process.env.QA_DEPS + '/package.json', JSON.stringify({
+            private: true,
+            dependencies: { esbuild: devDependencies.esbuild, pngjs: devDependencies.pngjs },
+          }));
+          JS
+          npm --prefix "$QA_DEPS" install --ignore-scripts --no-audit --no-fund
+          test ! -e node_modules
+          ln -s "$QA_DEPS/node_modules" node_modules
+
       - name: Run syntax & contract gates
         run: |
           node --check scripts/auto-qa-gate.mjs
@@ -53,7 +70,7 @@ jobs:
 
       - name: Run regression tests
         run: |
-          node --test scripts/auto-pipeline.test.mjs scripts/check-tracked-artifacts.test.mjs
+          node --test scripts/auto-pipeline.test.mjs scripts/check-tracked-artifacts.test.mjs scripts/repair-inspiration-covers.test.mjs
 
       - name: Verify model contracts (admission + dispositions strict)
         run: |

@@ -1,7 +1,11 @@
 import { OmnimuxError } from '../media/errors.js'
+import {
+  assertGuardOutput,
+  assertGuardSubmit,
+} from '../catalog/contract/submit-guard/index.js'
 import { parseTextConfig, resolveTextRoute } from './catalog.js'
 import { completeTextViaChat } from './chat.js'
-import { loadTextImage } from './image.js'
+import { probeTextImage, saveProbedTextImage } from './image.js'
 import { loadTextVideo, toVideoImageUrlPart } from './video.js'
 
 /**
@@ -9,9 +13,15 @@ import { loadTextVideo, toVideoImageUrlPart } from './video.js'
  * Video path: bypass stream + attachments and POST chat completions with
  * `image_url` + `data:video/…` (spike-locked protocol). Not a chat turn: no
  * tools, no parent messages, no dest, no poll.
+ *
+ * SubmitGuard (#468) admits model/operation against the contract index before
+ * the llm/chat path runs. Neutral adapter: does not change the public text API
+ * shape; optional `operation` may be passed explicitly.
+ *
  * @param {{
  *   prompt?: string,
  *   model?: string,
+ *   operation?: string,
  *   image?: string,
  *   video?: string,
  *   system?: string,
@@ -27,6 +37,7 @@ import { loadTextVideo, toVideoImageUrlPart } from './video.js'
  *   fetcher?: typeof fetch,
  *   apiKey?: string,
  *   baseUrl?: string,
+ *   assetMeta?: object,
  * }} input
  */
 export async function executeOmnimuxText(input) {
@@ -47,35 +58,67 @@ export async function executeOmnimuxText(input) {
     : route.maxTokens
   const system = typeof input.system === 'string' ? input.system.trim() : ''
 
+  if (image && (!input.attachments || typeof input.attachments.saveImage !== 'function')) {
+    throw new OmnimuxError('needs-provider', 'image input requires ctx.attachments')
+  }
+  const probedImage = image
+    ? await probeTextImage(image, { attachments: input.attachments, fetcher: input.fetcher, signal: input.signal })
+    : null
+  const packedVideo = video ? await loadTextVideo(video, { signal: input.signal }) : null
+  const assets = [
+    ...(probedImage ? [{ type: 'image', role: 'reference', pathOrUrl: image, mime: probedImage.mediaType, sizeBytes: probedImage.sizeBytes }] : []),
+    ...(packedVideo ? [{ type: 'video', role: 'reference', pathOrUrl: video, mime: packedVideo.mediaType, sizeBytes: packedVideo.bytes }] : []),
+  ]
+  const guardPlan = assertGuardSubmit(
+    {
+      prompt,
+      model: route.modelId,
+      operation: input.operation,
+      assets,
+      system,
+      maxTokens,
+      seam: 'textComplete',
+      capability: 'text',
+    },
+    {
+      seam: 'textComplete',
+      capability: 'text',
+      outputType: 'text',
+      gateAllows: gate
+        ? (modelId) => {
+            const models = gate.models
+            if (models && typeof models === 'object' && modelId in models) {
+              return models[modelId] !== false
+            }
+            return true
+          }
+        : undefined,
+    },
+  )
+
   if (video) {
-    const packed = await loadTextVideo(video, { signal: input.signal })
-    return completeTextViaChat({
+    const result = await completeTextViaChat({
       model: route.modelId,
       prompt,
       system,
       maxTokens,
-      videoPart: toVideoImageUrlPart(packed),
+      videoPart: toVideoImageUrlPart(packedVideo),
       env: input.env,
       fetcher: input.fetcher,
       signal: input.signal,
       apiKey: input.apiKey,
       baseUrl: input.baseUrl,
     })
+    assertGuardOutput(guardPlan, result, { capability: 'text' })
+    return result
   }
 
   if (!input.llm || typeof input.llm.stream !== 'function') {
     throw new OmnimuxError('needs-provider', 'textComplete requires ctx.llm')
   }
   const content = [{ type: 'text', text: prompt }]
-  if (image) {
-    if (!input.attachments || typeof input.attachments.saveImage !== 'function') {
-      throw new OmnimuxError('needs-provider', 'image input requires ctx.attachments')
-    }
-    const attachment = await loadTextImage(image, {
-      attachments: input.attachments,
-      fetcher: input.fetcher,
-      signal: input.signal,
-    })
+  if (probedImage) {
+    const attachment = await saveProbedTextImage(probedImage, input.attachments)
     content.push({ type: 'image', attachment })
   }
   const options = {
@@ -114,5 +157,7 @@ export async function executeOmnimuxText(input) {
   if (!assembled.trim()) {
     throw new OmnimuxError('omnimux-invalid-response', 'text complete produced no text')
   }
-  return { mode: 'live', model: route.modelId, text: assembled }
+  const result = { mode: 'live', model: route.modelId, text: assembled }
+  assertGuardOutput(guardPlan, result, { capability: 'text' })
+  return result
 }

@@ -44,7 +44,7 @@
     "archived:verify": "node scripts/verify-archived-agent-notes.mjs",
     "archived:seal": "node scripts/verify-archived-agent-notes.mjs --write",
     "check:boundaries": "node scripts/verify-plugin-boundaries.mjs",
-    "test:gates": "node --test scripts/verify-ci-gates.test.mjs scripts/ego-browser-qa.test.mjs scripts/live-qa.test.mjs",
+    "test:gates": "node --test scripts/verify-ci-gates.test.mjs scripts/ego-browser-qa.test.mjs scripts/live-qa.test.mjs scripts/codex-browser-qa.test.mjs scripts/live-runtime-proof.test.mjs",
     "auto:run": "node scripts/auto-pipeline.mjs",
     "test": "corepack pnpm --filter omnimux test && corepack pnpm --filter omnimux-accounts test && corepack pnpm --filter omnimux-inspiration test && corepack pnpm --filter omnimux-market test && corepack pnpm --filter omnimux-publish test && corepack pnpm test:gates",
     "test:all": "corepack pnpm -r test && corepack pnpm test:gates",
@@ -68,5 +68,9 @@
     "presets:verify": "node --test scripts/verify-agent-presets.test.mjs",
     "verify:cdp": "node scripts/verify-dev-cdp.mjs",
     "check:package-files": "node scripts/verify-package-files.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "pngjs": "7.0.0"
   }
 }

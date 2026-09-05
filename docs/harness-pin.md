@@ -38,13 +38,13 @@ DSH_SRC=/Users/x/Desktop/Project/Github/deepseek-harness ./scripts/apply-harness
 DSH_SRC=/Users/x/Desktop/Project/Github/deepseek-harness ./scripts/reset-harness-overlay.sh
 ```
 
-Apply requires `HEAD` to equal the SHA above. Reset restores the tracked quota and ui-commands overlay files to the pinned upstream tree.
+Apply requires `HEAD` to equal the SHA above. Before reset, inspect the script's exact quota and ui-commands overlay target paths and staged/unstaged changes: it restores tracked files from the current index (not `origin/master`) and removes the named legacy desktop patch. It does not clear staged changes; preserve unrelated work before proceeding.
 
 ## Bump the pin
 
 1. Fetch the official tag or SHA. Set it in this file.
 2. `reset-harness-overlay.sh`, then `git checkout` that SHA in `DSH_SRC`.
 3. Replay each patch. If official added the same seat or desktop wiring, delete that patch instead of rebasing it.
-4. `pnpm install` in the clone. Run `dsh-omnimux` / `omnimux-drama` tests and desktop smoke.
+4. Install the pinned clone's dependencies. In this product repository, run the affected `omnimux` / domain-plugin checks and the RC skill's Host/desktop acceptance checks.
 5. Load skill `omnimux-rc-upgrade` (`.agents/skills/omnimux-rc-upgrade/SKILL.md`) and finish its report. MUST NOT tag or call the bump done while any `screens.*` is `missing`.
-6. Tag the product repo. Changelog names the new dsh pin.
+6. Tag or publish only when the task explicitly authorizes that action; otherwise report the verified pin and acceptance evidence without creating a release.

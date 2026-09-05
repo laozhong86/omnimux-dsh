@@ -86,10 +86,27 @@ export function getComposerText(field) {
  * @returns {boolean}
  */
 function composerWriteSucceeded(field, value) {
-  const current = getComposerText(field)
-  return current === value
-    || current.includes('/video-deconstruct')
-    || current.includes('inspiration_id')
+  return getComposerText(field) === value
+}
+
+/**
+ * Confirm that a single accepted contenteditable command has committed its
+ * complete replacement. This only observes the result; it never writes,
+ * retries, or falls back after command acceptance.
+ *
+ * @param {HTMLElement | HTMLTextAreaElement | HTMLInputElement} field
+ * @param {string} value
+ * @param {{ timeoutMs: number, pollMs: number, now: () => number, sleep: (ms: number) => Promise<void> }} options
+ * @returns {Promise<boolean>}
+ */
+async function waitForComposerCommit(field, value, options) {
+  const started = options.now()
+  while (true) {
+    if (composerWriteSucceeded(field, value)) return true
+    const elapsed = options.now() - started
+    if (elapsed >= options.timeoutMs) return false
+    await options.sleep(Math.min(options.pollMs, options.timeoutMs - elapsed))
+  }
 }
 
 /**
@@ -139,8 +156,12 @@ export function setComposerValue(field, text, globals = {}) {
         if (sel && typeof sel.selectAllChildren === 'function') {
           sel.selectAllChildren(field)
         }
-        execDoc.execCommand('insertText', false, value)
-        if (composerWriteSucceeded(field, value)) return true
+        // `execCommand` may report success before Lexical has reconciled the
+        // DOM. A second direct write in that window becomes a duplicate once
+        // Lexical applies the accepted command. Treat an accepted command as
+        // the single write channel; only fall back when the command rejects.
+        const accepted = execDoc.execCommand('insertText', false, value)
+        if (accepted === true || composerWriteSucceeded(field, value)) return true
       } catch {
         // fall through to textContent
       }
@@ -202,6 +223,8 @@ function dispatchComposerInput(field, value, globals) {
  *   document?: Document | { querySelector: Function },
  *   timeoutMs?: number,
  *   pollMs?: number,
+ *   commitTimeoutMs?: number,
+ *   commitPollMs?: number,
  *   now?: () => number,
  *   sleep?: (ms: number) => Promise<void>,
  *   HTMLTextAreaElement?: Function,
@@ -220,6 +243,8 @@ export async function prefillReplicationPrompt(text, opts = {}) {
   const sleep = typeof opts.sleep === 'function'
     ? opts.sleep
     : (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+  const commitTimeoutMs = Number.isFinite(opts.commitTimeoutMs) ? opts.commitTimeoutMs : 100
+  const commitPollMs = Number.isFinite(opts.commitPollMs) ? opts.commitPollMs : 10
 
   const started = now()
   let field = findComposer(doc)
@@ -231,6 +256,15 @@ export async function prefillReplicationPrompt(text, opts = {}) {
 
   const wrote = setComposerValue(field, text, opts)
   if (!wrote) {
+    return { ok: false, error: 'composer-rejected' }
+  }
+  const committed = await waitForComposerCommit(field, String(text ?? ''), {
+    timeoutMs: Math.max(0, commitTimeoutMs),
+    pollMs: Math.max(1, commitPollMs),
+    now,
+    sleep,
+  })
+  if (!committed) {
     return { ok: false, error: 'composer-rejected' }
   }
 

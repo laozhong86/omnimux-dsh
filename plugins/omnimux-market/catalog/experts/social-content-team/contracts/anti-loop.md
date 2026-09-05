@@ -3,12 +3,11 @@ name: anti-loop
 agents: [social-content-team-lead, content-copywriter, image-agent, video-agent, editing-agent, speech-agent, music-agent]
 ---
 
-# Anti-Loop & Failure Breaker Contract
+# Failure Handling Contract
 
-同参数连续失败达到 3 次强制熔断，严禁静默重试消耗算力。
+失败处理由错误类型、可恢复性、成本和新增信息决定，不使用固定次数代替判断。
 
-## 核心规则
-
-1. **同参数重试上限**：对相同参数、相同输入的工具调用，最多允许 1 次自动重试。若连续 2 次失败，必须变更参数或切换模型。
-2. **熔断与求助**：当累计尝试 3 次仍无法成功时，子代理必须立即返回 `failed: true` 并携带明确的错误详情（`error_reason`、`model_signal`），主理人将问题和可选方案结构化呈报给用户。
-3. **安全拦截即时中止**：若工具返回涉及安全审查拦截（Safety Check / Content Block），立即中止该分支，严禁绕过或重复尝试。
+1. 相同输入与参数失败后，先读取错误和当前状态；没有新证据时不得机械重复。
+2. 只有存在合理的瞬时故障迹象时才原样重试；参数、模型或路径变化必须能对应已知原因。
+3. 安全拦截、权限不足、缺少授权、无可用通道或输入无效时立即停止该分支，不尝试绕过。
+4. 收尾返回已尝试动作、真实错误、已排除原因、可行替代和需要用户决定的事项；没有用户决定也能安全推进的部分继续完成。

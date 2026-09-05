@@ -58,6 +58,10 @@ export function mountSpeechToText(ctx, opts) {
     parameters: objectParams({
       audio: { type: 'string', required: true, description: 'Absolute path, http(s) URL, or data:audio URI of the source audio' },
       model: { type: 'string', description: 'Model ID (e.g. whisper-1). Omit to use the configured default.' },
+      operation: {
+        type: 'string',
+        description: 'Contract operation id (default speech_to_text). Draft/unlisted models are rejected by SubmitGuard.',
+      },
       language: { type: 'string', description: 'ISO language hint (e.g. zh, en). Optional.' },
     }),
     output: jsonOut,
@@ -67,6 +71,7 @@ export function mountSpeechToText(ctx, opts) {
         return await api.execute({
           audio: args.audio,
           model: args.model,
+          operation: args.operation,
           language: args.language,
           signal: exec?.signal,
         })

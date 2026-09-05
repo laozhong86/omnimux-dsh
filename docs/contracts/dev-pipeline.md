@@ -1,167 +1,63 @@
 ---
-title: "dev-pipeline — 开发 / 预发布 / 生产三层环境契约"
+title: "dev-pipeline — 开发、Dev 与生产环境合同"
 id: "contract-dev-pipeline"
 type: "contract"
 status: "living"
 authority: "L1"
 date: "2026-08-21"
-updated: "2026-08-30"
+updated: "2026-09-05"
 authors: ["x", "agent-architect"]
-subsystem: "omnimux-assets"
+subsystem: "global"
 ---
 
-# dev-pipeline — 开发 / 预发布 / 生产三层环境契约
+# dev-pipeline — 开发、Dev 与生产环境合同
 
-> 解决问题：link 模式下"修改中的代码"污染"正在使用的 App"；多插件并行开发共用单环境必然冲突。
-> 研究依据：DSH 官方 development/testing 工程实践（验证走分层测试，不喂运行实例；profile 是组合隔离单元；worktree 原生支持并行）。
+本合同防止未合并源码、并行任务和生产 profile 相互污染。命令入口见 [ops-entry](ops-entry.md)，证据要求见 [plugin-qa](plugin-qa.md)，发布权限见 [plugin-git-pr](plugin-git-pr.md)。
 
-## L2 → L3 速查（Agent / 人类主入口）
+## 环境分层
 
-**主入口仓库**：`~/Desktop/Project/omnimux-desktop-fork`（本 fork）。日常开发 / 测试 / 同步 / 发布都从这里发命令；真源脚本在 sibling `dsh-plugin/product/omnimux-dsh/scripts/`。
+| 层 | 用途 | 载体 | 代码形态 |
+|---|---|---|---|
+| L1 | 快速静态/单测 | 当前 worktree | 源码直读，无 App 副作用 |
+| L2 | 合并前运行与浏览器验收 | `~/.dsh-dev/tasks/<task>`，端口 `44201–44299` | 当前 worktree 的在研插件 link；每个 profile 最多一个 |
+| Dev | 合并后日常物化与验收 | `~/.omnimux-dev/profiles/omnimux`，Dev App/Host `45120` | 已合并 `main` 的物化副本 |
+| Prod | 正式运行 | `~/.omnimux/profiles/omnimux`，OmniMux App `44200` | 仅独立发布授权后的物化副本 |
+| Base | 官方底座 | `~/.dsh` | 不接收 OmniMux 日常交付 |
 
-| 场景 | 命令 | 说明 |
-|------|------|------|
-| 浏览器验收（L2 / Agent 唯一测试入口） | `yarn omnimux:dev start <任务名> <插件>` | 独立端口(442xx) + 独立 `DSH_HOME` + link 在研插件 + Host + **统一 watch**；改 client 源码 → 重建 → 官方 HMR 自动推浏览器 |
-| 原地重启 L2 Host | `yarn omnimux:dev restart-host <任务名>` | 修改后端 Tool / Service 时同端口冷重启 Host（保端口与数据，Agent 可用） |
-| 换在研插件的 watch | `yarn omnimux:dev watch <任务名> <插件>` | Host 不停，只换 watch 目标 |
-| 验收完推进生产 App（L3 / 零重启物化） | `yarn omnimux:sync <插件>` | **先 build 再物化**进 `~/.dsh/profiles/omnimux`；**零副作用，绝不重启任何进程** |
-| 人工让 App 加载新 Host 插件 | `yarn omnimux:restart` | `pkill` + `open -a OmniMux`（**仅限人类**；前端改动无需重启，直接 Cmd+R 刷新） |
-| 环境自检 | `yarn omnimux:doctor` | 生产禁止 link、依赖声明 file: 等 |
-| 发布重打包前 | `yarn omnimux:stage` → `yarn package:dir` / `dist:*` | 物化进 `preset/plugins/`，随安装包分发 |
+生产或 Dev profile 都不得 link 工作树。L2 profile 用完即弃，不作为长期环境。
 
-**铁律提醒**：
-1. **Agent 无法调试 Native 桌面窗口，所有端到端与 UI 测试必须在 L2 独立 Web 实例完成**。
-2. **严禁 Agent 强杀或重启任何桌面 App**（避免多 Agent / 人机并发撞车）。
-3. 日常迭代走 `omnimux:sync` 静态物化；前端 Client 改动直接在客户端/浏览器按 `Cmd+R` 刷新即可生效，无需重启进程。
+## 合并边界
 
-## 三层与多 Profile 物理隔离模型
+- 合并前运行验证必须使用独立 L2；SOURCE 精确指向当前隔离 worktree 的 `plugins/`，不得指向共享主工作区或另一个任务。可配置 source 不等于可以放弃 worktree 隔离。
+- 公共 Dev 和 Prod 不得接收未合并 worktree 产物。未合并物化旁路只允许显式 `OMNIMUX_ALLOW_UNMERGED_TARGET=<~/.dsh-dev/tasks/...>`，且所有目标都在该前缀内；旧布尔旁路单独使用必须失败。
+- 合并后更新 `main`，默认同步到 Dev，再按变更面在 45120 验收。普通交付到此为止；不得自动追加 `--prod`、`--all` 或正式包发布。
+- 纯文档和不影响已安装运行时的任务不要求 L2、Dev 物化或 App 验收。
 
-| 环境类型 | 目的 | 载体与端口 | Profile 目录 | 权限与物化规则 |
-|---|---|---|---|---|
-| **L1 本地单测** | 代码级快速测试 | `node --test` / `vitest` | 无 / 临时目录 | 源码直读，零副作用 |
-| **L2 任务沙箱** | 隔离并发调试 | 独立端口 (44201~44299) | `~/.dsh-dev/tasks/<task>` | 任务隔离，用完即弃 |
-| **L3-Dev 开发版** | 日常 Agent 物化与真机验收 | `OmniMux Dev.app` (端口 `45120`) | `~/.omnimux-dev` | **日常开发唯一目标**：`./scripts/sync-to-app.sh` 默认写入，Cmd+R / 重启即见最新改动 |
-| **L3-Prod 正式版** | 用户日常高可用生产 | `OmniMux.app` (正式端口) | `~/.omnimux` | **严格物理锁定**：日常严禁写入，仅在人类明确下达发布指令时通过 `./scripts/sync-to-app.sh --prod` 单向发布 |
-| **L3-Base 底座版** | 官方原生底座 | `DSH Desktop.app` | `~/.dsh` | 官方原生干净目录，禁止业务污染 |
+L2 初始化从 `OMNIMUX_L2_SEED_PROFILE` 或默认 Dev `~/.omnimux-dev/profiles/omnimux` 取稳定种子，不默认使用旧 `~/.dsh/profiles/omnimux`。启动前必须校验 `$DSH_SRC` 安装闭包；官方 `@deepseek-ai/*` 由 app-boot 投影，不来自任务 profile 的私有 `node_modules`。
 
-### 物理隔离核心原则（铁律）
-1. **日常开发与生产环境绝对物理隔离**：`./scripts/sync-to-app.sh` 默认且仅物化到 `~/.omnimux-dev`。严禁 Agent 在日常研发中未经授权添加 `--prod` 或 `--all` 污染正式版 `~/.omnimux`。
-2. **真机定点验收（Electron 窗口红线，CDP 直连）**：涉及 Web/Stage 界面改动的交付验收，**必须能断言 Dev App 的真实 Electron renderer**，而非 host 端口的网页。
-   - **Web 侧 ≠ Electron 窗口**：`http://127.0.0.1:45120` 是 Dev App 的 **host 端口**，用 Ego-Browser / curl / opencli 访问它只能触达 **web 侧页面**，**不是 Electron 渲染窗口**。两者的渲染进程与 DOM 不同（尤其受 `data-dsh-desktop-platform="darwin"` 门控的壳层样式，web 侧不会触发）。**严禁以 web 侧 45120 的渲染结果作为 Dev App UI 验收依据。**
-   - **CDP 直连（推荐）**：Dev App（Dev 构建）通过 desktop-fork #33 暴露 `--remote-debugging-port=9229`（可用 `OMNIMUX_DEV_CDP_PORT` 覆盖）。Agent 走 `pnpm verify:cdp`（`scripts/verify-dev-cdp.mjs`）连 `http://127.0.0.1:9229/json` 进入真实 Electron renderer，驱动窗口并断言 computed 样式，自动落盘 `docs/evidence/live-cdp-qa-report.json`。
-   - **红线**：涉及壳层样式 / `data-dsh-desktop-*` / macOS 门控的改动，web 侧不触发，必须用 CDP 连 Electron 窗口验收才能作为完成依据；**严禁使用 4817 等独立私有 harness 沙箱作为交付完成依据**。
-3. **零重启与安全刷新**：前端 Client 代码更新在 45120 Dev App 界面按 `Cmd+R` 刷新即生效；Agent 严禁强杀或重启任何桌面 App。
+## 物化合同
 
-## 铁律（违反即事故）
+- 唯一写入口是 `yarn omnimux:sync`，底层为 `scripts/sync-to-app.sh` → `scripts/sync-stable.sh`。禁止手工 rsync/cp 进任何 profile。
+- 无目标参数时只写 Dev `~/.omnimux-dev`。`--prod`、`--all` 及 `~/.omnimux` 需要单独发布授权；显式绝对路径或 `~/` 目标必须原样解析并限定到该目标。
+- 物化源固定在目标 profile 的 `.materialize-snapshots/plugins/`；`node_modules` 只由 pnpm 生成。依赖声明必须指向受管 snapshot，不得回指 profile `node_modules`、共享工作树或未受管旧源。
+- 命名插件同步只构建/替换被点名插件，只读核验它依赖的现有 `dsh-ui-kit` 受管 snapshot；不得重建/覆盖 shared kit，也不得更新 Agent Presets、`app.asar` 或 `Info.plist`。
+- 完整同步从权威 `dsh-ui-kit` 构建输入更新**既有**受管 snapshot，再物化全插件和 Agent Presets。首次建立缺失的稳定 kit/source 必须走官方完整 profile rebuild；同步不得从已安装 `node_modules` 反向回填。
+- 任何受管 source 缺失、kit 漂移、未受管自引用、旧 `file:node_modules/...` 残留或已安装入口身份/文件校验失败，都必须在首次写入前失败；不得迁移、静默跳过或留下部分同步。
+- `omnimux-workflow` 只跟踪 `src/`；`dist/index.js`、`lib/client.js`、`lib/canvas.js` 由 prepare/sync 现场生成。其它插件的跟踪策略按各包当前清单执行。
 
-1. **生产 profile（omnimux）MUST NOT link 工作区**；其插件一律物化副本。
-2. **dev/staging profile MUST link 源码树**；MUST NOT 出现在生产 App 的 profile 里。
-3. **一个 dev profile 里 link 的在研插件 ≤ 1 个**，其余一律物化稳定副本——这是多插件并行开发防干扰的核心规则。
-4. **同步 profile 副本只走 `yarn omnimux:sync` / `scripts/sync-to-app.sh`（内部再调 `sync-stable.sh`）**；默认同步至开发版 `~/.omnimux-dev`，可用 `--prod` / `--dsh` / `--all` 参数指定其他目标；MUST NOT 手动 rsync/cp 进 profile（多源目录铺平事故已发生一次）。`sync` 会先 build 再物化，避免同步到陈旧 `lib/client.js`。
-4a. **`omnimux-workflow` 源码唯一真相**：Git 只跟踪 `src/`。`dist/index.js`（Host）、`lib/client.js`、`lib/canvas.js` 由 `prepare` 或 `sync-to-app` 现场生成，**禁止提交、禁止为对齐仓内旧包另开 PR**。新 clone 未 install/build 时没有这些文件是目标态。其它插件的 `lib/client.js` 本阶段仍跟踪。禁止 `--ignore-scripts` 安装本插件（会跳过 prepare，Host 入口缺失）。画布 island 必须带 `canvas.js?v=<canvasHash>`；Dev App 验收若仍见旧 UI，先硬刷新，不得据此判断源码未合入。
-5. **dev 环境用完即弃**：`yarn omnimux:dev rm <name>`；MUST NOT 把 dev profile 当长期环境养。
-6. **L1 验证优先**：能写进 `node --test` 的验证 MUST NOT 依赖开 App 人工点（官方 testing.zh.md 原则）。
-7. **`omnimux:sync` 纯静态物化，绝不重启任何进程**；前端 Client 改动通过客户端/浏览器页面刷新（Cmd+R）直接生效，Host 侧改动在应用下次自然启动或人类主动重启后生效。Agent 严禁执行任何 `restart`。
+## 刷新与重启
 
-## 日常流程
+- L2 Host 属于任务私有环境，Agent 可用 `yarn omnimux:dev restart-host <task>` 原地重启并保持端口/数据身份。
+- Client 物化后优先在指定 Dev 页面或窗口刷新；Host 变更只有在目标进程重新加载后才生效。
+- 公共 App 重启必须先确认具体 App（Dev/Prod）和协调窗口。确认后由 Agent 执行指定重启并复核，不得把非付款操作交回用户，也不得默认 `pkill` 未确认目标。
+- 只有壳层/平台门控改动需要额外 Electron renderer/CDP；普通 Web/Stage 仍以 L2 和合并后 45120 浏览器证据为主。
 
-### 开发一个插件功能（如 omnimux-assets）
+## 数据与诊断边界
 
-```sh
-# 推荐：始终在 fork 仓库发命令
-cd ~/Desktop/Project/omnimux-desktop-fork
+- 需要真实数据时只读复制到任务 L2，禁止从 L2 反向写 Dev/Prod。密钥不得写入仓库或证据。
+- `pnpm doctor` 当前实现仍以 `${DSH_HOME:-~/.dsh}/profiles/omnimux` 作为所谓生产检查目标；它不能单独证明当前 Prod `~/.omnimux` 或 Dev `~/.omnimux-dev` 合规。报告必须写明实际检查路径，直至实现修正。
+- Host 日志、PID、端口、profile、SOURCE 与 commit 是运行身份的一部分。只看 HTTP 200 或“进程存在”不能证明目标版本已加载。
 
-# L1：改代码 + 单测（产品树插件目录内）
-cd ~/Desktop/Project/dsh-plugin/product/omnimux-dsh/plugins/omnimux-assets
-node --test src/*.test.js
+## 桌面壳与上游
 
-# L2：起隔离环境验证（含 UI + 统一 watch / HMR）
-cd ~/Desktop/Project/omnimux-desktop-fork
-yarn omnimux:dev start assets-v2 omnimux-assets
-# → 浏览器打开打印的 URL；改 src/client 后 watch 自动重建，Host HMR 自动推浏览器
-# → Host 侧（非 client）改动仍需：yarn omnimux:dev stop/start
-
-# 收工
-yarn omnimux:dev rm assets-v2
-```
-
-### 发布到生产（日常使用的 App）
-
-#### 日常迭代（不重打包）——默认通道
-
-```sh
-cd ~/Desktop/Project/omnimux-desktop-fork
-yarn omnimux:sync omnimux-assets    # build + 物化（不自动重启）
-yarn omnimux:restart                # 手动重启后生效
-```
-
-底层仍是 `scripts/sync-to-app.sh` → `scripts/sync-stable.sh`。禁止手动 rsync/cp 进 profile。
-
-#### 重打安装包（DSH Desktop 升级 / 发版）
-
-```sh
-# 1. 同步上游官方 dsh desktop 壳（保持薄改点最稳定）
-cd ~/Desktop/Project/omnimux-desktop-fork
-git fetch origin && git merge origin/master    # 周级 merge
-corepack yarn install
-
-# 2. 物化产品树插件到 preset/plugins/
-yarn omnimux:stage
-# 等价：OMNIMUX_PLUGINS_DIR=... corepack yarn workspace dsh-plugin-desktop stage:preset
-
-# 3. 出包（mac 本机 / Windows 走 GH Actions release workflow）
-corepack yarn package:dir   # 本地冒烟 → dist/mac/OmniMux.app
-corepack yarn dist:mac      # mac DMG（公证+签名）
-corepack yarn dist:win      # mac 交叉产 win nsis（需 wine）
-
-# 4. 替换安装
-cp -R dsh-plugin-desktop/dist/mac/OmniMux.app /Applications/
-```
-
-#### 旧壳退役说明
-
-L3 旧壳是 `~/Desktop/Project/omnimux-desktop`（独立 Electron 壳，spawn Host 子进程），自 2026-08-21 起退役——fork dsh desktop 接管 L3 出包。`/Applications/OmniMux.app` 由 fork 替换，userData 目录 `~/Library/Application Support/OmniMux` 直接接管（旧壳无独立目录约定，Electron userData 按 productName 走）。`omnimux-desktop` 仓库归档为只读参考。
-
-重打包正式通道（preset 播种）由 fork 的 `stage-preset-profile.ts` 实现；日常迭代请用 `yarn omnimux:sync`，不要走 stage/dist。
-
-## 并行开发矩阵（多插件同时在研）
-
-```
-omnimux-dev-assets    → link: omnimux-assets   | port ∈ 44201-44299 | DSH_HOME=~/.dsh-dev/tasks/assets
-omnimux-dev-products  → link: omnimux-products | 另一 L2 口         | DSH_HOME=~/.dsh-dev/tasks/products
-Dev omnimux          → 全部物化副本（日常验收）| App 口 45120
-Prod omnimux         → 全部物化副本（仅授权发布）| App 口 44200
-```
-
-- L2 端口池 **44201–44299**（`dev-env.sh` 写 patch + `port.txt`）；生产 **44200** 永不分配，另保留 43120–43151 / 44120–44151。
-- 浏览器验收契约：`docs/contracts/plugin-qa.md`。
-- 源码侧可配 git worktree；主工作区 + 多任务 profile 已够用。
-
-### L1 铁律：合并前测试 = L2 独立任务环境（禁止污染公共 dev）
-
-- **合并前（PR 未 MERGED）的 UI / 交互 / 真机测试，一律在 L2 独立任务环境进行**：
-  `pnpm wt dev <topic> [issue_id] [plugin]`（内部走 `dev-env.sh start <topic> <plugin>`，`--source` 指向该工作树 `plugins/`），
-  独立端口 44201–44299、独立 `~/.dsh-dev/tasks/<topic>/`、独立 profile，与其它工作树互不干扰。
-- **公共 dev（`~/.omnimux-dev` / 端口 45120）只接受「已 MERGED 的 main」物化**；公共 dev/prod 严禁出现未合并工作树产物。
-- `sync-to-app.sh` 的未合并旁路已收窄为白名单：必须显式 `OMNIMUX_ALLOW_UNMERGED_TARGET=<~/.dsh-dev/tasks/... 前缀>`，
-  且所有同步目标都必须落在该前缀内；旧布尔 `OMNIMUX_ALLOW_UNMERGED_MATERIALIZE=1` 单独设置会被拒绝（已废弃）。
-- `wt:finish` 强制要求工作树存在 `.l2-dev.env`（`wt dev` 写入：PORT/URL/COMMIT/SOURCE/PROFILE_DIR）作为合并前验证记录；`verify:live` 另核对实际运行身份与行为证据。
-  仅 R3 / 纯文档 / 纯后端变更可用 `--skip-l2` 显式跳过。`wt:clean` 在合并后自动回收对应 L2 任务环境。
-- **L2 Host 安装闭包预检**：`dev-env.sh start` 在新环境初始化前检查 **`$DSH_SRC` 安装锚点**
-  （`apps/cli/package.json` → `@deepseek-ai/dsh-web-app` → `@deepseek-ai/dsh-client-ui-chat/lib`）。
-  官方 `@deepseek-ai/*` 由 app-boot 的 `healProfilesModuleFallback` 投影到任务
-  `$DSH_HOME/profiles/node_modules`，**不**来自 profile 私有 `node_modules`。
-- **L2 插件依赖种子**：克隆自 `OMNIMUX_L2_SEED_PROFILE` 或（默认）`~/.omnimux-dev/profiles/omnimux`
-  （与 Dev App / `yarn omnimux:sync` 对齐）；不再默认使用可能过期的 `~/.dsh/profiles/omnimux`
-  （曾出现同版本 `dsh-better-sidebar` 仍 import 已删除的 `settingsNamespace` 导致 Host 起不来）。
-  `yarn omnimux:sync` 只物化 OmniMux 插件树，不修官方 client 闭包；缺 `ui-chat` 时修 DSH_SRC 或重打安装层。
-
-## 数据与排障
-
-- dev 环境需要真实数据时，从生产**只读拷贝**到该任务 `~/.dsh-dev/tasks/<task>/omnimux/`（或公共种子 `~/.dsh-dev/.credentials.yaml`）；MUST NOT 反向写生产。
-- dev Host 日志：profile 目录 `host.log`；`ls` 打印 port/home；停止失败查 `lsof -nP -iTCP -sTCP:LISTEN`。
-- dev 环境 Host 由 `$DSH_SRC/apps/cli/lib/bin.js` 启动；DSH_SRC 变更需重建克隆 lib。
-
-## 上游同步合同（fork 桌面壳）
-
-fork 桌面壳（`laozhong86/omnimux-desktop-fork`）与 DSH 官方上游的同步遵循 fork 仓库内 `docs/contracts/upstream-sync.md` 合同：四级合并决策（自动合/模板解/停等确认/直接拒绝）+ 强制决策日志（`upstream-sync-log.md`）+ 周级纪律。任何 agent 执行上游 merge 前必读该合同；无日志的 merge 不算完成。
+日常入口仓库是 `/Users/x/Desktop/Project/omnimux-desktop-fork`。壳的上游同步、stage 和打包遵循该仓 `docs/contracts/upstream-sync.md`；这些是独立高风险/发布流程，不是插件日常交付步骤。归档壳 `/Users/x/Desktop/Project/omnimux-desktop` 只读，不得恢复为运行真源。

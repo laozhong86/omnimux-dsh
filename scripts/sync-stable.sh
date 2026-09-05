@@ -8,6 +8,7 @@
 #
 # 默认行为：仅物化到 ~/.omnimux-dev；可通过 --prod / --dsh / --all 参数扩展到其他环境。
 # 本脚本只做 rsync 物化 + file: 依赖声明 + dsh.profile.bundles 幂等入名单 + pnpm install，**不 build**。
+# 物化源固定在 profile 的 .materialize-snapshots/plugins/；node_modules 只由 pnpm 管理。
 # 直调容易把陈旧 lib/client.js 推进生产（已踩过坑）。禁止手动 rsync/cp 进 profile。
 #
 # 规范：docs/contracts/dev-pipeline.md
@@ -20,6 +21,9 @@ fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PLUGINS_ROOT="${OMNIMUX_PLUGINS_DIR:-$ROOT/plugins}"
+MANAGED_DSH_UI_KIT_RELATIVE_PATH='.materialize-snapshots/plugins/dsh-ui-kit'
+# Keep L2 task profiles aligned with dev-env.sh; shared with sync-to-app.sh.
+source "$ROOT/scripts/resolve-omnimux-profile.sh"
 
 TARGET_SELECTION=()
 PLUGINS=()
@@ -27,7 +31,7 @@ PLUGINS=()
 if [ -n "${OMNIMUX_SYNC_TARGETS:-}" ]; then
   IFS=',' read -ra ENV_TARGETS <<< "$OMNIMUX_SYNC_TARGETS"
   for t in "${ENV_TARGETS[@]}"; do
-    t=$(echo "$t" | tr '[:upper:]' '[:lower:]' | xargs)
+    t=$(normalize_omnimux_sync_target "$t")
     [ -n "$t" ] && TARGET_SELECTION+=("$t")
   done
 fi
@@ -36,7 +40,7 @@ parse_target_value() {
   local val="$1"
   IFS=',' read -ra PARTS <<< "$val"
   for p in "${PARTS[@]}"; do
-    p=$(echo "$p" | tr '[:upper:]' '[:lower:]' | xargs)
+    p=$(normalize_omnimux_sync_target "$p")
     [ -n "$p" ] && TARGET_SELECTION+=("$p")
   done
 }
@@ -107,8 +111,8 @@ else
       dsh|dsh-desktop)
         add_target_home "$HOME/.dsh"
         ;;
-      /*|~*)
-        eval expanded_path="$item"
+      /*|"~"|"~/"*)
+        expanded_path=$(expand_omnimux_sync_target_home "$item") || exit 1
         add_target_home "$expanded_path"
         ;;
       *)
@@ -119,7 +123,7 @@ fi
 
 PROFILES=()
 for home_candidate in "${TARGET_HOMES[@]}"; do
-  prof_dir="$home_candidate/profiles/omnimux"
+  prof_dir=$(resolve_omnimux_profile_dir "$home_candidate") || exit 1
   if [ -d "$prof_dir" ] || [ -d "$home_candidate" ]; then
     already=0
     if [ "${#PROFILES[@]}" -gt 0 ]; then
@@ -147,30 +151,184 @@ fi
 
 for PROFILE in "${PROFILES[@]}"; do
   echo "== 同步目标 Profile: $PROFILE =="
-  mkdir -p "$PROFILE/node_modules"
+  MANAGED_SOURCE_ROOT="$PROFILE/.materialize-snapshots/plugins"
+  MANAGED_KIT_SOURCE="$PROFILE/$MANAGED_DSH_UI_KIT_RELATIVE_PATH"
+  MANAGED_PLUGINS=()
+  MANAGES_KIT=0
+  LEGACY_KIT_SELF_REFERENCE=0
 
+  contains_managed_plugin() {
+    local candidate="$1"
+    for existing in "${MANAGED_PLUGINS[@]-}"; do
+      [ "$existing" = "$candidate" ] && return 0
+    done
+    return 1
+  }
+
+  add_managed_plugin() {
+    local candidate="$1"
+    contains_managed_plugin "$candidate" || MANAGED_PLUGINS+=("$candidate")
+  }
+
+  targets_plugin() {
+    local candidate="$1"
+    for selected in "${TARGET_PLUGINS[@]}"; do
+      [ "$selected" = "$candidate" ] && return 0
+    done
+    return 1
+  }
+
+  is_product_plugin() {
+    local candidate="$1"
+    for known in "${ALL_PLUGINS[@]}"; do
+      [ "$known" = "$candidate" ] && return 0
+    done
+    return 1
+  }
+
+  syncs_all_plugins=1
+  for name in "${ALL_PLUGINS[@]}"; do
+    targets_plugin "$name" || syncs_all_plugins=0
+  done
+
+  # pnpm removes every self-reference from node_modules before resolving the
+  # selected packages. We can rebuild only product packages and the verified
+  # profile-local kit below; reject every other old profile entry before any
+  # source, manifest, or node_modules write.
+  while IFS=$'\t' read -r dependency_name dependency_spec; do
+    [ -n "$dependency_name" ] || continue
+    case "$dependency_spec" in
+      "file:node_modules/$dependency_name"|"file:./node_modules/$dependency_name")
+        if [ "$dependency_name" = "dsh-ui-kit" ]; then
+          LEGACY_KIT_SELF_REFERENCE=1
+        fi
+        if [ "$dependency_name" != "dsh-ui-kit" ] && ! is_product_plugin "$dependency_name"; then
+          echo "✗ 检测到非产品旧自引用 $dependency_name = ${dependency_spec}；sync-stable 无法重建该依赖，请先通过官方完整 profile 安装建立它。" >&2
+          exit 1
+        fi
+        ;;
+    esac
+  done < <(node -e "const fs=require('fs');try{const m=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));for(const [n,s] of Object.entries(m.dependencies||{}))if(typeof s==='string')process.stdout.write(n+'\\t'+s+'\\n')}catch{}" "$PROFILE/package.json")
+
+  # `file:node_modules/<name>` is an obsolete self-reference, not a source
+  # we can preserve. A sync can establish the new layout only when its caller
+  # explicitly selected every still-legacy package from the current source.
+  for name in "${ALL_PLUGINS[@]}"; do
+    dependency_spec=$(node -e "const fs=require('fs');const p=process.argv[1];const n=process.argv[2];try{const m=JSON.parse(fs.readFileSync(p,'utf8'));process.stdout.write(m.dependencies?.[n]||'')}catch{}" "$PROFILE/package.json" "$name")
+    case "$dependency_spec" in
+      "file:node_modules/$name"|"file:./node_modules/$name")
+        if ! targets_plugin "$name"; then
+          echo "✗ 检测到未选中的旧物化依赖 $name = ${dependency_spec}；请用包含所有旧依赖的完整 sync 建立受管源。" >&2
+          exit 1
+        fi
+        ;;
+      "file:.materialize-snapshots/plugins/$name")
+        if [ ! -f "$MANAGED_SOURCE_ROOT/$name/package.json" ]; then
+          echo "✗ 受管物化源缺失: $MANAGED_SOURCE_ROOT/$name" >&2
+          exit 1
+        fi
+        add_managed_plugin "$name"
+        ;;
+      "")
+        ;;
+      *)
+        if ! targets_plugin "$name"; then
+          echo "✗ 检测到未选中的非受管依赖 $name = ${dependency_spec}；请用包含该依赖的完整 sync 建立受管源。" >&2
+          exit 1
+        fi
+        ;;
+    esac
+  done
+
+  ensure_managed_kit() {
+    if [ ! -f "$MANAGED_KIT_SOURCE/package.json" ]; then
+      echo "✗ 缺少受管 dsh-ui-kit: ${MANAGED_KIT_SOURCE}；请先通过官方完整 profile rebuild 建立稳定源。" >&2
+      exit 1
+    fi
+    local kit_name
+    kit_name=$(node -e "const fs=require('fs');process.stdout.write(JSON.parse(fs.readFileSync(process.argv[1],'utf8')).name||'')" "$MANAGED_KIT_SOURCE/package.json")
+    if [ "$kit_name" != "dsh-ui-kit" ]; then
+      echo "✗ 受管 dsh-ui-kit 身份错误: $MANAGED_KIT_SOURCE" >&2
+      exit 1
+    fi
+    MANAGES_KIT=1
+    echo "✓ 使用受管 dsh-ui-kit → $MANAGED_KIT_SOURCE"
+  }
+
+  package_needs_managed_kit() {
+    node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(p.dependencies?.['dsh-ui-kit']==='file:../dsh-ui-kit'?'1':'0')" "$1"
+  }
+
+  requires_managed_kit="$LEGACY_KIT_SELF_REFERENCE"
+  managed_kit_spec=$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(p.dependencies?.['dsh-ui-kit']||'')" "$PROFILE/package.json")
+  if [ "$managed_kit_spec" = "file:$MANAGED_DSH_UI_KIT_RELATIVE_PATH" ]; then
+    requires_managed_kit=1
+  fi
+  for name in "${MANAGED_PLUGINS[@]-}"; do
+    [ -n "$name" ] || continue
+    if [ "$(package_needs_managed_kit "$MANAGED_SOURCE_ROOT/$name/package.json")" = "1" ]; then
+      requires_managed_kit=1
+    fi
+  done
+  if [ "$requires_managed_kit" -eq 1 ]; then
+    ensure_managed_kit
+  fi
+
+  # Validate every selected source and its stable-kit prerequisite before
+  # materializing the first one, so a missing kit cannot leave a partial sync.
   for name in "${TARGET_PLUGINS[@]}"; do
     src="$PLUGINS_ROOT/$name"
-    dst="$PROFILE/node_modules/$name"
     if [ ! -f "$src/package.json" ]; then
       echo "✗ 源码缺失: $src" >&2
       exit 1
     fi
-    # 逐目录同步（含 lib/ 构建产物与 cordis.patch.yml），排除依赖与测试
+    needs_kit=$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof p.dependencies?.['dsh-ui-kit']==='string'&&p.dependencies['dsh-ui-kit'].startsWith('file:')?'1':'0')" "$src/package.json")
+    if [ "$needs_kit" = "1" ]; then
+      ensure_managed_kit
+    fi
+  done
+
+  mkdir -p "$PROFILE/node_modules" "$MANAGED_SOURCE_ROOT"
+
+  materialize_plugin_source() {
+    local name="$1" src="$2" dst="$MANAGED_SOURCE_ROOT/$1"
+    local needs_kit
+    needs_kit=$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync(process.argv[1],'utf8'));process.stdout.write(typeof p.dependencies?.['dsh-ui-kit']==='string'&&p.dependencies['dsh-ui-kit'].startsWith('file:')?'1':'0')" "$src/package.json")
     mkdir -p "$dst"
-    rsync -a --delete \
+    rsync -aL --delete \
       --exclude node_modules \
       --exclude '*.test.js' \
       --exclude '*.spec.js' \
       "$src/" "$dst/"
-    echo "✓ $name 已物化进 $PROFILE"
+    if [ "$needs_kit" = "1" ]; then
+      node - "$dst/package.json" <<'EOF'
+const fs = require('fs')
+const file = process.argv[2]
+const manifest = JSON.parse(fs.readFileSync(file, 'utf8'))
+manifest.dependencies['dsh-ui-kit'] = 'file:../dsh-ui-kit'
+fs.writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
+EOF
+    fi
+    add_managed_plugin "$name"
+  }
+
+  for name in "${TARGET_PLUGINS[@]}"; do
+    src="$PLUGINS_ROOT/$name"
+    materialize_plugin_source "$name" "$src"
+    echo "✓ $name 已物化进 $MANAGED_SOURCE_ROOT"
   done
 
-  # 依赖声明统一回 file:（物化副本形态），声明了 dsh.bundle 的插件幂等写入加载名单
-  node - "$PROFILE" "${TARGET_PLUGINS[@]}" <<'EOF'
+  managed_plugins_csv=""
+  if [ "${#MANAGED_PLUGINS[@]}" -gt 0 ]; then
+    managed_plugins_csv=$(IFS=,; printf '%s' "${MANAGED_PLUGINS[*]}")
+  fi
+
+  # 依赖声明统一回 profile 外的受管 file: 源；声明了 dsh.bundle 的插件幂等写入加载名单。
+  node - "$PROFILE" "$MANAGED_SOURCE_ROOT" "$syncs_all_plugins" "$MANAGES_KIT" "$managed_plugins_csv" <<'EOF'
 const fs = require('fs')
 const path = require('path')
-const [profile, ...plugins] = process.argv.slice(2)
+const [profile, managedRoot, pruneLegacy, managesKit, pluginsCsv] = process.argv.slice(2)
+const plugins = pluginsCsv ? pluginsCsv.split(',') : []
 const file = path.join(profile, 'package.json')
 if (!fs.existsSync(file)) {
   process.exit(0)
@@ -185,7 +343,7 @@ let depChanged = false
 let bundleChanged = false
 
 function declaresBundle(name) {
-  const pkgFile = path.join(profile, 'node_modules', name, 'package.json')
+  const pkgFile = path.join(managedRoot, name, 'package.json')
   try {
     const pkg = JSON.parse(fs.readFileSync(pkgFile, 'utf8'))
     return pkg?.dsh?.bundle != null
@@ -195,7 +353,7 @@ function declaresBundle(name) {
 }
 
 // 清理已知历史废弃/更名前的包名，避免 Cordis 重复注册 Service 冲突导致 Host 启动失败崩溃
-const LEGACY_PRUNE_NAMES = ['dsh-video', 'dsh-omnimux', 'dsh-drama', 'dsh-publish']
+const LEGACY_PRUNE_NAMES = pruneLegacy === '1' ? ['dsh-video', 'dsh-omnimux', 'dsh-drama', 'dsh-publish'] : []
 for (const legacy of LEGACY_PRUNE_NAMES) {
   if (manifest.dependencies[legacy]) {
     delete manifest.dependencies[legacy]
@@ -211,10 +369,16 @@ for (const legacy of LEGACY_PRUNE_NAMES) {
     fs.rmSync(legacyDir, { recursive: true, force: true })
     console.log(`  - 已清理历史残留包目录: ${legacy}`)
   }
+  fs.rmSync(path.join(managedRoot, legacy), { recursive: true, force: true })
+}
+
+if (managesKit === '1') {
+  manifest.dependencies['dsh-ui-kit'] = 'file:.materialize-snapshots/plugins/dsh-ui-kit'
+  depChanged = true
 }
 
 for (const name of plugins) {
-  const targetSpec = `file:node_modules/${name}`
+  const targetSpec = `file:.materialize-snapshots/plugins/${name}`
   if (manifest.dependencies[name] !== targetSpec) {
     manifest.dependencies[name] = targetSpec
     depChanged = true
@@ -272,9 +436,102 @@ if (depChanged || bundleChanged) {
 }
 EOF
 
-  # 写入后刷新 profile 下的 node_modules 符号拓扑
+  # 写入后由 pnpm 构造 profile 下的 node_modules 符号拓扑。安装失败即阻断，
+  # 避免报告一个 pnpm 已移动/忽略 package 的伪成功。
   echo "  → 刷新 profile 依赖 (corepack pnpm install)..."
-  (cd "$PROFILE" && corepack pnpm install >/dev/null 2>&1) || true
+  (cd "$PROFILE" && corepack pnpm install)
+
+  # 安装后同时核验 package 身份、声明入口和内容指纹；不能只相信 pnpm 退出码。
+  node - "$PROFILE" "$MANAGED_SOURCE_ROOT" "$MANAGES_KIT" "$managed_plugins_csv" <<'EOF'
+const crypto = require('crypto')
+const { spawnSync } = require('child_process')
+const fs = require('fs')
+const path = require('path')
+const [profile, managedRoot, managesKit, pluginsCsv] = process.argv.slice(2)
+const plugins = pluginsCsv ? pluginsCsv.split(',') : []
+const manifest = JSON.parse(fs.readFileSync(path.join(profile, 'package.json'), 'utf8'))
+const fingerprint = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')
+const packedFiles = root => {
+  const result = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--loglevel', 'silent'], {
+    cwd: root,
+    encoding: 'utf8',
+    maxBuffer: 8 * 1024 * 1024,
+  })
+  if (result.status !== 0) {
+    const detail = (result.stderr || result.stdout || '').trim() || `exit ${result.status}`
+    throw new Error(`npm pack 物化核验失败: ${root}: ${detail}`)
+  }
+  const records = JSON.parse(result.stdout)
+  const files = Array.isArray(records) ? records.flatMap(record => record?.files || []) : []
+  return files.map(item => typeof item === 'string' ? item : item?.path).filter(item => typeof item === 'string')
+}
+const isFile = file => {
+  try {
+    return fs.statSync(file).isFile()
+  } catch {
+    return false
+  }
+}
+const inside = (root, file) => {
+  const rel = path.relative(root, file)
+  return rel && !rel.startsWith(`..${path.sep}`) && rel !== '..' && !path.isAbsolute(rel)
+}
+const verifyPackedFiles = (name, sourceRoot, installedRoot) => {
+  for (const rel of packedFiles(sourceRoot)) {
+    const sourceFile = path.resolve(sourceRoot, rel)
+    const installedFile = path.resolve(installedRoot, rel)
+    if (!inside(sourceRoot, sourceFile) || !inside(installedRoot, installedFile) || !isFile(sourceFile) || !isFile(installedFile)) {
+      throw new Error(`已安装包打包文件缺失: ${name} → ${rel}`)
+    }
+    if (fingerprint(sourceFile) !== fingerprint(installedFile)) {
+      throw new Error(`已安装包打包文件指纹不匹配: ${name} → ${rel}`)
+    }
+  }
+}
+const profileModules = fs.realpathSync(path.join(profile, 'node_modules'))
+if (managesKit === '1') {
+  const kitSource = path.join(managedRoot, 'dsh-ui-kit')
+  const kitInstalled = path.join(profile, 'node_modules', 'dsh-ui-kit')
+  if (manifest.dependencies?.['dsh-ui-kit'] !== 'file:.materialize-snapshots/plugins/dsh-ui-kit') {
+    throw new Error('受管 dsh-ui-kit 依赖声明错误')
+  }
+  if (!inside(profileModules, fs.realpathSync(kitInstalled))) {
+    throw new Error('已安装 dsh-ui-kit 解析到 profile 外部')
+  }
+  verifyPackedFiles('dsh-ui-kit', kitSource, kitInstalled)
+}
+for (const name of plugins) {
+  const expectedSpec = `file:.materialize-snapshots/plugins/${name}`
+  if (manifest.dependencies?.[name] !== expectedSpec) {
+    throw new Error(`受管依赖声明错误: ${name} = ${manifest.dependencies?.[name] ?? '(missing)'}`)
+  }
+  const sourceRoot = path.join(managedRoot, name)
+  const installedRoot = path.join(profile, 'node_modules', name)
+  if (!inside(profileModules, fs.realpathSync(installedRoot))) {
+    throw new Error(`已安装包解析到 profile 外部: ${name}`)
+  }
+  const sourcePackage = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'package.json'), 'utf8'))
+  const installedPackage = JSON.parse(fs.readFileSync(path.join(installedRoot, 'package.json'), 'utf8'))
+  if (installedPackage.name !== sourcePackage.name || installedPackage.version !== sourcePackage.version) {
+    throw new Error(`已安装包身份不匹配: ${name}`)
+  }
+  const entry = typeof sourcePackage.main === 'string' ? sourcePackage.main : 'index.js'
+  const sourceEntry = path.resolve(sourceRoot, entry)
+  const installedEntry = path.resolve(installedRoot, entry)
+  if (!inside(sourceRoot, sourceEntry) || !inside(installedRoot, installedEntry) || !isFile(sourceEntry) || !isFile(installedEntry)) {
+    throw new Error(`已安装包入口缺失: ${name} → ${entry}`)
+  }
+  const packed = packedFiles(sourceRoot)
+  verifyPackedFiles(name, sourceRoot, installedRoot)
+  if (sourcePackage.dependencies?.['dsh-ui-kit'] === 'file:../dsh-ui-kit') {
+    const resolvedKitPackage = require.resolve('dsh-ui-kit/package.json', { paths: [installedRoot] })
+    if (!inside(fs.realpathSync(path.join(profile, 'node_modules')), resolvedKitPackage) || fingerprint(resolvedKitPackage) !== fingerprint(path.join(managedRoot, 'dsh-ui-kit', 'package.json'))) {
+      throw new Error(`已安装包 dsh-ui-kit 解析错误: ${name}`)
+    }
+  }
+  console.log(`  ✓ 已核验 ${name}@${sourcePackage.version} ${entry} + ${packed.length} 个打包文件`)
+}
+EOF
 done
 
 echo "✅ 插件物化完成。"
