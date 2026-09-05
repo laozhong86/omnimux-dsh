@@ -924,23 +924,6 @@ th[style*="--pub-min-w"] { min-width: var(--pub-min-w); }
   line-height: 24px;
   color: var(--dsw-alias-label-primary, #0f172a);
 }
-.omnimux-publish-accounts-help {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border: none;
-  background: transparent;
-  padding: 0;
-  font: inherit;
-  font-size: 12px;
-  color: var(--dsw-alias-label-tertiary, #94a3b8);
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-}
-.omnimux-publish-accounts-help:hover {
-  color: var(--dsw-alias-label-secondary, #64748b);
-}
 .omnimux-publish-accounts-add { width: 100%; }
 
 .omnimux-publish-accounts-search {
@@ -974,49 +957,6 @@ th[style*="--pub-min-w"] { min-width: var(--pub-min-w); }
   outline: none;
   border-color: var(--dsw-alias-brand-primary, #2563eb);
   box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary, rgba(37, 99, 235, 0.18));
-}
-
-.omnimux-publish-accounts-tabs {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: nowrap;
-}
-.omnimux-publish-accounts-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 28px;
-  padding: 0 10px;
-  border: none;
-  border-radius: 9999px;
-  background: transparent;
-  color: var(--dsw-alias-label-secondary, #64748b);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-.omnimux-publish-accounts-tab:hover {
-  background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, 0.05));
-}
-.omnimux-publish-accounts-tab.active {
-  background: var(--dsw-alias-interactive-bg-active, rgba(0, 0, 0, 0.09));
-  color: var(--dsw-alias-label-primary, #0f172a);
-  font-weight: 600;
-}
-.omnimux-publish-accounts-tab:focus-visible {
-  outline: 2px solid var(--dsw-alias-brand-primary, #2563eb);
-  outline-offset: 2px;
-}
-.omnimux-publish-accounts-tab-count {
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  color: var(--dsw-alias-label-tertiary, #94a3b8);
 }
 
 .omnimux-publish-accounts-items {
@@ -1117,23 +1057,6 @@ th[style*="--pub-min-w"] { min-width: var(--pub-min-w); }
 .omnimux-publish-accounts-empty-title {
   font-size: 13px;
   font-weight: 500;
-  color: var(--dsw-alias-label-secondary, #64748b);
-}
-.omnimux-publish-accounts-tutorial {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  background: transparent;
-  padding: 0;
-  font: inherit;
-  font-size: 12px;
-  color: var(--dsw-alias-label-tertiary, #94a3b8);
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-}
-.omnimux-publish-accounts-tutorial:hover {
   color: var(--dsw-alias-label-secondary, #64748b);
 }
 .omnimux-publish-accounts-note {
