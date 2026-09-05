@@ -34,7 +34,8 @@ export function runTests(cwd = process.cwd()) {
   assertTestFiles(files)
   console.log(`[omnimux:test] discovered ${files.length} test files`)
 
-  const result = spawnSync(process.execPath, ['--test', ...files], {
+  const preload = new URL('./test-network-guard.mjs', import.meta.url).href
+  const result = spawnSync(process.execPath, ['--import', preload, '--test', ...files], {
     cwd,
     stdio: 'inherit',
   })
