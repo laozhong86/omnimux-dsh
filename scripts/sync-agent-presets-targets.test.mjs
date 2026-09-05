@@ -28,11 +28,19 @@ test('sync-agent-presets preserves a case-sensitive L2 ~/ target', () => {
   chmodSync(join(scripts, 'sync-agent-presets.sh'), 0o755)
   cpSync(join(root, 'presets'), join(fixture, 'presets'), { recursive: true })
 
-  const result = spawnSync('bash', [join(scripts, 'sync-agent-presets.sh'), '--target=~/.dsh-dev/tasks/Full Layout'], {
-    cwd: fixture,
-    encoding: 'utf8',
-    env: { ...process.env, HOME: fixture },
-  })
+  const previousTargets = process.env.OMNIMUX_SYNC_TARGETS
+  process.env.OMNIMUX_SYNC_TARGETS = 'fixture-inherited-target'
+  let result
+  try {
+    result = spawnSync('bash', [join(scripts, 'sync-agent-presets.sh'), '--target=~/.dsh-dev/tasks/Full Layout'], {
+      cwd: fixture,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: fixture, OMNIMUX_SYNC_TARGETS: '' },
+    })
+  } finally {
+    if (previousTargets === undefined) delete process.env.OMNIMUX_SYNC_TARGETS
+    else process.env.OMNIMUX_SYNC_TARGETS = previousTargets
+  }
 
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
   assert.match(result.stdout, /Full Layout/)
