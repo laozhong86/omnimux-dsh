@@ -103,7 +103,7 @@ NOTE:  #566 只关闭「FLF 场景 last_frame → image_tail」的 mapper 表达
        不自动证明 end-frame-only SKU 的 live 合同，也不等于 registry 已有 end_frame op。
 ```
 
-**本 Issue 关闭 BI-2 的契约侧**：registry + profile + legacy +（实现阶段）YAML 可声明 `end_frame`。  
+**本 Issue 关闭 BI-2 的契约侧**：registry + profile + legacy +（实现阶段）YAML 可声明 `end_frame`。
 **不关闭** #530 C3 的 `minimax-h3-endframe#end_frame` listed。
 
 ---
