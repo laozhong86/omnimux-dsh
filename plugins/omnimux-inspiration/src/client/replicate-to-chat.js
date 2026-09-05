@@ -2,7 +2,7 @@
  * Inspiration → chat orchestrator (official new-session semantics).
  *
  * Pipeline: exclusive lock → hasAnySession → reuse blank or click .newSession
- * → addAttachment → prefillReplicationPrompt → dismissInspirationLibrary.
+ * → addAttachment → dismissInspirationLibrary → prefillReplicationPrompt.
  * Never starts a workflow project, never copies text, never clicks send.
  */
 import { buildReplicationPrompt } from './replication.js'
@@ -104,18 +104,23 @@ export function buildInspirationPayload(row) {
  * @param {{ window?: Window, tabId?: string, onDismissModal?: () => void }} [io]
  */
 /**
- * Library tabs default to `gui` (conversationCollapsed). Closing the last
- * workbench tab sets focus to `chat` without unhiding the middle pane, so
- * attach/prefill land in a hidden composer — click looks like a no-op.
- * Enter-conversation: uncollapse + split AFTER closeTab.
+ * Library tabs default to `gui` (conversationCollapsed). Closing the library
+ * while another occupant (创作画布) remains does NOT close the panel, so
+ * `setFocus('split')` is overwritten by the leftover tab's gui record and
+ * the middle composer stays width 0 — click looks like a no-op (#528).
+ * Enter-conversation: close leftover panel + uncollapse AFTER closeTab.
  */
 function revealConversationColumn(wb) {
   if (!wb) return
   if (typeof wb.setConversationCollapsed === 'function') {
     try { wb.setConversationCollapsed(false) } catch { /* ignore */ }
   }
+  if (typeof wb.closePanel === 'function') {
+    try { wb.closePanel() } catch { /* ignore */ }
+    return
+  }
   if (typeof wb.setFocus === 'function') {
-    try { wb.setFocus('split') } catch { /* ignore */ }
+    try { wb.setFocus('chat') } catch { /* ignore */ }
   }
 }
 
@@ -279,34 +284,28 @@ export async function oneClickReplicate(row, io = {}) {
     }
 
     const prompt = buildReplicationPrompt(row)
+    if (quotaExceeded) {
+      try { await prefill(prompt) } catch { /* ignore */ }
+      return { ok: false, error: 'attachFull' }
+    }
+
+    // Reveal before prefill so a gui-hidden composer does not fail first
+    // and skip dismiss. Prefill errors still leave the conversation column up.
+    try { dismiss() } catch { /* ignore */ }
+
     let prefilled
     try {
       prefilled = await prefill(prompt)
     } catch {
-      if (quotaExceeded) return { ok: false, error: 'attachFull' }
-      if (attached) {
-        onStatus('card.cta.sendManual')
-        return { ok: false, error: 'sendManual' }
-      }
-      onStatus('card.cta.attachFailed')
-      return { ok: false, error: 'attachFailed' }
+      onStatus('card.cta.sendManual')
+      return { ok: false, error: 'sendManual' }
     }
     if (!prefilled || prefilled.ok !== true) {
-      if (quotaExceeded) return { ok: false, error: 'attachFull' }
-      if (attached) {
-        onStatus('card.cta.sendManual')
-        return { ok: false, error: 'sendManual' }
-      }
-      onStatus('card.cta.attachFailed')
-      return { ok: false, error: 'attachFailed' }
-    }
-
-    if (quotaExceeded) {
-      return { ok: false, error: 'attachFull' }
+      onStatus('card.cta.sendManual')
+      return { ok: false, error: 'sendManual' }
     }
 
     onStatus(null)
-    try { dismiss() } catch { /* ignore */ }
     return {
       ok: true,
       reused,
