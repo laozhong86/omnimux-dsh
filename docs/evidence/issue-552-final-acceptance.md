@@ -7,6 +7,24 @@ status: "verified"
 
 # Issue 552 acceptance
 
+## Final source rerun
+
+Product source: `c191663a109ff7a94bca3d16faa4f0e60bfc21ac`, based on main `c30cad16ed41beb00d784bde637726180bf6dc7b`. Built inspiration bundle SHA-256: `4af12003f02aded394e96a0d837f968f51972e1434645785fcc5512469b7d533` (229293 bytes). The history below records the earlier, narrower acceptance, not final approval of its unresolved edge cases.
+
+Independent review subsequently reproduced two defects: an immediate snapshot could select blank B before the official asynchronous action selected blank A; writing the prompt before a failed attachment made retries hit draft protection. The final implementation observes the official session-list selection notification and executes the empty-draft guard, synchronous attachment result, then official `setDraft` in the session-bound input slot. Missing attachment store fails explicitly.
+
+Built-in browser 1 / tab 5 reloaded the real linked L2 `http://127.0.0.1:44202/` and exercised the authorized local fixture again. The existing task-local browser authentication and QA session were reused; this was not a fresh profile. No model round or send action ran.
+
+- A: library-only CTA produced the exact three-paragraph prompt and one `inspiration/qa552-live-fixture` attachment, retaining the library Tab.
+- C: a second CTA left editor HTML, attachment titles and open Tabs byte-for-byte unchanged.
+- B: after clearing only the task's generated draft and attachment with real UI actions, an open canvas and library both survived the CTA. The canvas remained at zero nodes, zero edges and `transform: translate(0px, 0px) scale(1);`.
+- Independent executable orchestration reproduction: attachment quota failure left an empty draft; freeing quota allowed retry; the subsequent CTA protected the existing draft and attachment count.
+- Multiple-blank asynchronous selection and same-ID reuse have deterministic regression coverage; they are not claimed as browser scenarios.
+
+This evidence covers isolated L2 preparation. Shared 45120 post-merge verification remains a separate required delivery step. The PR GIF identifies its exact demonstrated head separately; subsequent test/evidence-only commits do not change the product source above.
+
+## Earlier Hero-slot correction
+
 Verified product commit: `e711472e269c31bd028b9b16c4c9d9b3365948ef`.
 Its parent `acbe4388b381e6928c0c1371217af2c556954767` failed the real CTA check and is not approved by this report.
 

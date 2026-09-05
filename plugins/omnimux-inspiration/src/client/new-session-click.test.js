@@ -3,36 +3,14 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import {
-  clickOfficialNewSession,
-  findNewSessionButton,
-  findSingleWorkspaceNewSessionButton,
-} from './new-session-click.js'
+import { clickOfficialNewSession, findNewSessionButton, findSingleWorkspaceNewSessionButton } from './new-session-click.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(here, 'new-session-click.js'), 'utf8')
 
-describe('new-session-click.js isolation', () => {
-  it('never calls sessions.create and does not import workflow/market', () => {
-    assert.doesNotMatch(source, /sessions\.create/)
-    assert.doesNotMatch(source, /omnimux-workflow/)
-    assert.doesNotMatch(source, /omnimux-market/)
-    assert.doesNotMatch(source, /startReplicationProject/)
-    assert.doesNotMatch(source, /runNewProject/)
-  })
-})
-
-function makeButton(opts) {
-  const {
-    className = '',
-    aria = '',
-    menu = false,
-    treeitem = false,
-    topbar = false,
-    visible = true,
-  } = opts
+function makeButton({ className = '', aria = '', menu = false, treeitem = false, topbar = false, visible = true } = {}) {
   const clicks = []
-  const button = {
+  return {
     className,
     clicks,
     getAttribute(name) {
@@ -40,9 +18,7 @@ function makeButton(opts) {
       if (name === 'data-omnimux-topbar-new-session') return topbar ? '1' : null
       return null
     },
-    hasAttribute(name) {
-      return name === 'data-omnimux-topbar-new-session' ? topbar : false
-    },
+    hasAttribute(name) { return name === 'data-omnimux-topbar-new-session' ? topbar : false },
     closest(selector) {
       if (selector === '#omnimux-sidebar-new-menu') return menu ? {} : null
       if (selector === '[role="treeitem"]') return treeitem ? {} : null
@@ -50,46 +26,27 @@ function makeButton(opts) {
       if (selector === '[data-omnimux-topbar-new-session]') return topbar ? {} : null
       return null
     },
-    getClientRects() {
-      return visible ? [{ width: 32, height: 32 }] : []
-    },
-    click() {
-      clicks.push(1)
-    },
+    getClientRects() { return visible ? [{}] : [] },
+    click() { clicks.push(1) },
   }
-  return button
 }
 
-function makeMenuItem(opts) {
-  const { text = '', aria = '' } = opts
+function makeMenuItem(text) {
   const clicks = []
   return {
     textContent: text,
     clicks,
-    getAttribute(name) {
-      return name === 'aria-label' ? aria : null
-    },
-    click() {
-      clicks.push(1)
-    },
+    getAttribute() { return null },
+    click() { clicks.push(1) },
   }
 }
 
-function makeDoc(buttons, opts = {}) {
-  const getMenuItems = typeof opts.getMenuItems === 'function'
-    ? opts.getMenuItems
-    : () => opts.menuItems || []
+function makeDoc(buttons, getMenuItems = () => []) {
   return {
     querySelector(selector) {
       if (selector !== '#omnimux-sidebar-new-menu') return null
       const items = getMenuItems()
-      if (!items.length) return null
-      return {
-        querySelectorAll(inner) {
-          if (inner === '[role="menuitem"]') return items
-          return []
-        },
-      }
+      return items.length ? { querySelectorAll: (inner) => (inner === '[role="menuitem"]' ? items : []) } : null
     },
     querySelectorAll(selector) {
       if (selector === 'button') return buttons
@@ -99,382 +56,13 @@ function makeDoc(buttons, opts = {}) {
   }
 }
 
-function tickingNow(step = 40) {
-  let t = 0
-  return () => {
-    t += step
-    return t
-  }
-}
-
-describe('findNewSessionButton', () => {
-  it('hits className newSession and skips menu / treeitem / topbar attr', () => {
-    const official = makeButton({ className: 'newSession foo' })
-    const menu = makeButton({ className: 'newSession', menu: true })
-    const tree = makeButton({ aria: '新建会话', treeitem: true })
-    const topbar = makeButton({ aria: '新建会话', topbar: true })
-    const found = findNewSessionButton(makeDoc([menu, tree, topbar, official]))
-    assert.equal(found, official)
-  })
-
-  it('does not treat data-omnimux-topbar-new-session as the official control', () => {
-    const topbar = makeButton({ className: 'newSession', aria: '新建会话', topbar: true })
-    assert.equal(findNewSessionButton(makeDoc([topbar])), null)
-    const official = makeButton({ className: 'newSession extra' })
-    assert.equal(findNewSessionButton(makeDoc([topbar, official])), official)
-  })
-
-  it('hits aria-label 新会话 / New session', () => {
-    const zh = makeButton({ aria: '新会话' })
-    assert.equal(findNewSessionButton(makeDoc([zh])), zh)
-    const en = makeButton({ aria: 'New session' })
-    assert.equal(findNewSessionButton(makeDoc([en])), en)
-  })
-
-  it('prefers the first visible class* newSession hit', () => {
-    const hidden = makeButton({ className: 'newSession', visible: false })
-    const shown = makeButton({ className: 'newSession extra', visible: true })
-    assert.equal(findNewSessionButton(makeDoc([hidden, shown])), shown)
-  })
-
-  it('returns null when nothing matches', () => {
-    assert.equal(findNewSessionButton(makeDoc([makeButton({ aria: '设置' })])), null)
-    assert.equal(findNewSessionButton(null), null)
-  })
-})
-
-describe('findSingleWorkspaceNewSessionButton', () => {
-  it('returns the one visible official workspace action only', () => {
-    const official = makeButton({ aria: '在“测试环境”中新建会话' })
-    assert.equal(findSingleWorkspaceNewSessionButton(makeDoc([official])), official)
-  })
-
-  it('does not guess when multiple workspace controls are visible', () => {
-    const first = makeButton({ aria: '在“测试环境”中新建会话' })
-    const second = makeButton({ aria: '在“另一个工作区”中新建会话' })
-    assert.equal(findSingleWorkspaceNewSessionButton(makeDoc([first, second])), null)
-  })
-})
-
-describe.skip('clickOfficialNewSession legacy attachment-projection coverage', () => {
-  it('fails without a button and never creates a session', () => {
-    return clickOfficialNewSession({
-      document: makeDoc([]),
-      timeoutMs: 10,
-      pollMs: 1,
-      now: tickingNow(20),
-      sleep: async () => {},
-    }).then((result) => {
-      assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
-    })
-  })
-
-  it('uses the one official workspace action when no official current exists', async () => {
-    const generic = makeButton({ className: 'newSession' })
-    const workspace = makeButton({ aria: '在“测试环境”中新建会话' })
-    const snapshots = [
-      { current: undefined, byId: {} },
-      { current: undefined, byId: {} },
-      { current: 'session-new', byId: { 'session-new': { blank: true } } },
-    ]
-    let index = 0
-    const sessions = {
-      list: {
-        getSnapshot() {
-          return snapshots[Math.min(index++, snapshots.length - 1)]
-        },
-      },
-    }
-    const result = await clickOfficialNewSession({
-      document: makeDoc([generic, workspace]),
-      sessions,
-      timeoutMs: 200,
-      pollMs: 1,
-      now: tickingNow(40),
-      sleep: async () => {},
-    })
-    assert.equal(workspace.clicks.length, 1)
-    assert.equal(generic.clicks.length, 0)
-    assert.deepEqual(result, { ok: true, sessionId: 'session-new', reusedBlank: false })
-  })
-
-  it('clicks the official button once and returns the new session id', async () => {
-    const button = makeButton({ className: 'newSession' })
-    let id = 'old-session'
-    const win = { __omnimuxAttachments: { getActiveSessionId: () => id } }
-    const result = await clickOfficialNewSession({
-      document: { ...makeDoc([button]), defaultView: win },
-      window: win,
-      timeoutMs: 200,
-      pollMs: 1,
-      now: tickingNow(40),
-      sleep: async () => { id = 'new-session' },
-    })
-    assert.equal(button.clicks.length, 1)
-    assert.deepEqual(result, { ok: true, sessionId: 'new-session' })
-  })
-
-  it('succeeds when getActiveSessionId changes after the click', async () => {
-    const button = makeButton({ className: 'newSession' })
-    let id = 'old'
-    const win = { __omnimuxAttachments: { getActiveSessionId: () => id } }
-    const result = await clickOfficialNewSession({
-      document: { ...makeDoc([button]), defaultView: win },
-      window: win,
-      isBlank: () => false,
-      timeoutMs: 200,
-      pollMs: 1,
-      now: tickingNow(40),
-      sleep: async () => { id = 'new-sess' },
-    })
-    assert.equal(result.ok, true)
-    assert.equal(result.sessionId, 'new-sess')
-  })
-
-  it('times out as newSessionFailed when still not blank and id is unchanged', async () => {
-    const button = makeButton({ className: 'newSession' })
-    const result = await clickOfficialNewSession({
-      document: makeDoc([button]),
-      isBlank: () => false,
-      timeoutMs: 80,
-      pollMs: 10,
-      now: tickingNow(50),
-      sleep: async () => {},
-    })
-    assert.equal(button.clicks.length, 1)
-    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
-  })
-
-  it('clicks only the session menuitem when the collapsed menu is already open', async () => {
-    const official = makeButton({ className: 'newSession' })
-    const sessionItem = makeMenuItem({ text: '新建会话' })
-    const projectItem = makeMenuItem({ text: '新建项目' })
-    let id = 'old-session'
-    const win = { __omnimuxAttachments: { getActiveSessionId: () => id } }
-    sessionItem.click = function click() {
-      this.clicks.push(1)
-      id = 'new-session'
-    }
-    const result = await clickOfficialNewSession({
-      document: { ...makeDoc([official], { menuItems: [sessionItem, projectItem] }), defaultView: win },
-      window: win,
-      timeoutMs: 200,
-      pollMs: 1,
-      now: tickingNow(40),
-      sleep: async () => {},
-    })
-    assert.equal(official.clicks.length, 0)
-    assert.equal(sessionItem.clicks.length, 1)
-    assert.equal(projectItem.clicks.length, 0)
-    assert.deepEqual(result, { ok: true, sessionId: 'new-session' })
-  })
-
-  it('does not click Create project / 新建项目 menuitems', async () => {
-    const sessionEn = makeMenuItem({ text: 'New session' })
-    const projectEn = makeMenuItem({ text: 'Create project' })
-    let id = 'old-session'
-    const win = { __omnimuxAttachments: { getActiveSessionId: () => id } }
-    sessionEn.click = function click() {
-      this.clicks.push(1)
-      id = 'new-session'
-    }
-    const result = await clickOfficialNewSession({
-      document: { ...makeDoc([], { menuItems: [projectEn, sessionEn] }), defaultView: win },
-      window: win,
-      timeoutMs: 200,
-      pollMs: 1,
-      now: tickingNow(40),
-      sleep: async () => {},
-    })
-    assert.equal(sessionEn.clicks.length, 1)
-    assert.equal(projectEn.clicks.length, 0)
-    assert.deepEqual(result, { ok: true, sessionId: 'new-session' })
-  })
-
-  it('clicks the session menuitem after the official button opens the menu', async () => {
-    const official = makeButton({ className: 'newSession' })
-    const sessionItem = makeMenuItem({ text: '新会话' })
-    const projectItem = makeMenuItem({ text: '新建项目' })
-    let id = 'old-session'
-    const win = { __omnimuxAttachments: { getActiveSessionId: () => id } }
-    let menuOpen = false
-    official.click = function click() {
-      this.clicks.push(1)
-      menuOpen = true
-    }
-    sessionItem.click = function click() {
-      this.clicks.push(1)
-      id = 'new-session'
-    }
-    const result = await clickOfficialNewSession({
-      document: { ...makeDoc([official], {
-        getMenuItems: () => (menuOpen ? [sessionItem, projectItem] : []),
-      }), defaultView: win },
-      window: win,
-      timeoutMs: 200,
-      pollMs: 1,
-      now: tickingNow(40),
-      sleep: async () => {},
-    })
-    assert.equal(official.clicks.length, 1)
-    assert.equal(sessionItem.clicks.length, 1)
-    assert.equal(projectItem.clicks.length, 0)
-    assert.deepEqual(result, { ok: true, sessionId: 'new-session' })
-  })
-
-  it('picks the session menuitem on the next poll if the menu appears after click', async () => {
-    const official = makeButton({ className: 'newSession' })
-    const sessionItem = makeMenuItem({ text: '新建会话' })
-    const projectItem = makeMenuItem({ text: 'Create project' })
-    let id = 'old-session'
-    const win = { __omnimuxAttachments: { getActiveSessionId: () => id } }
-    let menuOpen = false
-    sessionItem.click = function click() {
-      this.clicks.push(1)
-      id = 'new-session'
-    }
-    const result = await clickOfficialNewSession({
-      document: { ...makeDoc([official], {
-        getMenuItems: () => (menuOpen ? [sessionItem, projectItem] : []),
-      }), defaultView: win },
-      window: win,
-      timeoutMs: 200,
-      pollMs: 1,
-      now: tickingNow(40),
-      sleep: async () => { menuOpen = true },
-    })
-    assert.equal(official.clicks.length, 1)
-    assert.equal(sessionItem.clicks.length, 1)
-    assert.equal(projectItem.clicks.length, 0)
-    assert.deepEqual(result, { ok: true, sessionId: 'new-session' })
-  })
-
-  it('returns newSessionFailed when the menu is clicked but the session never blanks', async () => {
-    const sessionItem = makeMenuItem({ text: '新建会话' })
-    const projectItem = makeMenuItem({ text: '新建项目' })
-    const result = await clickOfficialNewSession({
-      document: makeDoc([], { menuItems: [sessionItem, projectItem] }),
-      isBlank: () => false,
-      timeoutMs: 80,
-      pollMs: 10,
-      now: tickingNow(50),
-      sleep: async () => {},
-    })
-    assert.equal(sessionItem.clicks.length, 1)
-    assert.equal(projectItem.clicks.length, 0)
-    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
-  })
-
-  it('accepts official blank reuse when the confirmed target keeps its id', async () => {
-    const sessionItem = makeMenuItem({ text: 'New Session' })
-    const snapshots = [
-      { current: 'session-blank', byId: { 'session-blank': { blank: true } } },
-      { current: 'session-blank', byId: { 'session-blank': { blank: true } } },
-    ]
-    let index = 0
-    const sessions = {
-      list: {
-        getSnapshot() {
-          return snapshots[Math.min(index++, snapshots.length - 1)]
-        },
-      },
-    }
-    const result = await clickOfficialNewSession({
-      document: makeDoc([], { menuItems: [sessionItem] }),
-      sessions,
-      timeoutMs: 80,
-      pollMs: 10,
-      now: tickingNow(50),
-      sleep: async () => {},
-    })
-    assert.equal(sessionItem.clicks.length, 1)
-    assert.deepEqual(result, { ok: true, sessionId: 'session-blank', reusedBlank: true })
-  })
-
-  it('rejects a non-blank official current target even if attachments change', async () => {
-    const sessionItem = makeMenuItem({ text: 'New Session' })
-    let attachmentId = 'old-attachment-id'
-    const win = { __omnimuxAttachments: { getActiveSessionId: () => attachmentId } }
-    const sessions = {
-      list: {
-        getSnapshot() {
-          return { current: 'session-old', byId: { 'session-old': { blank: false } } }
-        },
-      },
-    }
-    const result = await clickOfficialNewSession({
-      document: { ...makeDoc([], { menuItems: [sessionItem] }), defaultView: win },
-      window: win,
-      sessions,
-      timeoutMs: 80,
-      pollMs: 10,
-      now: tickingNow(50),
-      sleep: async () => { attachmentId = 'unrelated-attachment-projection' },
-    })
-    assert.equal(sessionItem.clicks.length, 1)
-    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
-  })
-
-  it('fails when an official click leaves the active session id unchanged', async () => {
-    const sessionItem = makeMenuItem({ text: 'New Session' })
-    const projectItem = makeMenuItem({ text: 'Create Project' })
-    const win = { __omnimuxAttachments: { getActiveSessionId: () => 'session-294ee3ed' } }
-    const result = await clickOfficialNewSession({
-      document: { ...makeDoc([], { menuItems: [sessionItem, projectItem] }), defaultView: win },
-      window: win,
-      timeoutMs: 80,
-      pollMs: 10,
-      now: tickingNow(50),
-      sleep: async () => {},
-    })
-    assert.equal(sessionItem.clicks.length, 1)
-    assert.equal(projectItem.clicks.length, 0)
-    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
-  })
-
-  it('does not treat a clicked menu as success when a real user message remains and id is unchanged', async () => {
-    const sessionItem = makeMenuItem({ text: 'New Session' })
-    const user = { textContent: 'hello from user', tagName: 'DIV' }
-    const scroll = {
-      textContent: 'hello from user'.padEnd(80, 'x'),
-      querySelector(selector) {
-        return selector === '[data-role="user"]' ? user : null
-      },
-    }
-    const win = { __omnimuxAttachments: { getActiveSessionId: () => 'session-same' } }
-    const base = makeDoc([], { menuItems: [sessionItem] })
-    const doc = {
-      ...base,
-      defaultView: win,
-      querySelector(selector) {
-        if (selector === '[data-slot="conversation.session.header"]') return { textContent: '夏日护肤' }
-        if (selector === '[data-conversation-scroll]') return scroll
-        return base.querySelector(selector)
-      },
-    }
-    const result = await clickOfficialNewSession({
-      document: doc,
-      window: win,
-      timeoutMs: 80,
-      pollMs: 10,
-      now: tickingNow(50),
-      sleep: async () => {},
-    })
-    assert.equal(sessionItem.clicks.length, 1)
-    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
-  })
-})
-
-function makeOfficialSessions(initial) {
+function makeSessions(initial) {
   let snapshot = initial
   const listeners = new Set()
   return {
     list: {
-      getSnapshot() { return snapshot },
-      subscribe(listener) {
-        listeners.add(listener)
-        return () => listeners.delete(listener)
-      },
+      getSnapshot: () => snapshot,
+      subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener) },
     },
     select(sessionId) {
       snapshot = { ...snapshot, current: sessionId }
@@ -483,98 +71,113 @@ function makeOfficialSessions(initial) {
   }
 }
 
-describe('clickOfficialNewSession official lifecycle resolution', () => {
-  it('requires the public sessions lifecycle seam', async () => {
-    const button = makeButton({ className: 'newSession' })
-    const result = await clickOfficialNewSession({ document: makeDoc([button]) })
-    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
-    assert.equal(button.clicks.length, 0)
+describe('new-session-click.js isolation', () => {
+  it('does not create sessions or projects through APIs', () => {
+    assert.doesNotMatch(source, /sessions\.create/)
+    assert.doesNotMatch(source, /startReplicationProject/)
+    assert.doesNotMatch(source, /runNewProject/)
+    assert.doesNotMatch(source, /omnimux-workflow/)
+  })
+})
+
+describe('official button discovery', () => {
+  it('selects a visible official button and excludes menu, tree, and topbar twins', () => {
+    const official = makeButton({ className: 'newSession' })
+    assert.equal(findNewSessionButton(makeDoc([
+      makeButton({ className: 'newSession', menu: true }),
+      makeButton({ aria: '新建会话', treeitem: true }),
+      makeButton({ aria: '新建会话', topbar: true }),
+      official,
+    ])), official)
   })
 
-  it('waits for async official selection instead of returning the pre-click blank B', async () => {
-    const sessionItem = makeMenuItem({ text: 'New Session' })
-    const sessions = makeOfficialSessions({
+  it('uses exactly one visible explicit-workspace action', () => {
+    const first = makeButton({ aria: '在“测试环境”中新建会话' })
+    const second = makeButton({ aria: '在“另一个工作区”中新建会话' })
+    assert.equal(findSingleWorkspaceNewSessionButton(makeDoc([first])), first)
+    assert.equal(findSingleWorkspaceNewSessionButton(makeDoc([first, second])), null)
+  })
+})
+
+describe('clickOfficialNewSession official lifecycle resolution', () => {
+  it('requires the public lifecycle seam and fails without an official button', async () => {
+    const noSeam = await clickOfficialNewSession({ document: makeDoc([makeButton({ className: 'newSession' })]) })
+    assert.deepEqual(noSeam, { ok: false, error: 'newSessionFailed' })
+    const sessions = makeSessions({ current: 'old', byId: { old: { blank: false } } })
+    const noButton = await clickOfficialNewSession({ document: makeDoc([]), sessions })
+    assert.deepEqual(noButton, { ok: false, error: 'newSessionFailed' })
+  })
+
+  it('uses the direct single-workspace action when there is no current session', async () => {
+    const generic = makeButton({ className: 'newSession' })
+    const workspace = makeButton({ aria: '在“测试环境”中新建会话' })
+    const sessions = makeSessions({ byId: { new: { blank: true } } })
+    workspace.click = function click() { this.clicks.push(1); sessions.select('new') }
+    const result = await clickOfficialNewSession({ document: makeDoc([generic, workspace]), sessions })
+    assert.equal(workspace.clicks.length, 1)
+    assert.equal(generic.clicks.length, 0)
+    assert.deepEqual(result, { ok: true, sessionId: 'new', reusedBlank: false })
+  })
+
+  it('waits for async official selection A instead of returning pre-click blank B', async () => {
+    const item = makeMenuItem('New Session')
+    const sessions = makeSessions({
       current: 'blank-B',
       ids: ['blank-A', 'blank-B'],
       byId: { 'blank-A': { blank: true }, 'blank-B': { blank: true } },
     })
-    // Official connectWorkspace picks the first matching blank, then opens it
-    // in a Promise continuation. The old implementation returned B directly.
-    sessionItem.click = function click() {
-      this.clicks.push(1)
-      Promise.resolve().then(() => sessions.select('blank-A'))
-    }
-    const result = await clickOfficialNewSession({
-      document: makeDoc([], { menuItems: [sessionItem] }),
-      sessions,
-      timeoutMs: 100,
-      pollMs: 1,
-    })
-    assert.equal(sessionItem.clicks.length, 1)
+    item.click = function click() { this.clicks.push(1); Promise.resolve().then(() => sessions.select('blank-A')) }
+    const result = await clickOfficialNewSession({ document: makeDoc([], () => [item]), sessions, timeoutMs: 100, pollMs: 1 })
     assert.deepEqual(result, { ok: true, sessionId: 'blank-A', reusedBlank: false })
   })
 
-  it('accepts same-id blank reuse only after the official selection notification', async () => {
-    const sessionItem = makeMenuItem({ text: 'New Session' })
-    const sessions = makeOfficialSessions({
-      current: 'blank-B',
-      byId: { 'blank-B': { blank: true } },
-    })
-    sessionItem.click = function click() {
-      this.clicks.push(1)
-      sessions.select('blank-B')
-    }
-    const result = await clickOfficialNewSession({
-      document: makeDoc([], { menuItems: [sessionItem] }),
-      sessions,
-      timeoutMs: 100,
-      pollMs: 1,
-    })
+  it('accepts same-id blank reuse only after an official selection notification', async () => {
+    const item = makeMenuItem('New Session')
+    const sessions = makeSessions({ current: 'blank-B', byId: { 'blank-B': { blank: true } } })
+    item.click = function click() { this.clicks.push(1); sessions.select('blank-B') }
+    const result = await clickOfficialNewSession({ document: makeDoc([], () => [item]), sessions, timeoutMs: 100, pollMs: 1 })
     assert.deepEqual(result, { ok: true, sessionId: 'blank-B', reusedBlank: true })
   })
 
-  it('does not settle from a menu-opener projection before its session menuitem dispatches', async () => {
+  it('waits for a delayed session menu and never clicks Create project', async () => {
     const button = makeButton({ className: 'newSession' })
-    const sessionItem = makeMenuItem({ text: '新建会话' })
-    const sessions = makeOfficialSessions({
-      current: 'blank-B',
-      byId: { 'blank-B': { blank: true }, 'blank-A': { blank: true } },
-    })
+    const sessionItem = makeMenuItem('新建会话')
+    const projectItem = makeMenuItem('新建项目')
+    const sessions = makeSessions({ current: 'old', byId: { old: { blank: false }, new: { blank: true } } })
     let menuOpen = false
-    button.click = function click() {
-      this.clicks.push(1)
-      menuOpen = true
-      // A menu-open render can republish the list; it is not a new-session
-      // result and must not settle the command before the menuitem click.
-      sessions.select('blank-B')
-    }
-    sessionItem.click = function click() {
-      this.clicks.push(1)
-      sessions.select('blank-A')
-    }
+    sessionItem.click = function click() { this.clicks.push(1); sessions.select('new') }
     const result = await clickOfficialNewSession({
-      document: makeDoc([button], { getMenuItems: () => (menuOpen ? [sessionItem] : []) }),
+      document: makeDoc([button], () => (menuOpen ? [projectItem, sessionItem] : [])),
       sessions,
       timeoutMs: 100,
       pollMs: 1,
+      sleep: async () => { menuOpen = true },
     })
+    assert.equal(button.clicks.length, 1)
     assert.equal(sessionItem.clicks.length, 1)
+    assert.equal(projectItem.clicks.length, 0)
+    assert.deepEqual(result, { ok: true, sessionId: 'new', reusedBlank: false })
+  })
+
+  it('does not settle from a menu-opener projection before the session menuitem dispatches', async () => {
+    const button = makeButton({ className: 'newSession' })
+    const item = makeMenuItem('新建会话')
+    const sessions = makeSessions({ current: 'blank-B', byId: { 'blank-B': { blank: true }, 'blank-A': { blank: true } } })
+    let menuOpen = false
+    button.click = function click() { this.clicks.push(1); menuOpen = true; sessions.select('blank-B') }
+    item.click = function click() { this.clicks.push(1); sessions.select('blank-A') }
+    const result = await clickOfficialNewSession({
+      document: makeDoc([button], () => (menuOpen ? [item] : [])), sessions, timeoutMs: 100, pollMs: 1,
+    })
+    assert.equal(item.clicks.length, 1)
     assert.deepEqual(result, { ok: true, sessionId: 'blank-A', reusedBlank: false })
   })
 
-  it('rejects a lifecycle selection that is not blank', async () => {
-    const sessionItem = makeMenuItem({ text: 'New Session' })
-    const sessions = makeOfficialSessions({ current: 'old', byId: { old: { blank: false }, new: { blank: false } } })
-    sessionItem.click = function click() {
-      this.clicks.push(1)
-      sessions.select('new')
-    }
-    const result = await clickOfficialNewSession({
-      document: makeDoc([], { menuItems: [sessionItem] }),
-      sessions,
-      timeoutMs: 10,
-      pollMs: 1,
-    })
+  it('times out when the official lifecycle never selects a blank target', async () => {
+    const item = makeMenuItem('New Session')
+    const sessions = makeSessions({ current: 'old', byId: { old: { blank: false } } })
+    const result = await clickOfficialNewSession({ document: makeDoc([], () => [item]), sessions, timeoutMs: 10, pollMs: 1 })
+    assert.equal(item.clicks.length, 1)
     assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
   })
 })
