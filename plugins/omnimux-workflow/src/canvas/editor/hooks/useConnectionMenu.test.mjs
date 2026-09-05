@@ -1,9 +1,13 @@
 /**
  * W3 测试（计划 §8）：释放菜单三分支 / 选项集派生 / disconnect→mutation plan。
  * 纯逻辑 node:test（无 React 渲染）。
+ * Issue #466 B1：拒绝提示链必须携带 catalogRuntime，避免误报 catalog_unavailable。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { resolveConnectionEndOutcome } from './useConnectionMenu.logic.ts';
 import {
   encodeOutputOptionKey,
@@ -11,6 +15,22 @@ import {
   getOutputOptionSpecs,
 } from '../utils/connectionMenuOptions.ts';
 import { planCanvasInputMutation } from '../utils/canvasInputMutationGateway.ts';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const hookSrc = readFileSync(join(here, 'useConnectionMenu.ts'), 'utf8');
+
+test('B1：invalid connection 拒绝提示链 validateConnectionDetailed 携带 catalogRuntime', () => {
+  // 源码契约：onConnectEnd 二次校验必须注入 store catalog，与 CanvasEditor 硬闸一致。
+  // 旧代码只传 connection/nodes/edges 三参，会把 mime_unsupported 等误报为 catalog_unavailable。
+  assert.match(
+    hookSrc,
+    /validateConnectionDetailed\(\s*\{\s*source:\s*fromId,\s*target:\s*toId,[\s\S]*?\},\s*state\.nodes,\s*state\.edges,\s*state\.catalogRuntime\s*,?\s*\)/,
+  );
+  assert.doesNotMatch(
+    hookSrc,
+    /validateConnectionDetailed\(\s*\{\s*source:\s*fromId,\s*target:\s*toId,[\s\S]*?\},\s*state\.nodes,\s*state\.edges\s*\)/,
+  );
+});
 
 // ==================== 释放菜单三分支 ====================
 

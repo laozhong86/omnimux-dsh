@@ -67,7 +67,10 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
     async function refreshCatalog(force = false): Promise<void> {
       if (!force) {
         const cached = getCachedCatalog();
-        if (cached) setCatalog(cached);
+        if (cached) {
+          setCatalog(cached);
+          useCanvasStore.getState().setCatalogRuntime(cached);
+        }
       }
       const result = await fetchCapabilities();
       if (cancelled || !result.ok) return;
@@ -82,10 +85,12 @@ export function useCanvasBoot(opts: UseCanvasBootOptions = {}) {
         // Same fingerprint and cache already in memory: skip localStorage write.
         // Still hydrate boot catalog state if it is empty.
         setCatalog((prev) => prev ?? next);
+        useCanvasStore.getState().setCatalogRuntime(next);
         return;
       }
       setCatalog(next);
       setCachedCatalog(next);
+      useCanvasStore.getState().setCatalogRuntime(next);
     }
 
     async function probeAndPatchImportedMedia(): Promise<void> {

@@ -19,7 +19,8 @@ import type {
   SubmitRequest,
   SubmitResult,
 } from './gateway';
-import type { ModelParameterSchema } from '../../shared/api';
+import type { CatalogModelDto, ModelParameterSchema } from '../../shared/api';
+import type { ModelInputCapability } from '../../shared/validation/modelCompatibilityEvaluator.ts';
 import { createWorkflowLogger } from '../execution/logger.ts';
 
 const LOG_TAG = 'OmniMuxSeamClient';
@@ -82,6 +83,7 @@ export const DEFAULT_SEAM_CONCURRENCY = 2;
 interface ModelCatalogSeam {
   list(): {
     source?: string;
+    schemaVersion?: string;
     fingerprint?: string;
     defaults?: {
       text?: string;
@@ -89,6 +91,9 @@ interface ModelCatalogSeam {
       video?: string;
       audio?: string;
     };
+    /** Catalog v1.1 authoritative rows — passed through untouched (DTO). */
+    models?: Array<Record<string, unknown>>;
+    defaultsByOperation?: Record<string, string>;
     text?: Array<Record<string, unknown>>;
     image?: Array<Record<string, unknown>>;
     video?: Array<Record<string, unknown>>;
@@ -110,6 +115,8 @@ function asCatalogRows(value: unknown): Array<{
   badge?: string;
   subtitle?: string;
   family?: string;
+  aliases?: string[];
+  inputCapability?: ModelInputCapability;
   parameters?: ModelParameterSchema;
 }> {
   if (!Array.isArray(value)) return [];
@@ -121,11 +128,37 @@ function asCatalogRows(value: unknown): Array<{
       ...(typeof row.badge === 'string' ? { badge: row.badge } : {}),
       ...(typeof row.subtitle === 'string' ? { subtitle: row.subtitle } : {}),
       ...(typeof row.family === 'string' ? { family: row.family } : {}),
+      ...(Array.isArray(row.aliases) ? { aliases: row.aliases.map(String) } : {}),
+      ...(row.inputCapability && typeof row.inputCapability === 'object'
+        ? { inputCapability: row.inputCapability as ModelInputCapability }
+        : {}),
       ...(row.parameters && typeof row.parameters === 'object'
         ? { parameters: row.parameters as ModelParameterSchema }
         : {}),
     }))
     .filter((row) => row.id.length > 0);
+}
+
+/**
+ * Catalog v1.1 passthrough: keep every contract field (operations/inputs/
+ * output/research/execution/aliases/parameters). Rows that are not plain
+ * objects are dropped; everything else crosses the seam verbatim.
+ */
+function asCatalogModels(value: unknown): CatalogModelDto[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.filter(
+    (row): row is CatalogModelDto =>
+      typeof row === 'object' && row !== null && typeof (row as { id?: unknown }).id === 'string',
+  );
+}
+
+function asDefaultsByOperation(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof raw === 'string' && raw) out[key] = raw;
+  }
+  return out;
 }
 
 // ============================================================================
@@ -438,8 +471,11 @@ export function createOmnimuxSeamClient(
       const body = catalogSeam.list();
       return {
         source: body.source === 'omnimux' || body.source === 'static-stub' ? body.source : source,
+        schemaVersion: typeof body.schemaVersion === 'string' ? body.schemaVersion : undefined,
         fingerprint: typeof body.fingerprint === 'string' ? body.fingerprint : undefined,
         defaults: body.defaults,
+        models: asCatalogModels(body.models),
+        defaultsByOperation: asDefaultsByOperation(body.defaultsByOperation),
         text: asCatalogRows(body.text),
         image: asCatalogRows(body.image),
         video: asCatalogRows(body.video),

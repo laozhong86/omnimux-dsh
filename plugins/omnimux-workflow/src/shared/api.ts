@@ -134,12 +134,67 @@ export interface ModelParameterSchema {
 import type { ModelInputCapability } from './validation/modelCompatibilityEvaluator.ts';
 export type { ModelInputCapability };
 
+// ============================================================================
+// Catalog v1.1 contract DTO (Issue #466 — canvas consumes the hub projection)
+// ============================================================================
+//
+// The hub (`omnimux`) owns the contract SSOT; workflow NEVER imports it.
+// These shapes mirror the seam / HTTP DTO only. Operation ids are plain
+// `string` + metadata — workflow must NOT copy the MCC 17-entry union.
+
+/** One operation input slot (contract v1.1). */
+export interface InputSlotDto {
+  slot: string;
+  /** 'text' | 'image' | 'video' | 'audio' | 'document' (open string). */
+  type: string;
+  role: string;
+  source?: 'user' | 'upstream_edge' | 'node_field';
+  min: number;
+  max: number;
+  allowedMimes?: string[];
+  maxSizeMb?: number;
+  maxDurationSec?: number;
+  limitSource?: { kind: string; url?: string; note?: string };
+}
+
+/** Operation-level contract (research/execution/listed are per-operation). */
+export interface OperationContractDto {
+  id: string;
+  label?: string;
+  output: { type: string; allowedMimes?: string[]; min?: number; max?: number };
+  inputs: InputSlotDto[];
+  research?: { status?: string; docUrl?: string; verifiedAt?: string; notes?: string };
+  execution?: { status?: string; profileId?: string; seam?: string; notes?: string };
+  listed?: boolean;
+  /** Legacy operation-name aliases (read-time mapping only). */
+  aliases?: string[];
+  parameters?: Record<string, unknown>;
+}
+
+/** Authoritative model row of the Catalog v1.1 DTO (`models[]`). */
+export interface CatalogModelDto {
+  id: string;
+  label: string;
+  family?: string;
+  badge?: string;
+  subtitle?: string;
+  /** Runtime/wire model-id aliases normalized to `id`. */
+  aliases?: string[];
+  operations?: OperationContractDto[];
+  parameters?: ModelParameterSchema | Record<string, unknown>;
+  /** Derived summary only — never use as a per-operation gate. */
+  listed?: boolean;
+  listedOperations?: string[];
+  disposition?: string;
+}
+
 export interface CapabilityModelItem {
   id: string;
   label: string;
   badge?: string;
   subtitle?: string;
   family?: string;
+  aliases?: string[];
   inputCapability?: ModelInputCapability;
   parameters?: ModelParameterSchema;
 }
@@ -147,6 +202,8 @@ export interface CapabilityModelItem {
 /** GET /api/capabilities response (hub modelCatalog.list shape). */
 export interface CapabilityCatalog {
   source: 'static-stub' | 'omnimux';
+  /** Contract schema version ('1.1' when the hub projects contract v1.1). */
+  schemaVersion?: string;
   /** Hub content hash; used by canvas cache invalidation. */
   fingerprint?: string;
   /** Per-type default model ids (env → settings → config → first sorted). */
@@ -156,6 +213,10 @@ export interface CapabilityCatalog {
     video?: string;
     audio?: string;
   };
+  /** Authoritative contract rows (operations/inputs/output/research/execution). */
+  models?: CatalogModelDto[];
+  /** Per-operation default model id (hub catalog-defaults). */
+  defaultsByOperation?: Record<string, string>;
   text: Array<CapabilityModelItem>;
   image: Array<CapabilityModelItem>;
   video: Array<CapabilityModelItem>;

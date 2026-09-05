@@ -1,11 +1,22 @@
 /**
- * Model Compatibility Evaluator — Phase 2 Multimodal Model Capability Engine.
+ * Model Compatibility Evaluator — fail-closed facade over the contract-driven
+ * compatibility kernel (Issue #466 / W1).
  *
- * Assesses model compatibility with upstream inputs (image, video, audio)
- * against the model's declared InputCapability (from capability catalog or known specs).
+ * The hardcoded BUILTIN_MODEL_CAPABILITIES table is strangled: model input
+ * capability is resolved ONLY from the Catalog v1.1 DTO (authoritative
+ * `models[]` operations, or legacy bucket rows carrying inputCapability).
+ * Unknown / delisted models and a missing catalog resolve to `undefined` and
+ * evaluate as `disabled` with a typed reason — no permissive fallback.
  */
 
 import type { MaterialType } from '../canvasTypes.ts';
+import type { CapabilityCatalog } from '../api.ts';
+import {
+  buildContractView,
+  deriveMergedInputCapability,
+  resolveModelView,
+  type CompatReasonCode,
+} from './compatKernel.ts';
 
 export type ModelCompatibilityLevel = 'available' | 'degraded' | 'disabled' | 'hidden';
 
@@ -19,221 +30,92 @@ export interface ModelInputCapability {
 export interface ModelCompatibilityResult {
   level: ModelCompatibilityLevel;
   reasons: string[];
+  /** Typed, telemetry-safe reason codes (PRD §6.9). */
+  reasonCodes: CompatReasonCode[];
   adaptationAdvice?: string;
 }
 
-/**
- * Built-in fallback capabilities for known models when dynamic catalog is unavailable.
- */
-export const BUILTIN_MODEL_CAPABILITIES: Record<string, ModelInputCapability> = {
-  // Image generation models
-  'gpt-image-2': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'gpt-image-2-hd': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'grok-imagine-2': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 4, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'grok-imagine-2-hd': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 4, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'midjourney-8.1': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 5, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'midjourney-8': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 5, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'midjourney-7': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 5, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'midjourney-niji-7': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 5, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'nanobanana-2': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 4, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'nano_banana_2': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 4, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'nanobanana-pro': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 4, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'nano_banana_pro': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 4, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'seedream-5.0-pro': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 8, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'seedream-4.5': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 8, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
+/** Rows searched when the catalog has no authoritative models[] (legacy DTO). */
+type LegacyCatalogBucket = Array<{ id: string; inputCapability?: ModelInputCapability }>;
 
-  // Video generation models
-  'seedance-2.0-fast': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference', 'first_frame'] },
-  },
-  'seedance-2.0-max': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference', 'first_frame'] },
-  },
-  'seedance-2.0': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference', 'first_frame'] },
-  },
-  'seedance-1.5-pro': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference', 'first_frame'] },
-  },
-  'kling-v3': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 2, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['first_frame', 'last_frame'] },
-  },
-  'kling-v2.6': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 2, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['first_frame', 'last_frame'] },
-  },
-  'kling-motion-control': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 2, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['first_frame', 'last_frame'] },
-  },
-  'kling-avatar': {
-    modalities: ['text', 'image', 'audio'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-    referenceAudios: { min: 0, max: 1, allowedMimeTypes: ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/webm'], supportedRoles: ['audio_track'] },
-  },
-  'kling-o1': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 2, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['first_frame', 'last_frame'] },
-  },
-  'kling-o3': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 2, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['first_frame', 'last_frame'] },
-  },
-  'veo-3.1': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'veo-3.1-fast': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'grok-imagine-video': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'grok-imagine-video-1-5': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'omni-flash-video': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-  'wan-3.0': {
-    modalities: ['text', 'image'],
-    referenceImages: { min: 0, max: 1, allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp'], supportedRoles: ['reference'] },
-  },
-
-  // Audio generation models
-  'suno-v4': {
-    modalities: ['text'],
-  },
-  'openai-tts': {
-    modalities: ['text'],
-  },
-  'whisper-asr': {
-    modalities: ['audio'],
-    referenceAudios: { min: 1, max: 1, allowedMimeTypes: ['audio/mp3', 'audio/wav', 'audio/m4a', 'audio/webm'], supportedRoles: ['reference'] },
-  },
-
-  // Text models
-  'claude-opus-5': { modalities: ['text'] },
-  'claude-opus-4-6': { modalities: ['text', 'image'], referenceImages: { min: 0, max: 10 } },
-  'gpt-5.6-sol': { modalities: ['text', 'image'], referenceImages: { min: 0, max: 10 } },
-  'gpt-5.5': { modalities: ['text', 'image'], referenceImages: { min: 0, max: 10 } },
-  'grok-4.6': { modalities: ['text', 'image'], referenceImages: { min: 0, max: 10 } },
-  'kimi-k3': { modalities: ['text', 'image'], referenceImages: { min: 0, max: 10 } },
-  'deepseek-v4-pro': { modalities: ['text'] },
-  'deepseek-v4-flash-vision-exp': { modalities: ['text', 'image'], referenceImages: { min: 0, max: 10 } },
-  'gemini-3.7-flash': { modalities: ['text', 'image', 'video'], referenceImages: { min: 0, max: 10 }, referenceVideos: { min: 0, max: 1 } },
-  'gemini-3.1-pro-preview': { modalities: ['text', 'image'], referenceImages: { min: 0, max: 10 } },
-  'glm-5.3': { modalities: ['text'] },
-};
+function findLegacyRowCapability(
+  modelId: string,
+  catalog: CapabilityCatalog | null | undefined,
+): ModelInputCapability | undefined {
+  if (!catalog || Array.isArray(catalog.models)) return undefined;
+  const buckets: LegacyCatalogBucket[] = [
+    (catalog.text ?? []) as LegacyCatalogBucket,
+    (catalog.image ?? []) as LegacyCatalogBucket,
+    (catalog.video ?? []) as LegacyCatalogBucket,
+    (catalog.audio ?? []) as LegacyCatalogBucket,
+  ];
+  for (const bucket of buckets) {
+    const found = bucket.find((item) => item.id === modelId);
+    if (found?.inputCapability) return found.inputCapability;
+  }
+  return undefined;
+}
 
 /**
- * Resolve input capability for a model ID from catalog or builtin table.
+ * Resolve input capability for a model ID from the catalog ONLY.
+ *
+ * Order: Catalog v1.1 `models[]` (id or wire alias) → merged operation slots;
+ * legacy bucket row inputCapability for pre-v1.1 DTOs. No catalog / unknown
+ * model → undefined (fail closed).
  */
 export function resolveModelInputCapability(
   modelId: string,
-  catalog?: {
-    text?: Array<{ id: string; inputCapability?: ModelInputCapability }>;
-    image?: Array<{ id: string; inputCapability?: ModelInputCapability }>;
-    video?: Array<{ id: string; inputCapability?: ModelInputCapability }>;
-    audio?: Array<{ id: string; inputCapability?: ModelInputCapability }>;
-  } | null,
+  catalog?: CapabilityCatalog | null,
 ): ModelInputCapability | undefined {
   if (!modelId) return undefined;
   const trimmed = modelId.trim();
+  if (!catalog) return undefined;
 
-  // 1. Check catalog if provided
-  if (catalog) {
-    const all = [
-      ...(catalog.text || []),
-      ...(catalog.image || []),
-      ...(catalog.video || []),
-      ...(catalog.audio || []),
-    ];
-    const found = all.find((item) => item.id === trimmed);
-    if (found?.inputCapability) {
-      return found.inputCapability;
+  const view = buildContractView(catalog);
+  const model = resolveModelView(view, trimmed);
+  if (model) {
+    const merged = deriveMergedInputCapability(model);
+    if (merged) {
+      return {
+        modalities: merged.modalities as MaterialType[],
+        ...(merged.referenceImages ? { referenceImages: merged.referenceImages } : {}),
+        ...(merged.referenceVideos ? { referenceVideos: merged.referenceVideos } : {}),
+        ...(merged.referenceAudios ? { referenceAudios: merged.referenceAudios } : {}),
+      };
     }
   }
-
-  // 2. Check builtin capabilities
-  return BUILTIN_MODEL_CAPABILITIES[trimmed];
+  return findLegacyRowCapability(trimmed, catalog);
 }
 
 /**
  * Evaluate model compatibility based on input capability and upstream items.
  *
- * Rules:
- * 1. modelCap 为空 / 未知模型 -> { level: 'available', reasons: [] } (宽松回退，绝不误杀)。
- * 2. 统计 upstreams 中 image/video/audio 数量。
- * 3. 数量 > max -> level: 'disabled'，给出超限 reason 与 adaptationAdvice。
- * 4. max === 0 且存在非 text 上游 -> disabled（该模型不支持参考素材）。
- * 5. 数量在 (min, max] 且 min > 0 -> level: 'degraded'，提示超出推荐配额。
+ * Fail-closed: an unknown capability (unknown/delisted model or missing
+ * catalog) evaluates to `disabled` with `contract_missing` — the old
+ * permissive `available` fallback is removed.
+ *
+ * Rules (unchanged for known capabilities):
+ * 1. 统计 upstreams 中 image/video/audio 数量。
+ * 2. 数量 > max -> level: 'disabled'，给出超限 reason 与 adaptationAdvice。
+ * 3. max === 0 且存在对应模态上游 -> disabled。
+ * 4. 数量在 (min, max] 且 min > 0 -> level: 'degraded'，提示超出推荐配额。
  */
 export function evaluateModelCompatibility(
   modelId: string,
   modelCap: ModelInputCapability | undefined,
   upstreams: { type: MaterialType; mimeType?: string }[],
 ): ModelCompatibilityResult {
-  // Unknown model or no capability spec -> safe fallback to available
+  // Unknown model / no contract — fail closed.
   if (!modelCap) {
     return {
-      level: 'available',
-      reasons: [],
+      level: 'disabled',
+      reasons: ['模型缺少能力契约（未知、已下架或目录不可用）'],
+      reasonCodes: ['contract_missing'],
     };
   }
 
   const reasons: string[] = [];
+  const reasonCodes: CompatReasonCode[] = [];
   let level: ModelCompatibilityLevel = 'available';
   let adaptationAdvice: string | undefined;
 
@@ -242,6 +124,10 @@ export function evaluateModelCompatibility(
   const audios = upstreams.filter((u) => u.type === 'audio');
   const nonTextUpstreams = [...images, ...videos, ...audios];
 
+  const mark = (code: CompatReasonCode) => {
+    if (!reasonCodes.includes(code)) reasonCodes.push(code);
+  };
+
   // 1. Check reference images
   if (images.length > 0) {
     const cap = modelCap.referenceImages;
@@ -249,10 +135,12 @@ export function evaluateModelCompatibility(
     if (!isImageSupported || cap?.max === 0) {
       level = 'disabled';
       reasons.push('该模型不支持参考素材');
+      mark('model_incompatible');
       if (!adaptationAdvice) adaptationAdvice = '建议移除参考素材或更换支持图片输入的模型';
     } else if (cap && cap.max !== undefined && images.length > cap.max) {
       level = 'disabled';
       reasons.push(`超出模型最大参考图数量（最多 ${cap.max} 张）`);
+      mark('slot_capacity');
       if (!adaptationAdvice) adaptationAdvice = `建议截取前 ${cap.max} 张或更换模型`;
     } else if (cap && cap.min !== undefined && cap.min > 0 && images.length > cap.min && images.length <= cap.max) {
       level = 'degraded';
@@ -265,6 +153,7 @@ export function evaluateModelCompatibility(
         if (img.mimeType && !cap.allowedMimeTypes.includes(img.mimeType)) {
           level = 'disabled';
           reasons.push(`不支持的图片格式：${img.mimeType}`);
+          mark('mime_unsupported');
         }
       }
     }
@@ -277,10 +166,12 @@ export function evaluateModelCompatibility(
     if (!isVideoSupported || cap?.max === 0) {
       level = 'disabled';
       reasons.push('该模型不支持视频参考素材');
+      mark('model_incompatible');
       if (!adaptationAdvice) adaptationAdvice = '建议移除视频参考素材或更换支持视频输入的模型';
     } else if (cap && cap.max !== undefined && videos.length > cap.max) {
       level = 'disabled';
       reasons.push(`超出模型最大参考视频数量（最多 ${cap.max} 个）`);
+      mark('slot_capacity');
       if (!adaptationAdvice) adaptationAdvice = `建议截取前 ${cap.max} 个或更换模型`;
     } else if (cap && cap.min !== undefined && cap.min > 0 && videos.length > cap.min && videos.length <= cap.max) {
       if (level !== 'disabled') level = 'degraded';
@@ -293,6 +184,7 @@ export function evaluateModelCompatibility(
         if (vid.mimeType && !cap.allowedMimeTypes.includes(vid.mimeType)) {
           level = 'disabled';
           reasons.push(`不支持的视频格式：${vid.mimeType}`);
+          mark('mime_unsupported');
         }
       }
     }
@@ -305,10 +197,12 @@ export function evaluateModelCompatibility(
     if (!isAudioSupported || cap?.max === 0) {
       level = 'disabled';
       reasons.push('该模型不支持音频参考素材');
+      mark('model_incompatible');
       if (!adaptationAdvice) adaptationAdvice = '建议移除音频参考素材或更换支持音频输入的模型';
     } else if (cap && cap.max !== undefined && audios.length > cap.max) {
       level = 'disabled';
       reasons.push(`超出模型最大参考音频数量（最多 ${cap.max} 个）`);
+      mark('slot_capacity');
       if (!adaptationAdvice) adaptationAdvice = `建议截取前 ${cap.max} 个或更换模型`;
     } else if (cap && cap.min !== undefined && cap.min > 0 && audios.length > cap.min && audios.length <= cap.max) {
       if (level !== 'disabled') level = 'degraded';
@@ -321,6 +215,7 @@ export function evaluateModelCompatibility(
         if (aud.mimeType && !cap.allowedMimeTypes.includes(aud.mimeType)) {
           level = 'disabled';
           reasons.push(`不支持的音频格式：${aud.mimeType}`);
+          mark('mime_unsupported');
         }
       }
     }
@@ -332,6 +227,7 @@ export function evaluateModelCompatibility(
     if (!hasAnyNonTextModality && reasons.length === 0) {
       level = 'disabled';
       reasons.push('该模型不支持参考素材');
+      mark('model_incompatible');
       if (!adaptationAdvice) adaptationAdvice = '建议移除参考素材或更换支持多模态输入的模型';
     }
   }
@@ -340,12 +236,14 @@ export function evaluateModelCompatibility(
     return {
       level: 'available',
       reasons: [],
+      reasonCodes: [],
     };
   }
 
   return {
     level,
     reasons,
+    reasonCodes,
     ...(adaptationAdvice ? { adaptationAdvice } : {}),
   };
 }

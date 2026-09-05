@@ -165,12 +165,26 @@ export function mountWorkflowHost(ctx: HostContext, opts: MountWorkflowHostOptio
         mailbox && typeof mailbox === 'object' && typeof (mailbox as { getActiveView?: unknown }).getActiveView === 'function'
           ? (mailbox as { getActiveView: (sessionId?: string) => unknown }).getActiveView.bind(mailbox)
           : undefined;
+      // Optional hub seam: Catalog v1.1 DTO for the compat kernel (Issue
+      // #466). Read lazily at mutation time; null → fail closed.
+      const getCatalog = () => {
+        const seam = typeof ctx.get === 'function' ? ctx.get('modelCatalog') : undefined;
+        if (seam && typeof seam === 'object' && typeof (seam as { list?: unknown }).list === 'function') {
+          try {
+            return (seam as { list: () => unknown }).list();
+          } catch {
+            return null;
+          }
+        }
+        return null;
+      };
       disposers.push(
         registerWorkflowAgentSeats(ctx, {
           store,
           executionManager,
           mediaDir: paths.mediaDir,
           ensureProjectBound,
+          getCatalog,
           getActiveView: getActiveView as
             | ((sessionId?: string) => {
                 ok?: boolean;
