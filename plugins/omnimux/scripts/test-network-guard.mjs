@@ -1,13 +1,6 @@
+// Test-only guard for the Hub's fetch-based HTTP runtime. Direct node:http or
+// node:https calls are outside this guard and must be mocked by their caller.
 const GUARD_STATE = Symbol.for('omnimux.test.network-guard')
-
-function isLoopback(url) {
-  try {
-    const parsed = new URL(url)
-    return parsed.hostname === '127.0.0.1' || parsed.hostname === '::1' || parsed.hostname === 'localhost'
-  } catch {
-    return false
-  }
-}
 
 function requestUrl(input) {
   if (typeof input === 'string' || input instanceof URL) return String(input)
@@ -21,10 +14,10 @@ function installNetworkGuard() {
   const state = {
     attempts: [],
     originalFetch,
+    originalFetchCalls: 0,
   }
   globalThis.fetch = async (input, init) => {
     const url = requestUrl(input)
-    if (isLoopback(url)) return originalFetch(input, init)
     state.attempts.push({
       url,
       method: typeof init?.method === 'string' ? init.method : 'GET',
@@ -42,7 +35,13 @@ export function testNetworkAttempts() {
 }
 
 export function resetTestNetworkAttempts() {
-  installNetworkGuard().attempts.length = 0
+  const state = installNetworkGuard()
+  state.attempts.length = 0
+  state.originalFetchCalls = 0
+}
+
+export function testNetworkOriginalFetchCalls() {
+  return installNetworkGuard().originalFetchCalls
 }
 
 installNetworkGuard()

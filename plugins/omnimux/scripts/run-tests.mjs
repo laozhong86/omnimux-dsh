@@ -15,6 +15,7 @@ const EXCLUDED_GLOBS = [
   'src/**/build/**',
   'src/**/dist/**',
 ]
+const NETWORK_GUARD_TEST = 'src/media/test-network-guard.test.js'
 
 export function discoverTestFiles(cwd = process.cwd()) {
   return globSync(TEST_GLOBS, {
@@ -32,13 +33,24 @@ export function assertTestFiles(files) {
 export function runTests(cwd = process.cwd()) {
   const files = discoverTestFiles(cwd)
   assertTestFiles(files)
+  if (!files.includes(NETWORK_GUARD_TEST)) {
+    throw new Error(`Missing required network guard test: ${NETWORK_GUARD_TEST}`)
+  }
   console.log(`[omnimux:test] discovered ${files.length} test files`)
 
   const preload = new URL('./test-network-guard.mjs', import.meta.url).href
-  const result = spawnSync(process.execPath, ['--import', preload, '--test', ...files], {
+  const run = (testFiles) => spawnSync(process.execPath, ['--import', preload, '--test', ...testFiles], {
     cwd,
     stdio: 'inherit',
   })
+  const guardResult = run([NETWORK_GUARD_TEST])
+  if (guardResult.error) throw guardResult.error
+  if (guardResult.signal) {
+    throw new Error(`Hub network guard test terminated by ${guardResult.signal}`)
+  }
+  if (guardResult.status !== 0) return guardResult.status ?? 1
+
+  const result = run(files.filter((file) => file !== NETWORK_GUARD_TEST))
   if (result.error) throw result.error
   if (result.signal) {
     throw new Error(`Hub test runner terminated by ${result.signal}`)

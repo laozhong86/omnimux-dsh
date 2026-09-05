@@ -126,6 +126,19 @@ describe('mountMedia capability gate', () => {
     )
   })
 
+  it('keeps an explicit first-frame reference when image repeats its URL', async () => {
+    const first = pngData(6)
+    const assets = await probeMediaAssets({
+      image: first,
+      references: [{ type: 'image', role: 'first_frame', pathOrUrl: first }],
+    }, { capability: 'video', seam: 'videoGenerate' })
+
+    assert.deepEqual(
+      assets.map(({ type, role, pathOrUrl }) => ({ type, role, pathOrUrl })),
+      [{ type: 'image', role: 'first_frame', pathOrUrl: first }],
+    )
+  })
+
   it('submits mounted duplicate image shorthand as the listed multi-reference operation', async () => {
     const tools = []
     const provided = {}

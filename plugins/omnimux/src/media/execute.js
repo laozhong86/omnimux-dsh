@@ -178,19 +178,21 @@ export async function probeMediaAssets(input, context = {}) {
   const capability = typeof context.capability === 'string' ? context.capability : undefined
   const seam = typeof context.seam === 'string' ? context.seam : undefined
   const topImage = typeof input.image === 'string' ? input.image.trim() : ''
-  const explicitReferences = new Set(
+  const topImageIsExplicitReference = topImage && (
     Array.isArray(input.references)
-      ? input.references
-        .map((reference) => {
-          if (!reference || typeof reference !== 'object') return ''
-          const row = /** @type {Record<string, unknown>} */ (reference)
-          return typeof row.pathOrUrl === 'string' ? row.pathOrUrl.trim() : ''
-        })
-        .filter(Boolean)
-      : [],
+      ? input.references.some((reference) => {
+        if (!reference || typeof reference !== 'object') return false
+        const row = /** @type {Record<string, unknown>} */ (reference)
+        return typeof row.pathOrUrl === 'string' && row.pathOrUrl.trim() === topImage
+      })
+      : false
   )
   const normalized = normalizeLogicalRequest({
     ...input,
+    // A workflow often repeats its leading explicit reference in `image`.
+    // Omit only that shorthand before normalization so a first_frame supplied
+    // by `references` remains an explicit asset rather than being filtered.
+    image: topImageIsExplicitReference ? undefined : input.image,
     assetMeta: {},
     metadata: undefined,
     imageMeta: undefined,
@@ -201,19 +203,7 @@ export async function probeMediaAssets(input, context = {}) {
     capability,
     seam,
   })
-  return Promise.all(normalized.assets
-    // A workflow often keeps its first reference in both `image` and
-    // `references`. The explicit reference is authoritative; do not invent a
-    // second first_frame for the same source.
-    .filter((asset) => !(
-      capability === 'video' &&
-      topImage &&
-      asset.type === 'image' &&
-      asset.role === 'first_frame' &&
-      asset.pathOrUrl === topImage &&
-      explicitReferences.has(topImage)
-    ))
-    .map(async (asset) => {
+  return Promise.all(normalized.assets.map(async (asset) => {
     const identity = {
       type: asset.type,
       pathOrUrl: asset.pathOrUrl,
@@ -247,7 +237,7 @@ export async function probeMediaAssets(input, context = {}) {
       }
     }
     return identity
-    }))
+  }))
 }
 
 /**

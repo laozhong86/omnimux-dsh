@@ -2,7 +2,11 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { mountMedia } from './mount.js'
 import { executeOmnimuxVideo } from './video.js'
-import { resetTestNetworkAttempts, testNetworkAttempts } from '../../scripts/test-network-guard.mjs'
+import {
+  resetTestNetworkAttempts,
+  testNetworkAttempts,
+  testNetworkOriginalFetchCalls,
+} from '../../scripts/test-network-guard.mjs'
 
 describe('test network guard', () => {
   it('blocks the protocol POST when a mounted tool drops an injected runtime', async () => {
@@ -48,5 +52,24 @@ describe('test network guard', () => {
       url: 'https://external.test/v1/video/generations',
       method: 'POST',
     }])
+    assert.equal(testNetworkOriginalFetchCalls(), 0)
+  })
+
+  it('blocks loopback services and a loopback redirect before original fetch', async () => {
+    resetTestNetworkAttempts()
+    const urls = [
+      'http://127.0.0.1:45120/',
+      'http://127.0.0.1:6152/',
+      'http://localhost:6153/',
+      'http://127.0.0.1:45120/redirect?to=https%3A%2F%2Fexternal.test%2Fpayload',
+    ]
+    for (const url of urls) {
+      await assert.rejects(
+        () => globalThis.fetch(url),
+        (error) => error?.code === 'OMNIMUX_TEST_NETWORK_BLOCKED',
+      )
+    }
+    assert.deepEqual(testNetworkAttempts(), urls.map((url) => ({ url, method: 'GET' })))
+    assert.equal(testNetworkOriginalFetchCalls(), 0)
   })
 })
