@@ -1,8 +1,8 @@
 /**
  * Inspiration → chat orchestrator (official new-session semantics).
  *
- * Pipeline: exclusive lock → clickOfficialNewSession → addAttachment to the
- * returned new session → revealConversationForReplicate → prefillReplicationPrompt.
+ * Pipeline: exclusive lock → clickOfficialNewSession → reveal conversation →
+ * session-scoped prefill → addAttachment to the returned new session.
  * Never starts a workflow project, never copies text, never clicks send.
  * 灵感库 Tab 永不由此链路关闭（#552 P-1）；画布开关权归用户，本链路完全不触碰（P-3）。
  * CTA 唯一副作用 = 展开中间会话栏（split）+ 预填 prompt（P-2）。

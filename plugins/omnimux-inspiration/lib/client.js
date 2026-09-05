@@ -4385,6 +4385,7 @@ ${REPLICATION_PROMPT_BODY}`;
 
 // src/client/session-prefill.js
 var pendingIntent = null;
+var listeners = /* @__PURE__ */ new Set();
 var DEFAULT_TIMEOUT_MS = 6e3;
 function queueSessionPrefill(request) {
   const targetSessionId = String(request?.targetSessionId ?? "");
@@ -4393,7 +4394,7 @@ function queueSessionPrefill(request) {
   if (!targetSessionId || targetSessionId === "default" || !prompt) {
     return Promise.resolve({ ok: false, error: "composer-missing" });
   }
-  if (pendingIntent) pendingIntent.resolve({ ok: false, error: "composer-rejected" });
+  if (pendingIntent) finishIntent(pendingIntent, { ok: false, error: "composer-rejected" });
   return new Promise((resolve) => {
     const intent = {
       targetSessionId,
@@ -4402,7 +4403,14 @@ function queueSessionPrefill(request) {
       timer: setTimeout(() => finishIntent(intent, { ok: false, error: "composer-missing" }), timeoutMs)
     };
     pendingIntent = intent;
+    emitSessionPrefill();
   });
+}
+function subscribeSessionPrefill(listener) {
+  if (typeof listener !== "function") return () => {
+  };
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 function consumeSessionPrefill(intent, slot) {
   if (!intent || pendingIntent !== intent) return "waiting";
@@ -4432,6 +4440,15 @@ function finishIntent(intent, result) {
   pendingIntent = null;
   clearTimeout(intent.timer);
   intent.resolve(result);
+  emitSessionPrefill();
+}
+function emitSessionPrefill() {
+  for (const listener of listeners) {
+    try {
+      listener();
+    } catch {
+    }
+  }
 }
 
 // src/client/new-session-click.js
@@ -5321,15 +5338,20 @@ var inject = ["slots", "locale"];
 var INSPIRATION_TAB_ID2 = "omnimux-inspiration:library";
 var SESSION_PREFILL_SLOT = "conversation.composer.dock";
 function SessionPrefillConsumer(props) {
+  const intent = (0, import_react9.useSyncExternalStore)(
+    subscribeSessionPrefill,
+    getPendingSessionPrefill,
+    getPendingSessionPrefill
+  );
   const draft = typeof props?.useInput === "function" ? String(props.useInput((state) => state?.draft ?? "") ?? "") : "";
   const sessionId = String(props?.sessionId ?? "");
   (0, import_react9.useEffect)(() => {
-    consumeSessionPrefill(getPendingSessionPrefill(), {
+    consumeSessionPrefill(intent, {
       sessionId,
       draft,
       inputActions: props?.inputActions
     });
-  }, [draft, sessionId, props?.inputActions]);
+  }, [draft, intent, sessionId, props?.inputActions]);
   return null;
 }
 function renderInspirationIcon(size = 16) {

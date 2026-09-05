@@ -6,6 +6,7 @@
  * cannot distinguish a visible target editor from a retained editor.
  */
 let pendingIntent = null
+const listeners = new Set()
 
 const DEFAULT_TIMEOUT_MS = 6000
 
@@ -21,7 +22,7 @@ export function queueSessionPrefill(request) {
     return Promise.resolve({ ok: false, error: 'composer-missing' })
   }
 
-  if (pendingIntent) pendingIntent.resolve({ ok: false, error: 'composer-rejected' })
+  if (pendingIntent) finishIntent(pendingIntent, { ok: false, error: 'composer-rejected' })
   return new Promise((resolve) => {
     const intent = {
       targetSessionId,
@@ -30,7 +31,19 @@ export function queueSessionPrefill(request) {
       timer: setTimeout(() => finishIntent(intent, { ok: false, error: 'composer-missing' }), timeoutMs),
     }
     pendingIntent = intent
+    emitSessionPrefill()
   })
+}
+
+/**
+ * Subscribe the session-scoped composer consumer to queued intent changes.
+ * @param {() => void} listener
+ * @returns {() => void}
+ */
+export function subscribeSessionPrefill(listener) {
+  if (typeof listener !== 'function') return () => {}
+  listeners.add(listener)
+  return () => listeners.delete(listener)
 }
 
 /**
@@ -76,4 +89,11 @@ function finishIntent(intent, result) {
   pendingIntent = null
   clearTimeout(intent.timer)
   intent.resolve(result)
+  emitSessionPrefill()
+}
+
+function emitSessionPrefill() {
+  for (const listener of listeners) {
+    try { listener() } catch { /* isolate subscriber failures */ }
+  }
 }

@@ -1,15 +1,25 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { afterEach, describe, it } from 'node:test'
 import {
   consumeSessionPrefill,
   getPendingSessionPrefill,
   queueSessionPrefill,
   resetSessionPrefill,
+  subscribeSessionPrefill,
 } from './session-prefill.js'
 
 afterEach(() => resetSessionPrefill())
 
 describe('session-scoped replication prefill', () => {
+  it('wires queued intents into the mounted official composer consumer', () => {
+    const source = readFileSync(new URL('./index.js', import.meta.url), 'utf8')
+    assert.match(
+      source,
+      /const intent = useSyncExternalStore\(\s*subscribeSessionPrefill,\s*getPendingSessionPrefill,/s,
+    )
+  })
+
   it('writes one exact prompt through target inputActions only', async () => {
     const prompt = '/video-deconstruct\n\n完整正文'
     const completion = queueSessionPrefill({ targetSessionId: 'new-session', prompt })
@@ -58,6 +68,43 @@ describe('session-scoped replication prefill', () => {
     }), 'consumed')
     assert.deepEqual(await completion, { ok: true, via: 'input-actions' })
     assert.deepEqual(writes, ['正文'])
+  })
+
+  it('notifies an already-mounted consumer when an intent is queued', async () => {
+    const writes = []
+    const unsubscribe = subscribeSessionPrefill(() => {
+      const intent = getPendingSessionPrefill()
+      if (!intent) return
+      consumeSessionPrefill(intent, {
+        sessionId: 'mounted-target',
+        draft: '',
+        inputActions: { setDraft(next) { writes.push(next) } },
+      })
+    })
+
+    const completion = queueSessionPrefill({ targetSessionId: 'mounted-target', prompt: '挂载后排队' })
+    assert.deepEqual(await completion, { ok: true, via: 'input-actions' })
+    assert.deepEqual(writes, ['挂载后排队'])
+    unsubscribe()
+  })
+
+  it('expires an unconsumed intent and ignores its stale target afterward', async () => {
+    const completion = queueSessionPrefill({
+      targetSessionId: 'expired-target',
+      prompt: '超时不应再写入',
+      timeoutMs: 0,
+    })
+    const staleIntent = getPendingSessionPrefill()
+    assert.deepEqual(await completion, { ok: false, error: 'composer-missing' })
+    assert.equal(getPendingSessionPrefill(), null)
+
+    const writes = []
+    assert.equal(consumeSessionPrefill(staleIntent, {
+      sessionId: 'expired-target',
+      draft: '',
+      inputActions: { setDraft(next) { writes.push(next) } },
+    }), 'waiting')
+    assert.deepEqual(writes, [])
   })
 
   it('fails safely when target inputActions are unavailable', async () => {

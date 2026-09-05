@@ -1,9 +1,13 @@
-import { createElement, useEffect } from 'react'
+import { createElement, useEffect, useSyncExternalStore } from 'react'
 import { NS, en, zh } from './locales.js'
 import { mountSidebarEntry } from './sidebar-entry.js'
 import { InspirationStage } from './InspirationStage.jsx'
 import { bindOfficialSessions } from './new-session-click.js'
-import { consumeSessionPrefill, getPendingSessionPrefill } from './session-prefill.js'
+import {
+  consumeSessionPrefill,
+  getPendingSessionPrefill,
+  subscribeSessionPrefill,
+} from './session-prefill.js'
 
 export const name = 'omnimux-inspiration'
 export const inject = ['slots', 'locale']
@@ -18,17 +22,22 @@ export const SESSION_PREFILL_SLOT = 'conversation.composer.dock'
  * @returns {null}
  */
 export function SessionPrefillConsumer(props) {
+  const intent = useSyncExternalStore(
+    subscribeSessionPrefill,
+    getPendingSessionPrefill,
+    getPendingSessionPrefill,
+  )
   const draft = typeof props?.useInput === 'function'
     ? String(props.useInput((state) => state?.draft ?? '') ?? '')
     : ''
   const sessionId = String(props?.sessionId ?? '')
   useEffect(() => {
-    consumeSessionPrefill(getPendingSessionPrefill(), {
+    consumeSessionPrefill(intent, {
       sessionId,
       draft,
       inputActions: props?.inputActions,
     })
-  }, [draft, sessionId, props?.inputActions])
+  }, [draft, intent, sessionId, props?.inputActions])
   return null
 }
 
