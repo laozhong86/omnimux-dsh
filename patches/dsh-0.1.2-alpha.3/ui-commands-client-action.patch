@@ -239,7 +239,7 @@ index 4a606fe607..b176812cbc 100644
    private leadingClaim(desc: CommandDescriptor, session: ClientSessionContext): CommandClaim {
      const token = `/${desc.name} `
 diff --git a/packages/client/ui-commands/tests/service.client.spec.ts b/packages/client/ui-commands/tests/service.client.spec.ts
-index ae8ef7a884..e3d200a2e4 100644
+index ae8ef7a884..990f71403b 100644
 --- a/packages/client/ui-commands/tests/service.client.spec.ts
 +++ b/packages/client/ui-commands/tests/service.client.spec.ts
 @@ -14,7 +14,7 @@ import { createScope, scopeOf } from '@deepseek-ai/dsh-api-session-controller/cl
@@ -247,7 +247,7 @@ index ae8ef7a884..e3d200a2e4 100644
  import { RemoteError, TestRemote } from '@deepseek-ai/dsh-client-test-runtime'
  import type { ClientSessionContext, ConsumeTokenRequest, InputTriggerPick, InputTriggerSource, SubmitImageAttachment } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
 -import type { CommandContribution, CommandDecoration, CommandUiSpec, SelectOption } from '../src/client/contract.ts'
-+import type { ClientActionSpec, CommandContribution, CommandDecoration, CommandUiSpec, PopupSelectSpec, SelectOption } from '../src/client/contract.ts'
++import type { ClientActionSpec, CommandContribution, CommandDecoration, PopupSelectSpec, SelectOption } from '../src/client/contract.ts'
  import type { CommandDescriptor } from '../src/client/directory.ts'
  import { CommandUiRuntime } from '../src/client/service.ts'
  
