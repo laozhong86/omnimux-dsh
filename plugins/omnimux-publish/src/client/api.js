@@ -170,14 +170,6 @@ export function listHubAccounts(filters = {}) {
 }
 
 /**
- * 账号侧栏外链常量。「常见问题」/「使用教程」的跳转地址收敛于此：
- * 默认空字符串时 UI 不渲染对应链接；配置后由
- * window.open(url, '_blank', 'noopener,noreferrer') 打开。
- */
-export const ACCOUNTS_HELP_URL = ''
-export const ACCOUNTS_TUTORIAL_URL = ''
-
-/**
  * 发起 TikTok 授权：hub `POST /omnimux/accounts`（中枢 withPat → 网关
  * /api/social/v1/connect，pickConnectView 保证仅 https auth_url 透出）。
  * 成功响应体 { auth_url }；401/needs-omnimux 走登录引导。

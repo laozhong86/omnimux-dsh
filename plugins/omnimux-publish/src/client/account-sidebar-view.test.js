@@ -1,16 +1,12 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
-  ACCOUNT_TABS,
-  COMMERCE_GROUP_LABEL,
   accountDisplayName,
   accountHandle,
   accountStatusTone,
-  countAccountTabs,
   extractAccounts,
   filterAccounts,
   findNewAccount,
-  isCommerceAccount,
   isNeedsLogin,
   matchesAccountQuery,
   pickAuthUrl,
@@ -35,24 +31,6 @@ describe('extractAccounts', () => {
   })
 })
 
-describe('带货分类（group === "带货"）', () => {
-  it('classifies by exact group label', () => {
-    assert.equal(COMMERCE_GROUP_LABEL, '带货')
-    assert.equal(isCommerceAccount(ROW_A), true)
-    assert.equal(isCommerceAccount(ROW_B), false)
-    assert.equal(isCommerceAccount(ROW_C), false)
-    assert.equal(isCommerceAccount({ group: ' 带货 ' }), true)
-    assert.equal(isCommerceAccount({}), false)
-  })
-
-  it('counts all / commerce / standard consistently', () => {
-    const counts = countAccountTabs([ROW_A, ROW_B, ROW_C])
-    assert.deepEqual(counts, { all: 3, commerce: 1, standard: 2 })
-    assert.deepEqual(countAccountTabs([]), { all: 0, commerce: 0, standard: 0 })
-    assert.deepEqual(countAccountTabs(null), { all: 0, commerce: 0, standard: 0 })
-  })
-})
-
 describe('matchesAccountQuery（大小写不敏感 substring）', () => {
   it('matches display_name / username / name case-insensitively', () => {
     assert.equal(matchesAccountQuery(ROW_A, 'MIA'), true)
@@ -68,34 +46,25 @@ describe('matchesAccountQuery（大小写不敏感 substring）', () => {
   })
 })
 
-describe('filterAccounts（tab + 搜索组合）', () => {
+describe('filterAccounts（搜索过滤全量列表）', () => {
   const rows = [ROW_A, ROW_B, ROW_C]
 
-  it('tab all returns every row', () => {
-    assert.deepEqual(filterAccounts(rows, { tab: 'all' }), rows)
+  it('empty query returns every row', () => {
     assert.deepEqual(filterAccounts(rows), rows)
+    assert.deepEqual(filterAccounts(rows, ''), rows)
   })
 
-  it('tab commerce keeps only group === 带货', () => {
-    assert.deepEqual(filterAccounts(rows, { tab: 'commerce' }), [ROW_A])
+  it('query narrows the list case-insensitively', () => {
+    assert.deepEqual(filterAccounts(rows, 'vlog'), [ROW_B])
+    assert.deepEqual(filterAccounts(rows, 'NOHANDLE'), [ROW_C])
+    assert.deepEqual(filterAccounts(rows, 'MIA STORE'), [ROW_A])
+    assert.deepEqual(filterAccounts(rows, 'zzz'), [])
   })
 
-  it('tab standard keeps the rest', () => {
-    assert.deepEqual(filterAccounts(rows, { tab: 'standard' }), [ROW_B, ROW_C])
-  })
-
-  it('unknown tab falls back to all', () => {
-    assert.deepEqual(filterAccounts(rows, { tab: 'weird' }), rows)
-  })
-
-  it('query narrows within the tab', () => {
-    assert.deepEqual(filterAccounts(rows, { tab: 'all', query: 'vlog' }), [ROW_B])
-    assert.deepEqual(filterAccounts(rows, { tab: 'commerce', query: 'vlog' }), [])
-    assert.deepEqual(filterAccounts(rows, { tab: 'standard', query: 'NOHANDLE' }), [ROW_C])
-  })
-
-  it('exposes a stable tab order', () => {
-    assert.deepEqual(ACCOUNT_TABS, ['all', 'commerce', 'standard'])
+  it('tolerates malformed input', () => {
+    assert.deepEqual(filterAccounts(null), [])
+    assert.deepEqual(filterAccounts(undefined, 'vlog'), [])
+    assert.deepEqual(filterAccounts(rows, null), rows)
   })
 })
 

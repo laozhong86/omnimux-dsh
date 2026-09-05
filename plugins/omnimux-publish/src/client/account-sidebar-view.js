@@ -8,15 +8,6 @@
 /** 侧栏固定平台（本轮只接 TikTok 官方授权）。 */
 export const ACCOUNT_PLATFORM = 'tiktok'
 
-/** 分段 tab 键序（全部 / 带货账号 / 非带货账号）。 */
-export const ACCOUNT_TABS = ['all', 'commerce', 'standard']
-
-/**
- * 带货分组判定标签。中枢无专用「带货」字段，约定 hub 账号行
- * `group === '带货'` 归「带货账号」，其余归「非带货账号」。
- */
-export const COMMERCE_GROUP_LABEL = '带货'
-
 /**
  * 从 hub 响应体取账号行数组；任何非数组形状都归一为 []。
  * @param {unknown} body
@@ -27,28 +18,6 @@ export function extractAccounts(body) {
   const rows = /** @type {Record<string, unknown>} */ (body).accounts
   if (!Array.isArray(rows)) return []
   return rows.filter((row) => row && typeof row === 'object' && !Array.isArray(row))
-}
-
-/**
- * @param {Record<string, unknown>} row
- * @returns {boolean} 是否带货账号
- */
-export function isCommerceAccount(row) {
-  return String(row?.group ?? '').trim() === COMMERCE_GROUP_LABEL
-}
-
-/**
- * 三个分段 tab 的实时计数（all 恒等于行数）。
- * @param {Array<Record<string, unknown>>} rows
- * @returns {{ all: number, commerce: number, standard: number }}
- */
-export function countAccountTabs(rows) {
-  const list = Array.isArray(rows) ? rows : []
-  let commerce = 0
-  for (const row of list) {
-    if (isCommerceAccount(row)) commerce += 1
-  }
-  return { all: list.length, commerce, standard: list.length - commerce }
 }
 
 /**
@@ -65,20 +34,14 @@ export function matchesAccountQuery(row, query) {
 }
 
 /**
- * tab 分类 + 搜索组合过滤。未知 tab 按 'all' 处理。
+ * 搜索过滤全量账号列表。
  * @param {Array<Record<string, unknown>>} rows
- * @param {{ tab?: string, query?: string }} [opts]
+ * @param {string} [query]
  * @returns {Array<Record<string, unknown>>}
  */
-export function filterAccounts(rows, opts = {}) {
-  const tab = ACCOUNT_TABS.includes(opts.tab) ? opts.tab : 'all'
-  const query = String(opts.query ?? '')
+export function filterAccounts(rows, query = '') {
   const list = Array.isArray(rows) ? rows : []
-  return list.filter((row) => {
-    if (tab === 'commerce' && !isCommerceAccount(row)) return false
-    if (tab === 'standard' && isCommerceAccount(row)) return false
-    return matchesAccountQuery(row, query)
-  })
+  return list.filter((row) => matchesAccountQuery(row, query))
 }
 
 /**
