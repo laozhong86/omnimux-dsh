@@ -23,22 +23,24 @@ supersedes:
 
 # 灵感库「一键复刻」：官方新会话语义增量系统设计
 
+> **需求更正（#552，已批准）**：本稿中所有「空白会话复用」「仅非空会话点击新会话」「无会话直接报 noSession」「附件回退到 `default`」及「成功后关闭灵感库」的表述均已失效。CTA 无论当前会话状态都必须走一次官方新会话动作，且只在返回的新 session id 上挂附件并预填；动作失败或未返回新 id 时不得向旧会话或 `default` 添加附件。灵感库 Tab 保留，链路只 reveal 中间会话栏，不触碰画布。
+
 > 作者：高见远（架构）  
 > 输入：冻结 PRD `prd-inspiration-one-click-replicate`（2026-09-04 新会话语义）+ 现网 Inspect  
 > 给：工程师  
 > 范围：只改 `omnimux-inspiration` client 编排 / 文案 / CTA。不写业务实现代码于本文件。不改 `plugins/omnimux*` 功能代码（本轮只出规格）。不新建 skill 包。零新 npm。
 
-**一句话方案：** 把卡片/预览/详情的唯一 orchestrator 从 `replicateInspirationToChat → startReplicationProject` 换成 `oneClickReplicate`：空白会话复用、有内容则 DOM click 官方 `.newSession`、无会话 toast；然后 `__omnimuxAttachments.addAttachment` + §5 预填 `/video-deconstruct`；成功 `closeTab('omnimux-inspiration:library')`；0 次建项目、0 次发送。
+**一句话方案：** 把卡片/预览/详情的唯一 orchestrator 从 `replicateInspirationToChat → startReplicationProject` 换成 `oneClickReplicate`：不论当前会话状态均 DOM click 官方 `.newSession`，只在返回的新 session id 上调用 `__omnimuxAttachments.addAttachment`，再 reveal 中间会话栏并预填 §5 `/video-deconstruct`；灵感库 Tab 保留；0 次建项目、0 次发送。
 
 ---
 
 ## 1. 选型与定界（一句话 + 否决表）
 
-一句话：在现有 `omnimux-inspiration` 客户端内，用**复制**市场 `isBlankSession` 算法 + **程序化 click** 官方侧栏「新会话」按钮（与 `conversation-box.js` `shellNewSessionControl` 同构）完成会话落点；附件读结果走已存在的 `window.__omnimuxAttachments.addAttachment`；预填沿用 `prefillReplicationPrompt`；关库走 `window.__omnimuxWorkbench.closeTab`。不新 Slot、不新 Host 路由、不跨包 import、不 inject `sessions` 来开会话。
+一句话：在现有 `omnimux-inspiration` 客户端内，用**程序化 click** 官方侧栏「新会话」按钮（与 `conversation-box.js` `shellNewSessionControl` 同构）完成会话落点；只接受该动作返回的新 session id，附件走已存在的 `window.__omnimuxAttachments.addAttachment`，预填前 reveal 中间会话栏，灵感库 Tab 保留。不新 Slot、不新 Host 路由、不跨包 import、不 inject `sessions` 来开会话。
 
 | 候选 | 结论 | 理由 |
 |---|---|---|
-| **DOM click 官方 `.newSession` / aria「新会话」** | **本 CTA 有内容时唯一开会话手段** | 与用户手势同构；官方内部复用空白；一级页自己关 overlay。灵感库禁止 `sessions.create` / `sessions.create({})`。 |
+| **DOM click 官方 `.newSession` / aria「新会话」** | **本 CTA 任意当前会话状态下唯一开会话手段** | 与用户手势同构；必须得到新的 session id 后才挂附件。灵感库禁止 `sessions.create` / `sessions.create({})`。 |
 | **复制市场 `isBlankSession` 到本包** | **P0 必做** | 禁止 `import` 市场包。算法：标题 `新会话\|New session\|Untitled` 或 `[data-conversation-scroll]` trim 长度 &lt; 40。 |
 | **`window.__omnimuxAttachments.addAttachment`** | **读挂附件结果的首选** | CustomEvent 是单向广播，拿不到 `quota-exceeded` / `duplicate`。全局已存在、与 workflow 全局同构。无 sessionId 时 store 走 active / `default`。 |
 | `CustomEvent('omnimux:add-to-conversation')` | **本 CTA 不再从 JSX 派发** | 若与 `addAttachment` 同时发会双挂。其它插件仍可广播；本 CTA 直接调 store。全局缺失时才 fallback dispatch（无法读 reason，当 ok）。 |
@@ -62,24 +64,19 @@ supersedes:
      oneClickReplicate(row)          ← plugins/omnimux-inspiration only
               │
               ├─ busy? ────────────────────────── toast card.cta.busy
-              ├─ !hasAnySession? ──────────────── toast card.cta.noSession
-              ├─ isBlankSession? ── reuse ──┐
-              └─ else click .newSession ────┤
-                     │ fail                 │
+              └─ click official .newSession once
+                     │ fail / no new id
                      └ toast newSessionFailed
                                             ▼
-                    addAttachment(sessionId|'', payload)
+                    addAttachment(returnedNewSessionId, payload)
                        │ quota-exceeded → toast attachFull（仍尝试预填）
                        │ duplicate → 视为已挂，继续
                        │ invalid → toast attachFailed
                                             ▼
+                    revealConversationForReplicate()
                     buildReplicationPrompt(row)  // PRD §5 原文
                     prefillReplicationPrompt(text)  // 不 click 发送
-                                            ▼
-                    dismissInspirationLibrary()
-                       window.__omnimuxWorkbench.closeTab('omnimux-inspiration:library')
-                       或 createSidebarStore({tabId}).close()
-                       禁止 claimProductStage
+                    keep inspiration library Tab open
 
  禁止箭头：
    inspiration ──x── __omnimuxWorkflow.startReplicationProject
@@ -94,16 +91,12 @@ flowchart TD
   CTA["一键复刻 CTA"] --> ORCH["oneClickReplicate"]
   ORCH --> LOCK{"runExclusive"}
   LOCK -->|busy| BUSY["aria-live busy"]
-  LOCK --> SESS{"hasAnySession"}
-  SESS -->|no| NO["toast noSession"]
-  SESS --> BLANK{"isBlankSession"}
-  BLANK -->|yes| ATT["addAttachment"]
-  BLANK -->|no| CLICK["findNewSessionButton.click"]
-  CLICK -->|fail| NSF["toast newSessionFailed"]
-  CLICK --> ATT
-  ATT --> PRE["prefillReplicationPrompt"]
-  PRE --> DIS["closeTab library"]
-  DIS --> IDLE["Idle 不发送 不开画布"]
+  LOCK --> CLICK["clickOfficialNewSession"]
+  CLICK -->|fail or no new id| NSF["toast newSessionFailed"]
+  CLICK -->|returned new session id| ATT["addAttachment(newSessionId)"]
+  ATT --> REVEAL["revealConversationForReplicate"]
+  REVEAL --> PRE["prefillReplicationPrompt"]
+  PRE --> IDLE["Idle: library open, no send, no canvas"]
 ```
 
 ---
@@ -157,19 +150,17 @@ P0 源文件上限核对：新建 2（`is-blank-session.js`、`new-session-click
  * @param {{
  *   document?: Document,
  *   window?: Window,
- *   isBlank?: (doc?: unknown) => boolean,
- *   hasSession?: (doc?: unknown) => boolean,
  *   clickNewSession?: (opts?: object) => Promise<{ ok: boolean, sessionId?: string, error?: string }>,
  *   addAttachment?: (sessionId: string, payload: object) => { ok: boolean, reason?: string, attachment?: object },
  *   prefillPrompt?: (text: string, opts?: object) => Promise<{ ok: boolean, error?: string, via?: string }>,
- *   dismissLibrary?: () => void,
+ *   revealConversation?: () => void,
  *   now?: () => number,
  *   onStatus?: (key: string | null, detail?: string) => void,
  *   onDismissModal?: () => void,
  * }} [io]
  * @returns {Promise<
- *   | { ok: true, reused: boolean, clickedNewSession: boolean, attached: boolean, duplicate?: boolean }
- *   | { ok: false, error: 'busy' | 'noSession' | 'newSessionFailed' | 'attachFull' | 'attachFailed' | 'sendManual' }
+ *   | { ok: true, clickedNewSession: true, attached: boolean, duplicate?: boolean }
+ *   | { ok: false, error: 'busy' | 'newSessionFailed' | 'attachFull' | 'attachFailed' | 'sendManual' }
  * >}
  */
 export async function oneClickReplicate(row, io = {})

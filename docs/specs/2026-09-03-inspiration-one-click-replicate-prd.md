@@ -32,9 +32,11 @@ supersedes:
 
 ## 0. 结论
 
+> **#552 已批准需求更正**：本 PRD 内较早的「空白会话复用」「无会话先报 noSession」「附件可落 `default`」与「成功后关闭灵感库」描述均由本节及后续 #552 增量设计覆盖。CTA 对任何当前会话状态均点击一次官方新会话，且只在返回的新 session id 上挂附件并预填；失败或无新 id 时不得使用旧会话或 `default`。灵感库 Tab 保留，仅 reveal 中间会话栏，画布不碰。
+
 **一次点击、一条路径、新会话语义（同工作区空白对话）。** 卡片主按钮从「加会话」改为「一键复刻」。点击后必须同时完成三件事，然后停住等用户按发送：
 
-1. 把该条灵感以 `kind=inspiration` 挂到**目标会话**附件槽（空白则复用当前；有内容则走官方「新会话」结果；事件可带 `sessionId`，尚拿不到 id 时落入 `default`，open 后 `claimPendingAttachments`）。
+1. 无论当前会话是否为空，先走官方「新会话」动作，再把该条灵感以 `kind=inspiration` 挂到该动作返回的**新会话**附件槽；拿不到新 session id 即失败，不得回退到当前会话或 `default`。
 2. Composer **整框预填**下文 §5 提示词（含钉死手势 `/video-deconstruct`）。
 3. **不自动发送**（沿用 `prefillReplicationPrompt`）。
 
@@ -42,11 +44,10 @@ supersedes:
 
 | 当前状态 | 本 CTA 必须做 | 本 CTA 禁止做 |
 |---|---|---|
-| 已是空白会话（标题匹配 `新会话` / `New session` / `Untitled`，或对话滚动区几乎空——对齐市场 `isBlankSession`） | **复用它**：不建会话、不点新会话按钮；关灵感库 → 挂附件 → 预填 | 再建会话；点新会话（官方会看起来像没点） |
-| 当前会话已有内容 | 触发与用户点侧栏「新会话」**同一套**结果（同工作区、新的或复用的空白对话）。实现优先：程序化点击官方 `.newSession` / aria「新会话」按钮（与用户手势同构） | `sessions.create({})`；import workflow；`startReplicationProject` / `runNewProject` |
-| 无任何会话 | 提示「请先新建或打开一个会话」（workbench 硬约束），不静默吞 | `sessions.create({})` |
+| 当前会话为空或已有内容 | 一律触发与用户点侧栏「新会话」**同一套**结果。实现优先：程序化点击官方 `.newSession` / aria「新会话」按钮（与用户手势同构），并只向返回的新 session id 挂附件和预填 | `sessions.create({})`；import workflow；`startReplicationProject` / `runNewProject`；复用当前会话 |
+| 无任何会话 | 一律触发官方「新会话」动作，获得新 session id 后继续；失败时可感知地停住 | `sessions.create({})`；把附件静默丢进 `default` |
 
-成功后关灵感库一级页，露出 composer；附件挂到**新打开的那条会话**。不打开工作流画布 15:85（那是「新建项目」副作用）。新会话保持官方默认布局。
+成功后保留灵感库 Tab，并展开中间会话栏以露出 composer；附件仅挂到**官方新会话动作返回的那条新会话**。不打开工作流画布 15:85（那是「新建项目」副作用）。新会话保持官方默认布局。
 
 **覆盖上一轮：** 禁止双按钮。禁止把「加会话」留作主按钮。禁止本 CTA 走 `startReplicationProject` → `runNewProject`（POST `/api/projects` + `workspaces.create` 新 path + 画布 15:85）。禁止把「挂当前活跃会话、有内容也不新开会话」当作默认（2026-09-03 Q1 推荐已被用户否决）。
 
@@ -119,7 +120,7 @@ As a 库里混了图和链接的用户, I want 同一颗按钮仍预填 `/video-
 
 **US-6 十条灵感不应产生十个工作区**  
 As a 连续复刻多条爆款的创作者, I want 每条灵感只占用一条空白对话、全部留在当前工作区 so that 我的工作区账本和磁盘不会被灵感库刷爆。  
-验收：连续点十条不同灵感：**0** 次 `POST /api/projects`、**0** 个新项目文件夹、工作区账本 **+0** 新 path；会话条数最多 +N（有内容才新开会话 / 复用空白则 +0）；布局保持官方默认，不切 15:85 画布。
+验收：连续点十条不同灵感：**0** 次 `POST /api/projects`、**0** 个新项目文件夹、工作区账本 **+0** 新 path；每次都走一次官方新会话动作，附件只落在返回的新 session id；布局保持官方默认，不切 15:85 画布。
 
 ---
 
@@ -131,22 +132,22 @@ As a 连续复刻多条爆款的创作者, I want 每条灵感只占用一条空
 |---|---|---|
 | P0-1 | 卡片主按钮文案 `card.cta.try`：zh「一键复刻」/ en「Replicate」；4 字放不下时可见「复刻」，`aria-label` 完整「一键复刻」/「One-click replicate」 | locale 单测；胶囊 28px 不截断 |
 | P0-2 | 禁止「加会话」作主按钮；删除双路径：卡片 click **不得**再同时「事件挂附件 + clipboard + startReplicationProject」 | 编排只走一个 orchestrator |
-| P0-3 | 一次点击 = （必要时官方新会话）+ 挂附件 + 预填 prompt + 预填 `/video-deconstruct` | 三件事都发生或按状态机降级 |
+| P0-3 | 一次点击 = 官方新会话 + 挂附件 + 预填 prompt + 预填 `/video-deconstruct` | 官方动作、附件与预填都发生，或按状态机失败且不回退到旧会话 |
 | P0-4 | 附件：`sourcePlugin=omnimux-inspiration`，`kind=inspiration`，`entityId=row.id`，`extension=INSPIRATION`，`metadata.inspiration_id/source_url/source_platform` | 与现网 payload 字段对齐；去重指纹不变 |
-| P0-5 | **会话落点 = 官方新会话语义**：空白复用当前；有内容才触发与侧栏「新会话」同一结果；附件挂到**新打开的那条会话**（事件可带 `sessionId`；尚无 id 则 `default` + open 后 `claimPendingAttachments`） | 不 `sessions.create({})`；不每灵感一个工作区 |
+| P0-5 | **会话落点 = 官方新会话语义**：无论当前为空或有内容，均触发侧栏「新会话」同一结果；附件只挂到该动作返回的**新会话** `sessionId` | 不 `sessions.create({})`；不每灵感一个工作区；不回退 `default` 或旧会话 |
 | P0-6 | `buildReplicationPrompt` 输出 §5 全文；`REPLICATION_SKILL='video-deconstruct'` | 单测含手势、id、时长、商品降级、口播/字幕/出镜 |
 | P0-7 | 只预填、不发送 | composer-inject 现网契约不变 |
 | P0-8 | 口播/出镜/字幕仅为 prompt 约束，无 UI 开关 | 无新 checkbox |
 | P0-9 | 无商品：不拦截、不挂产品附件 | 见 US-2 |
 | P0-10 | 预览弹窗（`InspirationPreviewModal`）与详情（`InspirationDetailModal`）主 CTA 改为同一「一键复刻」；卡片「查看」保留 | 详情不再单独「添加到会话」 |
-| P0-11 | 成功：关闭/收起灵感库一级页以露出 composer；无 toast；**停止写剪贴板**；**不**打开工作流画布 | 失败才 2s `aria-live`；布局 = 官方新会话默认 |
+| P0-11 | 成功：保留灵感库 Tab、展开中间会话栏以露出 composer；无 toast；**停止写剪贴板**；**不**打开工作流画布 | 失败才 2s `aria-live`；布局 = 官方新会话默认 |
 | P0-12 | 图片/链接：同一按钮 + 同一 skill + `media_type` 降级段 | 见 US-5 |
 | P0-13 | 防重入：模块锁 + 全卡片 `disabled`；附件 `quota-exceeded` / `duplicate` 可感知 | duplicate 视为已挂，继续预填 |
 | P0-14 | 图标改为复刻语义 SVG（拷贝/层叠），禁止 emoji；`--dsw-*`、28px 胶囊、8px 体系 | 对齐 design.md Chip |
 | P0-15 | 本 CTA **0 次** `runNewProject` / `startReplicationProject` / `createProject` / `createProjectSession` / `POST /omnimux-workflow/api/projects` / `workspaces.create` 新 path / `activateProjectCanvas` | 单测 mock 断言 0 次；连续复刻工作区账本 +0 |
-| P0-16 | 当前已是空白会话（对齐市场 `isBlankSession`：标题 `新会话`/`New session`/`Untitled` 或滚动区 trim 长度 &lt; 40）：**复用**，不点新会话、不建会话 | 复用后附件与预填落在同一会话 |
-| P0-17 | 当前会话已有内容：程序化点击官方 `.newSession` / `aria-label` 新会话按钮（与用户手势同构）；灵感库禁止自己 `sessions.create`、禁止 import workflow | 结果与手点侧栏「新会话」一致（同工作区空白对话） |
-| P0-18 | 无任何会话：不 `sessions.create({})`；`aria-live`「请先新建或打开一个会话」；不静默吞 | 与 workbench `open()` 硬约束同文案 |
+| P0-16 | 当前已是空白会话：仍程序化点击官方 `.newSession` / `aria-label` 新会话按钮；不建项目、不复用当前会话 | 点击恰好 1 次，附件与预填只落在返回的新 session id |
+| P0-17 | 当前会话已有内容：程序化点击官方 `.newSession` / `aria-label` 新会话按钮（与用户手势同构）；灵感库禁止自己 `sessions.create`、禁止 import workflow | 结果与手点侧栏「新会话」一致，附件与预填只落在返回的新 session id |
+| P0-18 | 无任何会话：仍只走官方新会话动作；失败时可感知地停住且不静默吞 | 不 `sessions.create({})`，不回退 `default` 或旧会话 |
 | P0-19 | 实现优先点击官方按钮，而不是调用 `runResetSession`（后者仍会 `activateProjectCanvas`） | 无 15:85 画布副作用 |
 
 ### P1 Should
@@ -190,10 +191,9 @@ handleReplicate =
 
 ```
 主胶囊「一键复刻」 → 唯一 orchestrator oneClickReplicate(row)
-  blank? → 复用当前
-  有内容? → 程序化 click 官方「新会话」
-  无会话? → toast，停
-  → attach（目标会话）→ prefill → dismiss library
+  任意当前会话状态 → 程序化 click 官方「新会话」
+  → 取得新 session id → attach（该新会话）→ reveal conversation → prefill
+  → 未取得新 id 则提示失败，绝不回退旧会话或 default
 次胶囊「查看」 → 仅打开预览（现网 onSelect）
 多选网格：隐藏 CTA（沿用）
 ```
@@ -205,28 +205,28 @@ handleReplicate =
 | 表面 | 现网 | 本轮 |
 |---|---|---|
 | 卡片「查看」 | 开 Modal | **保留** |
-| `InspirationPreviewModal` | 无复刻 CTA | 底栏主按钮「一键复刻」，同一 orchestrator；成功后关 Modal **且** 收起一级页 |
+| `InspirationPreviewModal` | 无复刻 CTA | 底栏主按钮「一键复刻」，同一 orchestrator；成功后仅关 Modal，灵感库 Tab 保留 |
 | `InspirationDetailModal` | 「添加到会话」= 只挂附件 + 剪贴板 + `onClose` | 改为「一键复刻」同一路径；废止单独「添加到会话」 |
 
 ### 4.3 会话落点（三列对照，已拍板）
 
 | 维度 | 侧栏「新建项目」 | 官方侧栏「新会话」 | 本 CTA「一键复刻」 |
 |---|---|---|---|
-| 产品意图 | 一个作品一个文件夹 | 进入对话列，复用空白会话 | **官方新会话 + 附件 + 预填** |
+| 产品意图 | 一个作品一个文件夹 | 官方会话动作 | **官方新会话 + 附件 + 预填** |
 | `POST /omnimux-workflow/api/projects` | 要（Host mkdir + 说明.md + project.json） | 不要 | **禁止** |
 | `workspaces.create` 新 path | 要 | 不要 | **禁止** |
 | `sessions.create({})` | 不要（有 `workspaceId`） | 官方内部；插件禁止 | **灵感库禁止** |
-| `sessions.create({ workspaceId })` | 要（新项目会话） | 官方可能内部做；空白则复用 | 灵感库禁止自己调；只许程序化点官方按钮 |
-| 复用空白会话 | 否 | **是**（注释：「看起来像没点」） | **是**（对齐 `isBlankSession`） |
-| 一级页 overlay | `dismissProductStage` | 一级页必须自己关 | 成功后关灵感库 |
+| `sessions.create({ workspaceId })` | 要（新项目会话） | 官方内部；插件禁止 | 灵感库禁止自己调；只许程序化点官方按钮 |
+| 当前空白会话 | 不适用 | 官方动作自身语义 | **仍必须点一次官方新会话；不得复用当前会话** |
+| 一级页 overlay | `dismissProductStage` | 官方控制 | 灵感库 Tab 保留，只 reveal 中间会话栏 |
 | 画布 15:85 | `activateProjectCanvas` | **否**（官方默认布局） | **禁止** |
 | `runResetSession` | 否 | 否（比新会话重，仍开会话+画布） | **禁止**当默认 |
 | 附件 + §5 预填 | 否 | 否（市场 summon 只 insertGesture） | **要** |
 | 谁可以走这条 path | 仅「新建项目」按钮 | 仅「新会话」按钮 / 本 CTA 点它 | 本 CTA；**禁止**走新建项目 |
 
-无任何会话：提示「请先新建或打开一个会话」；**仍禁止**灵感库自己 `sessions.create`。不把附件先丢进 `default` 假装成功——无会话就是失败。
+无任何会话时也只尝试官方「新会话」动作；**仍禁止**灵感库自己 `sessions.create`。不把附件先丢进 `default` 假装成功；动作失败或不返回新 session id 即失败。
 
-成功后必须让用户看见 composer：关闭/收起 workbench 灵感库 Tab（不 `claimProductStage`）。官方「新会话」会复用空白会话，一级页必须自己关 overlay（`conversation-box.js`）。
+成功后必须让用户看见 composer：保留 workbench 灵感库 Tab（不 `claimProductStage`），并 reveal 中间会话栏。
 
 ### 4.4 状态机
 
@@ -236,36 +236,33 @@ stateDiagram-v2
   Idle --> Busy: 点击一键复刻
   Idle --> BusyBlocked: 已有 inflight
   BusyBlocked --> Idle: toast busy / 2s
-  Busy --> NoSession: 无任何会话
-  NoSession --> Idle: toast 请先新建或打开一个会话
-  Busy --> ReuseBlank: isBlankSession
-  Busy --> ClickNewSession: 当前会话已有内容
-  ClickNewSession --> Attach: 官方新会话结果（同工作区空白对话）
-  ClickNewSession --> NewSessionFail: 点不到按钮 / 官方无响应
+  Busy --> ClickNewSession: 任意当前会话状态
+  ClickNewSession --> Attach: 官方动作返回新的 session id
+  ClickNewSession --> NewSessionFail: 点不到按钮 / 官方无响应 / 未返回新 id
   NewSessionFail --> Idle: toast 请手动点新会话后重试
-  ReuseBlank --> Attach: 不建会话、不点按钮
-  Attach --> Prefill: 挂上或 duplicate
+  Attach --> Reveal: 挂上或 duplicate
+  Reveal --> Prefill: 展开中间会话栏
   Attach --> AttachFail: quota-exceeded / invalid
   AttachFail --> Idle: toast 附件失败
   Prefill --> Ready: composer 含 inspiration_id
   Prefill --> PrefillFail: composer-missing / rejected
   PrefillFail --> Idle: toast 请打开对话确认后发送
-  Ready --> Idle: 关一级页 / 清 status（不发送、不开画布）
+  Ready --> Idle: 清 status（不发送、不开画布、保留灵感库 Tab）
 ```
 
-顺序硬约束：**先 blank? → 复用 / 点新会话 → attach → prefill**。禁止先建项目再挂附件。JIT 安装**不是**本状态机节点：P0 不在点击同步安装。
+顺序硬约束：**先点官方新会话 → 获得新的 session id → attach → reveal → prefill**。禁止先建项目再挂附件；不得复用空白会话或回退 `default`。JIT 安装**不是**本状态机节点：P0 不在点击同步安装。
 
 ### 4.5 反馈
 
 | 事件 | 反馈 |
 |---|---|
 | 进行中 | 全卡主按钮 disabled；`card.cta.replicating` 可停在卡片底部，不 toast |
-| 成功 | 关一级页；`onStatus(null)`；**无 toast**；**不写剪贴板**；**不开画布** |
+| 成功 | 保留灵感库 Tab、reveal 中间会话栏；`onStatus(null)`；**无 toast**；**不写剪贴板**；**不开画布** |
 | busy | 2s `card.cta.busy` |
 | 附件满 | 2s 新 key `card.cta.attachFull` |
 | composer 失败但附件已挂 | 2s `card.cta.sendManual`（文案改为「附件已添加，请打开对话粘贴或重试」） |
-| 无任何会话 | 2s `card.cta.noSession`（「请先新建或打开一个会话」） |
-| 新会话手势失败 | 2s `card.cta.newSessionFailed` |
+| 无当前会话 | 仍尝试官方新会话；失败时 2s `card.cta.newSessionFailed` |
+| 新会话手势失败或未返回新 id | 2s `card.cta.newSessionFailed` |
 | 工作流缺失 | **不再出现**（本路径不依赖 workflow 全局缝） |
 | 建项目失败 | **不再出现**（本路径不建项目） |
 
@@ -374,7 +371,7 @@ stateDiagram-v2
 ## 8. 成功标准 DoD
 
 1. 网格悬停主按钮不再出现「加会话」/「Add to chat」。
-2. 单击主按钮：目标空白会话（复用或官方新会话结果；无会话则失败不挂）出现一条 `kind=inspiration` 附件，指纹含 `omnimux-inspiration::inspiration::{id}`。
+2. 单击主按钮：每次先执行一次官方新会话动作；仅在其返回的新 session id 上出现一条 `kind=inspiration` 附件，指纹含 `omnimux-inspiration::inspiration::{id}`。
 3. Composer 文本以 `/video-deconstruct` 开头，含该 `inspiration_id`、口播/字幕/出镜/时长/商品缺失句；`document.querySelector(发送)` **无**程序 click。
 4. `replication.js` 不再导出或使用 `video-replication`。
 5. 预览/详情主 CTA 与卡片同一 orchestrator；「查看」不挂附件、不预填。
@@ -382,9 +379,9 @@ stateDiagram-v2
 7. **0 次** `startReplicationProject` / `runNewProject` / `createProject` / `POST /omnimux-workflow/api/projects` / `workspaces.create` 新 path / `activateProjectCanvas`（单测 mock 断言 0 次）。
 8. 灵感库无 `sessions.create` / 无 `sessions.create({})` / 无跨包 import / 无新 skill 包。
 9. 连点第二下 `busy`；附件满可感知；成功无 toast。
-10. **连续点两条不同灵感**：工作区账本 **+0** 新 path、磁盘 **+0** 新项目文件夹；会话可以 +1（若第一条占用了原先的空白会话，第二条应再走官方新会话）。十条同理：工作区 +0，会话至多 +10。
-11. 成功后布局 = 官方新会话默认，**不是** 15:85 画布。
-12. 无会话时出现「请先新建或打开一个会话」，且 `sessions.create` 调用次数为 0。
+10. **连续点两条不同灵感**：工作区账本 **+0** 新 path、磁盘 **+0** 新项目文件夹；每次均点一次官方新会话，附件各自落在返回的新 session id。十条同理：工作区 +0。
+11. 成功后布局 = 官方新会话默认且灵感库 Tab 保留、会话栏 reveal，**不是** 15:85 画布。
+12. 无当前会话时仍只尝试官方新会话；失败不挂附件，且 `sessions.create` 调用次数为 0。
 13. 单测全绿 **不够**：`pnpm verify:live omnimux-inspiration` + ego-browser（hover CTA 文案、点击后 Tray + composer、发送键未被点、工作区未新增）。
 
 ---
@@ -393,7 +390,7 @@ stateDiagram-v2
 
 **Q1. 挂当前会话，还是新建工作流项目会话，还是官方新会话？**  
 **已拍板（用户 2026-09-04）：一键复刻 = 官方新会话业务 + 附件 + 预填。**  
-空白会话复用；有内容则与侧栏「新会话」同构（优先程序化点击官方按钮）；无会话则提示、禁止 `sessions.create({})`。禁止每条灵感一个工作区。禁止本 CTA 调用 `startReplicationProject` / `runNewProject`。`startReplicationProject` 缝只留给「新建项目」按钮。不再作为开放问题。
+无论当前会话为空、有内容或不存在，都与侧栏「新会话」同构（程序化点击官方按钮）；只有获得返回的新 session id 才继续，禁止 `sessions.create({})`、旧会话复用或 `default` 回退。禁止每条灵感一个工作区。禁止本 CTA 调用 `startReplicationProject` / `runNewProject`。`startReplicationProject` 缝只留给「新建项目」按钮。不再作为开放问题。
 
 **Q2. skill 默认安装选哪种？**  
 推荐默认：**P0 = 只预填 `/video-deconstruct` + 发送 JIT（c）**。灵感库无安装能力、市场无 ensure 全局、git 源点击安装会拖死一键、`skillhub_install` 不允许后台偷装。P1 再补 ensure 缝。
@@ -402,7 +399,7 @@ stateDiagram-v2
 推荐默认：**不强制先选商品**；prompt 等待补充。强制选品破坏一键，产品库也尚未接到本 CTA。
 
 **Q4. 成功是否关一级页 / toast / 剪贴板？**  
-推荐默认：**关一级页（露出 composer）+ 成功静默 + 停止剪贴板**。失败才 2s live 文案。不开画布。
+**已拍板（#552）**：**保留灵感库 Tab、reveal 中间会话栏 + 成功静默 + 停止剪贴板**。失败才 2s live 文案。不开画布。
 
 **Q5. 图片/链接点一键复刻？**  
 推荐默认：**同一按钮、同一 skill、prompt 降级**。禁止改预填 `/image-remix`（装错 skill 的历史雷）。
@@ -427,8 +424,8 @@ stateDiagram-v2
 - AttachmentStore：`kind` 已含 `'inspiration'`；事件名 `omnimux:add-to-conversation`；无 sessionId → active / `default`；上限 8；指纹去重。
 - `InspirationPreviewModal`：无复刻按钮；`InspirationDetailModal`：独立「添加到会话」。
 - 市场 catalog 已有 `sk-omx-video-deconstruct`；client **无**安装 window 全局。
-- 官方「新会话」：`plugins/omnimux/src/client/conversation-box.js` 复用空白会话（「看起来像没点」）；一级页必须自己关 overlay；意图是进入对话列，不是建项目。
-- 市场广场 summon：`isBlankSession`（标题 `新会话|New session|Untitled` 或滚动区 trim &lt; 40）时直接 `insertGesture`，不建项目。
+- 官方「新会话」：`plugins/omnimux/src/client/conversation-box.js` 是本 CTA 唯一可用的官方动作入口；本 CTA 必须观察到新的 active session id 后才挂附件，意图是进入对话列，不是建项目。
+- 市场广场的 `isBlankSession` 策略不适用于本 CTA；本 CTA 不因当前会话空白而跳过官方动作。
 - `runResetSession`（`newProject.js`）：已有 `workspaceId` 上 `sessions.create({ workspaceId })` + open，不 mkdir；**仍会** `activateProjectCanvas`。比 `runNewProject` 轻，但**不是**官方新会话。本 CTA 默认对齐官方新会话，而不是 reset+画布。
 - 侧栏「新建项目」：`mountNewProjectEntry` → prompt 名称 → `runNewProject`。另一条产品；一键复刻禁止走它。
 - workbench：无当前会话 **禁止** `sessions.create({})`；提示「请先新建或打开一个会话」。
@@ -437,11 +434,11 @@ stateDiagram-v2
 
 | 缝 | 用法 |
 |---|---|
-| `omnimux:add-to-conversation` | **本 CTA 挂附件的唯一合法通道**；成功路径尽量带目标 `sessionId` |
+| `omnimux:add-to-conversation` | **本 CTA 挂附件的唯一合法通道**；成功路径必须带官方动作返回的新 `sessionId` |
 | `prefillReplicationPrompt` / `setComposerValue` | 整框预填 + focus，不 click 发送 |
 | `runExclusive` / `isReplicateBusy` | 防连点 |
 | `resolveMediaType` / `deriveProjectTitle` | 前者 P0 仍用；后者本 CTA 不再建项目，可留作纯函数 |
-| 官方 `.newSession` / aria「新会话」按钮 | **有内容时本 CTA 唯一允许的「开会话」手段**（程序化 click，与用户手势同构） |
+| 官方 `.newSession` / aria「新会话」按钮 | **任意当前会话状态下本 CTA 唯一允许的「开会话」手段**（程序化 click，与用户手势同构） |
 | `window.__omnimuxWorkflow.startReplicationProject` / `runNewProject` | **保留安装与 disposer，专供侧栏「新建项目」按钮**；**本 CTA 0 次调用** |
 | `inspiration_get` | prompt 引用，不改 Host |
 | 卡片「查看」+ 预览 Modal | 保留 |
@@ -467,12 +464,12 @@ stateDiagram-v2
 
 把卡片事件派发从 JSX 挪进唯一 `oneClickReplicate(row)`：
 
-1. 无会话 → `noSession` toast，return。
-2. `isBlankSession` → 跳过开会话。
-3. 否则程序化 click 官方新会话按钮，等对话列可见。
-4. `omnimux:add-to-conversation`（能带 `sessionId` 则带）。
+1. 任意当前会话状态均程序化 click 官方新会话按钮，等待新的 active session id。
+2. 未获得新 id → `newSessionFailed`，不挂附件。
+3. `omnimux:add-to-conversation` 必须带返回的新 `sessionId`。
+4. reveal 中间会话栏。
 5. `buildReplicationPrompt` → `prefillReplicationPrompt`。
-6. dismiss 灵感库一级页。
+6. 保留灵感库 Tab。
 
 `InspirationCoverCard` 只调 `onReplicate`，不再自己 `dispatch`+clipboard。灵感库**禁止** `waitForWorkflowGlobal` / `startReplicationProject`。
 

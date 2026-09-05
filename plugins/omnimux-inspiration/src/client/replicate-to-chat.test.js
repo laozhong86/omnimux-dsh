@@ -42,8 +42,6 @@ function makeIo(overrides = {}) {
     reveals,
     status,
     starts,
-    hasSession: () => true,
-    isBlank: () => true,
     async clickNewSession() {
       clicks.push(1)
       return { ok: true, sessionId: 'sess-new' }
@@ -82,6 +80,8 @@ describe('replicate-to-chat.js isolation', () => {
     assert.doesNotMatch(source, /from ['"].*workflow-global/)
     assert.doesNotMatch(source, /omnimux-workflow/)
     assert.doesNotMatch(source, /replicateInspirationToChat/)
+    assert.doesNotMatch(source, /hasAnySession/)
+    assert.doesNotMatch(source, /isBlankSession/)
     assert.doesNotMatch(feedSource, /replicateInspirationToChat/)
     assert.match(feedSource, /oneClickReplicate/)
   })
@@ -186,17 +186,6 @@ describe('oneClickReplicate', () => {
     assert.equal(io.starts.length, 0)
   })
 
-  it('noSession never attaches and reports card.cta.noSession', async () => {
-    const io = makeIo({ hasSession: () => false })
-    const result = await oneClickReplicate(ROW, io)
-    assert.deepEqual(result, { ok: false, error: 'noSession' })
-    assert.equal(io.attaches.length, 0)
-    assert.equal(io.clicks.length, 0)
-    assert.equal(io.prefills.length, 0)
-    assert.equal(io.reveals.length, 0)
-    assert.equal(io.status.at(-1), 'card.cta.noSession')
-  })
-
   it('success uses real revealConversationForReplicate: split reveal, library tab stays open (#552)', async () => {
     const order = []
     const win = {
@@ -236,15 +225,15 @@ describe('oneClickReplicate', () => {
     assert.deepEqual(order, ['reveal', 'prefill'])
   })
 
-  it('blank reuses the session: 0 clicks, 1 attach, 1 reveal, 1 prefill', async () => {
-    const io = makeIo({ isBlank: () => true })
+  it('blank session clicks official new session once, then attaches and prefills the returned id', async () => {
+    const io = makeIo()
     const result = await oneClickReplicate(ROW, io)
     assert.equal(result.ok, true)
-    assert.equal(result.reused, true)
-    assert.equal(result.clickedNewSession, false)
+    assert.equal(result.clickedNewSession, true)
     assert.equal(result.attached, true)
-    assert.equal(io.clicks.length, 0)
+    assert.equal(io.clicks.length, 1)
     assert.equal(io.attaches.length, 1)
+    assert.equal(io.attaches[0].sessionId, 'sess-new')
     assert.equal(io.reveals.length, 1)
     assert.equal(io.prefills.length, 1)
     assert.match(io.prefills[0], /^\/video-deconstruct\n/)
@@ -255,11 +244,10 @@ describe('oneClickReplicate', () => {
     assert.equal(io.status.at(-1), null)
   })
 
-  it('non-blank clicks official new session then attach+reveal+prefill', async () => {
-    const io = makeIo({ isBlank: () => false })
+  it('non-blank session also clicks official new session then attaches, reveals, and prefills', async () => {
+    const io = makeIo()
     const result = await oneClickReplicate(ROW, io)
     assert.equal(result.ok, true)
-    assert.equal(result.reused, false)
     assert.equal(result.clickedNewSession, true)
     assert.equal(io.clicks.length, 1)
     assert.equal(io.attaches.length, 1)
@@ -268,9 +256,8 @@ describe('oneClickReplicate', () => {
     assert.equal(io.prefills.length, 1)
   })
 
-  it('missing new-session button is newSessionFailed and does not attach', async () => {
+  it('new-session failure never attaches to the prior session', async () => {
     const io = makeIo({
-      isBlank: () => false,
       async clickNewSession() {
         return { ok: false, error: 'newSessionFailed' }
       },
@@ -280,6 +267,46 @@ describe('oneClickReplicate', () => {
     assert.equal(io.attaches.length, 0)
     assert.equal(io.prefills.length, 0)
     assert.equal(io.status.at(-1), 'card.cta.newSessionFailed')
+  })
+
+  it('does not attach when the official action returns no new session id', async () => {
+    const io = makeIo({
+      async clickNewSession() {
+        io.clicks.push(1)
+        return { ok: true }
+      },
+    })
+    const result = await oneClickReplicate(ROW, io)
+    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
+    assert.equal(io.clicks.length, 1)
+    assert.equal(io.attaches.length, 0)
+    assert.equal(io.reveals.length, 0)
+    assert.equal(io.prefills.length, 0)
+    assert.equal(io.status.at(-1), 'card.cta.newSessionFailed')
+  })
+
+  it('fallback attachment event carries the returned new session id', async () => {
+    const events = []
+    const win = {
+      CustomEvent: class CustomEvent {
+        constructor(type, init) {
+          this.type = type
+          this.detail = init.detail
+        }
+      },
+      dispatchEvent(event) {
+        events.push(event)
+        return true
+      },
+    }
+    const io = makeIo({ window: win })
+    delete io.addAttachment
+    const result = await oneClickReplicate(ROW, io)
+    assert.equal(result.ok, true)
+    assert.equal(events.length, 1)
+    assert.equal(events[0].type, 'omnimux:add-to-conversation')
+    assert.equal(events[0].detail.sessionId, 'sess-new')
+    assert.equal(events[0].detail.entityId, 'insp-1')
   })
 
   it('second concurrent click returns busy and does not queue', async () => {

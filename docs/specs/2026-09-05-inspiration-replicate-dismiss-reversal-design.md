@@ -83,10 +83,10 @@ supersedes: PR #516 / #529 / #532 的「关闭灵感库」核心假设
 | 旧测试 | 处置 |
 |---|---|
 | `never invokes startReplication` | 保留不动 |
-| `noSession …` | 保留（closes→reveals 计数改名） |
+| `noSession …` | **删除**：无当前会话同样必须尝试官方新会话；失败时只断言无附件、无 reveal、无预填 |
 | `success uses real dismissInspirationLibrary: closeTab then split` | **改写**：`delete io.dismissLibrary` 改 `delete io.revealConversation`；fake wb 断言无 closeTab/closePanel，有 collapsed:false + focus:split |
 | `dismisses before prefill (#528)` | **改写保留**：更名 `reveals conversation before prefill`，顺序断言 `['reveal','prefill']` 不变 |
-| `blank reuses … 1 closeTab` / `non-blank clicks … +close` | **改写**：`io.closes` → `io.reveals`，计数语义不变（1 次） |
+| `blank reuses … 1 closeTab` / `non-blank clicks … +close` | **改写**：空白与非空会话均断言 1 次官方新会话动作、附件目标为返回的新 session id、`io.reveals` 与预填各 1 次；删除 `reused` 返回语义 |
 | `quota-exceeded still prefills but returns attachFull` | **改写**：`reveals.length` 从 0 改为 **1**（对应疑点 3 的 quota 统一 reveal） |
 | `prefill failure after attach still dismisses (#528)` | **改写保留**：更名 `prefill failure still reveals conversation`；断言 sendManual + reveal 1 次 + attach 1 次 + 灵感库未被 close |
 | busy / runExclusive / duplicate 等 | 保留不动（closes→reveals 改名处同步） |
@@ -99,7 +99,7 @@ supersedes: PR #516 / #529 / #532 的「关闭灵感库」核心假设
 
 | # | 位置 | 改动 |
 |---|---|---|
-| C-1 | 模块头注释（L1–7） | 管线描述改为 `exclusive lock → hasAnySession/isBlankSession → clickOfficialNewSession → addAttachment → revealConversationForReplicate → prefillReplicationPrompt`；补一句红线注释："灵感库 Tab 永不由此链路关闭（#552 P-1），画布开关权归用户（P-3）" |
+| C-1 | 模块头注释（L1–7） | 管线描述改为 `exclusive lock → clickOfficialNewSession → addAttachment（返回的新 session id）→ revealConversationForReplicate → prefillReplicationPrompt`；不检查或复用既有空白会话；补一句红线注释："灵感库 Tab 永不由此链路关闭（#552 P-1），画布开关权归用户（P-3）" |
 | C-2 | `revealConversationColumn(wb)`（L113–121） | 逻辑不变（collapsed:false + focus:split 双保险），更新上方块注释：删除 "AFTER closeTab" 表述，改为 "Enter-conversation: uncollapse + split only. Never closeTab, never closePanel（#552）" |
 | C-3 | `dismissInspirationLibrary(io)`（L129–152） | **重命名为 `revealConversationForReplicate(io)`**。删除 `tabId` 解析、`wb.closeTab(tabId)` 调用、`createSidebarStore` 兜底分支。保留：`onDismissModal` 调用（卡片详情弹窗关闭，与 tab 无关）+ `revealConversationColumn(wb)` + 0/50ms reveal-only replay |
 | C-4 | `INSPIRATION_LIBRARY_TAB_ID` 常量（L13）与 `io.tabId` | 删除（closeTab 移除后成死代码；全仓 grep 确认仅本文件与其测试引用） |

@@ -1,15 +1,14 @@
 /**
  * Inspiration → chat orchestrator (official new-session semantics).
  *
- * Pipeline: exclusive lock → hasAnySession/isBlankSession → clickOfficialNewSession
- * → addAttachment → revealConversationForReplicate → prefillReplicationPrompt.
+ * Pipeline: exclusive lock → clickOfficialNewSession → addAttachment to the
+ * returned new session → revealConversationForReplicate → prefillReplicationPrompt.
  * Never starts a workflow project, never copies text, never clicks send.
  * 灵感库 Tab 永不由此链路关闭（#552 P-1）；画布开关权归用户，本链路完全不触碰（P-3）。
  * CTA 唯一副作用 = 展开中间会话栏（split）+ 预填 prompt（P-2）。
  */
 import { buildReplicationPrompt } from './replication.js'
 import { prefillReplicationPrompt } from './composer-inject.js'
-import { hasAnySession, isBlankSession } from './is-blank-session.js'
 import { clickOfficialNewSession } from './new-session-click.js'
 
 /** Module-level inflight lock. A second call returns `{ error: 'busy' }` and does not queue. */
@@ -150,26 +149,11 @@ export function revealConversationForReplicate(io = {}) {
   }
 }
 
-function readActiveSessionId(win) {
-  const getter = win && win.__omnimuxAttachments && win.__omnimuxAttachments.getActiveSessionId
-  if (typeof getter !== 'function') return ''
-  try {
-    return String(getter.call(win.__omnimuxAttachments) || '')
-  } catch {
-    return ''
-  }
-}
-
-function resolveAttachSessionId(io, clickResult, win) {
-  if (io.sessionId != null && String(io.sessionId) !== '') {
-    const explicit = String(io.sessionId)
-    return explicit === 'default' ? '' : explicit
-  }
-  const fromClick = clickResult && clickResult.sessionId != null ? String(clickResult.sessionId) : ''
-  if (fromClick && fromClick !== 'default') return fromClick
-  const active = readActiveSessionId(win)
-  if (active && active !== 'default') return active
-  return ''
+function resolveNewSessionId(clickResult) {
+  const sessionId = clickResult && clickResult.sessionId != null
+    ? String(clickResult.sessionId)
+    : ''
+  return sessionId !== 'default' ? sessionId : ''
 }
 
 function defaultAddAttachment(win, doc) {
@@ -181,7 +165,9 @@ function defaultAddAttachment(win, doc) {
     const target = win || (doc && doc.defaultView) || (typeof window !== 'undefined' ? window : null)
     if (target && typeof target.dispatchEvent === 'function' && typeof target.CustomEvent === 'function') {
       const eventName = ['omnimux', 'add-to-conversation'].join(':')
-      target.dispatchEvent(new target.CustomEvent(eventName, { detail: payload }))
+      target.dispatchEvent(new target.CustomEvent(eventName, {
+        detail: { ...payload, sessionId },
+      }))
       return { ok: true }
     }
     return { ok: false, reason: 'invalid-payload' }
@@ -203,8 +189,6 @@ export async function oneClickReplicate(row, io = {}) {
   return runExclusive(async () => {
     const doc = resolveDoc(io)
     const win = resolveWindow(io, doc)
-    const hasSession = typeof io.hasSession === 'function' ? io.hasSession : hasAnySession
-    const isBlank = typeof io.isBlank === 'function' ? io.isBlank : isBlankSession
     const clickNew = typeof io.clickNewSession === 'function' ? io.clickNewSession : clickOfficialNewSession
     const addAttachment = typeof io.addAttachment === 'function'
       ? io.addAttachment
@@ -219,31 +203,23 @@ export async function oneClickReplicate(row, io = {}) {
 
     onStatus('card.cta.replicating')
 
-    if (!hasSession(doc)) {
-      onStatus('card.cta.noSession')
-      return { ok: false, error: 'noSession' }
-    }
-
-    let reused = false
-    let clickedNewSession = false
     let clickResult = null
-    if (isBlank(doc)) {
-      reused = true
-    } else {
-      try {
-        clickResult = await clickNew({ document: doc, window: win, isBlank })
-      } catch {
-        onStatus('card.cta.newSessionFailed')
-        return { ok: false, error: 'newSessionFailed' }
-      }
-      if (!clickResult || clickResult.ok !== true) {
-        onStatus('card.cta.newSessionFailed')
-        return { ok: false, error: 'newSessionFailed' }
-      }
-      clickedNewSession = true
+    try {
+      clickResult = await clickNew({ document: doc, window: win })
+    } catch {
+      onStatus('card.cta.newSessionFailed')
+      return { ok: false, error: 'newSessionFailed' }
+    }
+    if (!clickResult || clickResult.ok !== true) {
+      onStatus('card.cta.newSessionFailed')
+      return { ok: false, error: 'newSessionFailed' }
     }
 
-    const sessionId = resolveAttachSessionId(io, clickResult, win)
+    const sessionId = resolveNewSessionId(clickResult)
+    if (!sessionId) {
+      onStatus('card.cta.newSessionFailed')
+      return { ok: false, error: 'newSessionFailed' }
+    }
     const payload = buildInspirationPayload(row)
     let attached = false
     let duplicate = false
@@ -304,8 +280,7 @@ export async function oneClickReplicate(row, io = {}) {
     onStatus(null)
     return {
       ok: true,
-      reused,
-      clickedNewSession,
+      clickedNewSession: true,
       attached,
       ...(duplicate ? { duplicate: true } : {}),
     }

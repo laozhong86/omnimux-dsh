@@ -6,8 +6,6 @@
  * twin) and opens `#omnimux-sidebar-new-menu`. Real new-session happens only
  * after the "新建会话" menuitem click. This helper mirrors that gesture.
  */
-import { isBlankSession } from './is-blank-session.js'
-
 export const NEW_SESSION_WAIT_MS = 1500
 export const NEW_SESSION_POLL_MS = 50
 
@@ -141,18 +139,10 @@ function readActiveSessionId(win) {
   }
 }
 
-function sessionOpened(blank, doc, win, beforeId, clicked) {
+function openedNewSessionId(win, beforeId) {
   const afterId = readActiveSessionId(win)
-  if (afterId && afterId !== beforeId) {
-    return { ok: true, sessionId: afterId !== 'default' ? afterId : undefined }
-  }
-  // After an official / menuitem click, welcome chrome with no real turns
-  // is a reused blank session (host keeps the same id). A session that still
-  // has user/assistant messages and the same id is not a success.
-  if (clicked && blank(doc)) {
-    return { ok: true, sessionId: afterId && afterId !== 'default' ? afterId : undefined }
-  }
-  return null
+  if (!afterId || afterId === 'default' || afterId === beforeId) return null
+  return { ok: true, sessionId: afterId }
 }
 
 /**
@@ -162,7 +152,6 @@ function sessionOpened(blank, doc, win, beforeId, clicked) {
  * @param {{
  *   document?: unknown,
  *   window?: unknown,
- *   isBlank?: (doc?: unknown) => boolean,
  *   now?: () => number,
  *   sleep?: (ms: number) => Promise<void>,
  *   timeoutMs?: number,
@@ -179,8 +168,6 @@ export async function clickOfficialNewSession(opts = {}) {
   const sleep = typeof opts.sleep === 'function'
     ? opts.sleep
     : (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-  const blank = typeof opts.isBlank === 'function' ? opts.isBlank : isBlankSession
-
   const beforeId = readActiveSessionId(win)
   let clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
   let clickedButton = false
@@ -201,12 +188,12 @@ export async function clickOfficialNewSession(opts = {}) {
     if (!clickedMenu) {
       clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
     }
-    const opened = sessionOpened(blank, doc, win, beforeId, clickedMenu || clickedButton)
+    const opened = openedNewSessionId(win, beforeId)
     if (opened) return opened
     await sleep(pollMs)
   }
 
-  const opened = sessionOpened(blank, doc, win, beforeId, clickedMenu || clickedButton)
+  const opened = openedNewSessionId(win, beforeId)
   if (opened) return opened
   return { ok: false, error: 'newSessionFailed' }
 }
