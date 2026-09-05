@@ -81,6 +81,19 @@ ERR_MODULE_NOT_FOUND: Cannot find package 'esbuild'
 
 此外，当前未合并 worktree 不得物化到公共 45120；现有 45120 也没有证据载入 `efbfec5`。因此不得将 HTTP、mock、其他版本或此处的单元测试称为 App/真实 Lexical 通过。没有 evidence bundle 或截图。
 
+## 2026-09-05：授权 L2 真实 CTA 补充（HEAD `7b67f4d`）
+
+> 这是授权后的隔离 L2 live gate，不是 45120 的物化后验收。它不重开既有代码级重复 Bug QA 轮次；它记录新发现的真实 CTA 阻断。
+
+- **实际 L2 URL / task space**：`http://127.0.0.1:44202/` / ego-browser task space `476`（标题 `DSH Local Build`）。
+- **来源关联**：`.l2-dev.env` 记录 `TOPIC=replicate-dismiss-reversal`、`PLUGIN=omnimux-inspiration`、`COMMIT=7b67f4d`、`SOURCE=<本 worktree>/plugins`；Host PID `15622`、watch PID `15792` 仍运行。
+- **隔离 fixture**：通过已认证 L2 UI 同域 Host API 创建本地记录 `qa552-live-fixture`（标题 `QA-552 isolated inspiration fixture`；`https://example.invalid/qa-552-live-fixture`；无媒体、无云写入、无真实用户草稿）。该记录位于 task 的 `DSH_HOME`，供清理时删除。
+- **A（仅灵感库、空会话、真实 CTA）**：先通过官方 UI 创建 `session-bdc04d83-3a50-4546-b2cd-5604bb110c46`，打开灵感库 Local Tab，hover 后点击真实 `.omnimux-inspiration-overlay-cta-btn.primary`。初检约 `446 ms`，再观察 `1 s`：active id 未变；`window.__omnimuxAttachments.getSnapshot()` 仍 `[]`；真实 contenteditable 的 `innerText`/`textContent` 均空；Send 禁用；库仍开但 workbench tabs 仍仅 `omnimux-inspiration:library`，未取得 split/uncollapsed 会话。UI 一度显示 `Preparing replication…`，随后无成功状态/无可见错误。
+- **判定**：A **FAIL（源码/运行时缺陷，回传主理人）**。此路径未满足新官方会话 id、附件、精确 Lexical prompt 或 split 的任一必要条件；不以 `includes` 作判断，直接读真实 DOM/text 和 attachment snapshot。无发送行为。
+- **B（先画布、再库点击）**：**NOT RUN**。遵循“浏览器异常/失败只诊断一次，禁止盲重试”边界；A 已在第一次真实 CTA 暴露前置 release blocker，B 无法建立其共同的“新会话 + 附件 + prompt”基线，故不反复点击。
+- **完整 evidence bundle**：`docs/evidence/qa-552-live/live-qa-report.json` 和 `docs/evidence/qa-552-live/A-before-cta.png`、`A-after-cta.png`、`A-settled-fail.png`。截图已确认不包含 token 或用户真实草稿。
+- **GIF**：未生成。真实 CTA 无可验证成功状态，生成“成功演示”会误导；且本任务不授权 push/PR 发布。
+
 ## 测试报告
 
 | 项目 | 结果 |
@@ -90,10 +103,11 @@ ERR_MODULE_NOT_FOUND: Cannot find package 'esbuild'
 | F1 旧提交红测 | 1 failed / 1 passed（预期） |
 | 适用静态门禁 | PASS：`verify:stages`、`check:package-files`、`verify:tools`、diff check |
 | 构建 | BLOCKED：本 worktree 缺 `esbuild` |
-| 实机 / 真 Lexical | LIVE BLOCKED：45120 不可验证目标 commit，ego-browser 无 snapshot/screenshot |
-| 估计覆盖 | 写入分支高；真实 Lexical DOM 序列化、实际时间边界、UI 交互未覆盖 |
-| Routing Decision | **Known Issues / release-blocked**；F1 无需退回 Engineer，本 Bug QA 两轮已用尽 |
+| 授权 L2 live CTA | **FAIL**：真实 CTA 未创建新 session、未附加、未预填，不能达到 Split |
+| 实机 / 真 Lexical | **FAIL**：真实 Lexical DOM 为空；不是 45120 或其它 revision |
+| 估计覆盖 | 写入分支高；真实 CTA 新会话、附件、Lexical prompt、画布保活尚未通过 |
+| Routing Decision | **Engineer（仅回传主理人）**：#552 合并前 L2 gate FAIL；不改源码、不联系工程师 |
 
-## 唯一可执行下一步（需要环境授权/证据）
+## 唯一可执行下一步（需要源码修复后再验收）
 
-由具备环境所有权者提供一个**与 `efbfec5`（或后续合入 SHA）可追溯关联的、已装依赖的隔离 L2 runtime**，并允许按 `docs/contracts/plugin-qa.md` 使用 ego-browser 进行一条真实 CTA 验收。证据必须包含 task-space id、实际 L2 URL、snapshot/DOM、截图、commit、task/DSH_HOME 与清理记录；同时读取真实 composer 的 `innerText` / `textContent`，确认其与唯一 `/video-deconstruct\n\n<完整正文>` 的比较语义。未具备此环境授权/证据前，整体不得交付 PASS。
+工程师需从隔离 L2 对真实 CTA 的实际运行路径诊断：为什么 `Preparing replication…` 后官方新会话/attachment/prefill 链路没有完成。修复后由主理人再授权一次干净 L2 场景，按 A 与 B 全量复测，须保留真实 session id、attachment snapshot、Lexical exact text、tabs/画布 snapshot 和视觉证据。L2 Host/watch 保留，**不得**以公共 45120、HTTP 200、其它 revision 或物化后状态替代本门禁。
