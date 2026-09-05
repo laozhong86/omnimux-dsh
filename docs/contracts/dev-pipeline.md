@@ -33,7 +33,7 @@ subsystem: "global"
 - 合并后更新 `main`，默认同步到 Dev，再按变更面在 45120 验收。普通交付到此为止；不得自动追加 `--prod`、`--all` 或正式包发布。
 - 纯文档和不影响已安装运行时的任务不要求 L2、Dev 物化或 App 验收。
 
-L2 初始化从 `OMNIMUX_L2_SEED_PROFILE` 或默认 Dev `~/.omnimux-dev/profiles/omnimux` 取稳定种子，不默认使用旧 `~/.dsh/profiles/omnimux`。启动前必须校验 `$DSH_SRC` 安装闭包；官方 `@deepseek-ai/*` 由 app-boot 投影，不来自任务 profile 的私有 `node_modules`。
+L2 初始化从 `OMNIMUX_L2_SEED_PROFILE` 或默认 Dev `~/.omnimux-dev/profiles/omnimux` 取稳定种子，不默认使用旧 `~/.dsh/profiles/omnimux`。它完整复制受管 `.materialize-snapshots/plugins/` 与可重定位的 pnpm 锁到任务 profile，再由任务私有 pnpm store 重建 `node_modules`；不得复制 seed `node_modules`、`.npmrc` 或任何指向 Dev/Prod 的 source 链接。受管 source 或锁缺失时在创建 L2 profile 前失败。启动前必须校验 `$DSH_SRC` 安装闭包；官方 `@deepseek-ai/*` 由 app-boot 投影，不来自任务 profile 的私有 `node_modules`。
 
 ## 物化合同
 
