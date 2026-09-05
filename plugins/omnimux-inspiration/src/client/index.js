@@ -2,6 +2,7 @@ import { createElement } from 'react'
 import { NS, en, zh } from './locales.js'
 import { mountSidebarEntry } from './sidebar-entry.js'
 import { InspirationStage } from './InspirationStage.jsx'
+import { bindOfficialSessions } from './new-session-click.js'
 
 export const name = 'omnimux-inspiration'
 export const inject = ['slots', 'locale']
@@ -83,6 +84,7 @@ export function apply(ctx) {
     })
     ctx.inject(['layout', 'sessions'], (inner) => {
       bindWorkbench({ layout: inner.layout, sessions: inner.sessions })
+      bindOfficialSessions(inner.sessions)
     })
   }
 }

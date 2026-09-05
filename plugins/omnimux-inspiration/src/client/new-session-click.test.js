@@ -319,6 +319,56 @@ describe('clickOfficialNewSession', () => {
     assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
   })
 
+  it('accepts official blank reuse when the confirmed target keeps its id', async () => {
+    const sessionItem = makeMenuItem({ text: 'New Session' })
+    const snapshots = [
+      { current: 'session-blank', byId: { 'session-blank': { blank: true } } },
+      { current: 'session-blank', byId: { 'session-blank': { blank: true } } },
+    ]
+    let index = 0
+    const sessions = {
+      list: {
+        getSnapshot() {
+          return snapshots[Math.min(index++, snapshots.length - 1)]
+        },
+      },
+    }
+    const result = await clickOfficialNewSession({
+      document: makeDoc([], { menuItems: [sessionItem] }),
+      sessions,
+      timeoutMs: 80,
+      pollMs: 10,
+      now: tickingNow(50),
+      sleep: async () => {},
+    })
+    assert.equal(sessionItem.clicks.length, 1)
+    assert.deepEqual(result, { ok: true, sessionId: 'session-blank', reusedBlank: true })
+  })
+
+  it('rejects a non-blank official current target even if attachments change', async () => {
+    const sessionItem = makeMenuItem({ text: 'New Session' })
+    let attachmentId = 'old-attachment-id'
+    const win = { __omnimuxAttachments: { getActiveSessionId: () => attachmentId } }
+    const sessions = {
+      list: {
+        getSnapshot() {
+          return { current: 'session-old', byId: { 'session-old': { blank: false } } }
+        },
+      },
+    }
+    const result = await clickOfficialNewSession({
+      document: { ...makeDoc([], { menuItems: [sessionItem] }), defaultView: win },
+      window: win,
+      sessions,
+      timeoutMs: 80,
+      pollMs: 10,
+      now: tickingNow(50),
+      sleep: async () => { attachmentId = 'unrelated-attachment-projection' },
+    })
+    assert.equal(sessionItem.clicks.length, 1)
+    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
+  })
+
   it('fails when an official click leaves the active session id unchanged', async () => {
     const sessionItem = makeMenuItem({ text: 'New Session' })
     const projectItem = makeMenuItem({ text: 'Create Project' })

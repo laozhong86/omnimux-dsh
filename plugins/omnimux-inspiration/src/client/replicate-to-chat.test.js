@@ -256,6 +256,33 @@ describe('oneClickReplicate', () => {
     assert.equal(io.prefills.length, 1)
   })
 
+  it('action-dispatched but unresolved reveals the column and performs zero writes', async () => {
+    const order = []
+    let resolveOfficial
+    const pendingOfficial = new Promise((resolve) => { resolveOfficial = resolve })
+    const io = makeIo({
+      clickNewSession() {
+        io.clicks.push(1)
+        return pendingOfficial
+      },
+      revealConversation() {
+        order.push('reveal')
+        io.reveals.push(1)
+      },
+    })
+    const work = oneClickReplicate(ROW, io)
+    await Promise.resolve()
+    assert.deepEqual(order, ['reveal'])
+    assert.equal(io.attaches.length, 0)
+    assert.equal(io.prefills.length, 0)
+    resolveOfficial({ ok: false, error: 'newSessionFailed' })
+    const result = await work
+    assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
+    assert.equal(io.attaches.length, 0)
+    assert.equal(io.prefills.length, 0)
+    assert.equal(io.status.at(-1), 'card.cta.newSessionFailed')
+  })
+
   it('new-session failure never attaches to the prior session', async () => {
     const io = makeIo({
       async clickNewSession() {
@@ -264,6 +291,7 @@ describe('oneClickReplicate', () => {
     })
     const result = await oneClickReplicate(ROW, io)
     assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
+    assert.equal(io.reveals.length, 1)
     assert.equal(io.attaches.length, 0)
     assert.equal(io.prefills.length, 0)
     assert.equal(io.status.at(-1), 'card.cta.newSessionFailed')
@@ -280,9 +308,24 @@ describe('oneClickReplicate', () => {
     assert.deepEqual(result, { ok: false, error: 'newSessionFailed' })
     assert.equal(io.clicks.length, 1)
     assert.equal(io.attaches.length, 0)
-    assert.equal(io.reveals.length, 0)
+    assert.equal(io.reveals.length, 1)
     assert.equal(io.prefills.length, 0)
     assert.equal(io.status.at(-1), 'card.cta.newSessionFailed')
+  })
+
+  it('uses a blank-reused official target explicitly for attachment and prompt', async () => {
+    const io = makeIo({
+      async clickNewSession() {
+        io.clicks.push(1)
+        return { ok: true, sessionId: 'sess-blank-reused', reusedBlank: true }
+      },
+    })
+    const result = await oneClickReplicate(ROW, io)
+    assert.equal(result.ok, true)
+    assert.equal(io.attaches.length, 1)
+    assert.equal(io.attaches[0].sessionId, 'sess-blank-reused')
+    assert.equal(io.prefills.length, 1)
+    assert.match(io.prefills[0], /^\/video-deconstruct\n\n/)
   })
 
   it('fallback attachment event carries the returned new session id', async () => {

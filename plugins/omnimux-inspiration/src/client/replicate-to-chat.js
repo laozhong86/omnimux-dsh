@@ -203,9 +203,21 @@ export async function oneClickReplicate(row, io = {}) {
 
     onStatus('card.cta.replicating')
 
+    let clickPromise
+    try {
+      // Dispatch exactly one official New Session gesture, then reveal the
+      // middle column while official lifecycle resolution remains pending.
+      clickPromise = clickNew({ document: doc, window: win })
+    } catch {
+      try { reveal() } catch { /* keep the visible retry surface */ }
+      onStatus('card.cta.newSessionFailed')
+      return { ok: false, error: 'newSessionFailed' }
+    }
+    try { reveal() } catch { /* keep awaiting official resolution */ }
+
     let clickResult = null
     try {
-      clickResult = await clickNew({ document: doc, window: win })
+      clickResult = await clickPromise
     } catch {
       onStatus('card.cta.newSessionFailed')
       return { ok: false, error: 'newSessionFailed' }
@@ -254,11 +266,8 @@ export async function oneClickReplicate(row, io = {}) {
       return { ok: false, error: 'attachFailed' }
     }
 
-    // Reveal before prefill for every attach outcome (quota included), so a
-    // gui-hidden composer never swallows the prefill (#528). Reveal errors
-    // still allow prefill to proceed; prefill errors leave the column up.
-    try { reveal() } catch { /* ignore */ }
-
+    // The column was already revealed immediately after action dispatch, before
+    // official target resolution; keep that visible state for every outcome.
     const prompt = buildReplicationPrompt(row)
     if (quotaExceeded) {
       try { await prefill(prompt) } catch { /* ignore */ }

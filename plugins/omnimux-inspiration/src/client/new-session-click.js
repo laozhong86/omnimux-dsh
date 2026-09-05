@@ -9,6 +9,18 @@
 export const NEW_SESSION_WAIT_MS = 1500
 export const NEW_SESSION_POLL_MS = 50
 
+/** Official `sessions` client service injected into this plugin at apply time. */
+let officialSessions = null
+
+/**
+ * Bind the official public sessions service. This is scoped to the inspiration
+ * client module; it is not an attachment-store fallback or a cross-plugin queue.
+ * @param {unknown} sessions
+ */
+export function bindOfficialSessions(sessions) {
+  officialSessions = sessions || null
+}
+
 const SESSION_MENU_RE = /新会话|新建会话|new session/i
 const PROJECT_MENU_RE = /新建项目|create project|new project/i
 
@@ -139,7 +151,32 @@ function readActiveSessionId(win) {
   }
 }
 
-function openedNewSessionId(win, beforeId) {
+function sessionSnapshot(sessions) {
+  const list = sessions && sessions.list
+  if (!list || typeof list.getSnapshot !== 'function') return null
+  try {
+    return list.getSnapshot()
+  } catch {
+    return null
+  }
+}
+
+function resolvedOfficialTarget(sessions, beforeId) {
+  const snapshot = sessionSnapshot(sessions)
+  const sessionId = snapshot?.current
+  if (!sessionId || typeof sessionId !== 'string') return null
+  const summary = snapshot.byId?.[sessionId]
+  // `blank` is the official SessionSummary lifecycle bit. It proves that this
+  // selected target is a legal new-session result, including blank reuse.
+  if (!summary || summary.blank !== true) return null
+  return {
+    ok: true,
+    sessionId,
+    reusedBlank: sessionId === beforeId,
+  }
+}
+
+function resolvedAttachmentTarget(win, beforeId) {
   const afterId = readActiveSessionId(win)
   if (!afterId || afterId === 'default' || afterId === beforeId) return null
   return { ok: true, sessionId: afterId }
@@ -154,21 +191,23 @@ function openedNewSessionId(win, beforeId) {
  *   window?: unknown,
  *   now?: () => number,
  *   sleep?: (ms: number) => Promise<void>,
+ *   sessions?: { list?: { getSnapshot?: () => unknown } },
  *   timeoutMs?: number,
  *   pollMs?: number,
  * }} [opts]
- * @returns {Promise<{ ok: true, sessionId?: string } | { ok: false, error: 'newSessionFailed' }>}
+ * @returns {Promise<{ ok: true, sessionId: string, reusedBlank?: boolean } | { ok: false, error: 'newSessionFailed' }>}
  */
 export async function clickOfficialNewSession(opts = {}) {
   const doc = resolveDoc(opts.document)
   const win = resolveWindow(doc, opts.window)
+  const sessions = opts.sessions || officialSessions
   const timeoutMs = Number.isFinite(opts.timeoutMs) ? opts.timeoutMs : NEW_SESSION_WAIT_MS
   const pollMs = Number.isFinite(opts.pollMs) ? opts.pollMs : NEW_SESSION_POLL_MS
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now()
   const sleep = typeof opts.sleep === 'function'
     ? opts.sleep
     : (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-  const beforeId = readActiveSessionId(win)
+  const beforeId = sessionSnapshot(sessions)?.current || readActiveSessionId(win)
   let clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
   let clickedButton = false
 
@@ -188,12 +227,22 @@ export async function clickOfficialNewSession(opts = {}) {
     if (!clickedMenu) {
       clickedMenu = clickIfPossible(findNewSessionMenuItem(doc))
     }
-    const opened = openedNewSessionId(win, beforeId)
-    if (opened) return opened
+    const officialTarget = resolvedOfficialTarget(sessions, beforeId)
+    if (officialTarget) return officialTarget
+    // Compatibility only for runtimes predating the public `sessions` seam.
+    // Once the official seam is present, never infer success from attachments.
+    if (!sessions) {
+      const attachmentTarget = resolvedAttachmentTarget(win, beforeId)
+      if (attachmentTarget) return attachmentTarget
+    }
     await sleep(pollMs)
   }
 
-  const opened = openedNewSessionId(win, beforeId)
-  if (opened) return opened
+  const officialTarget = resolvedOfficialTarget(sessions, beforeId)
+  if (officialTarget) return officialTarget
+  if (!sessions) {
+    const attachmentTarget = resolvedAttachmentTarget(win, beforeId)
+    if (attachmentTarget) return attachmentTarget
+  }
   return { ok: false, error: 'newSessionFailed' }
 }
