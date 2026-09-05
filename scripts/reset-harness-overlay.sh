@@ -19,7 +19,9 @@ git -C "$src" checkout -- \
   packages/client/ui-commands/src/client/contract.ts \
   packages/client/ui-commands/src/client/service.ts \
   packages/client/ui-commands/src/client/index.ts \
-  packages/client/ui-commands/tests/service.client.spec.ts
+  packages/client/ui-commands/tests/service.client.spec.ts \
+  packages/client/ui-model-selection/tests/browser-plugin.client.spec.ts \
+  packages/client/ui-permission-presets/tests/browser-plugin.client.spec.ts
 
 rm -f "$src/patches/app-builder-lib@26.15.3.patch"
 
