@@ -182,7 +182,7 @@
         "docs/evidence/2026-09-05-model-seedance-2-0-text_to_video.md",
         "docs/evidence/2026-09-05-model-seedance-2-0-first_frame.md"
       ],
-      "notes": "2026-09-05 C1：text_to_video listed；first_frame draft（images[] live / mapper image 400）"
+      "notes": "2026-09-05 C1：text_to_video listed；first_frame draft（images[] live；mapper image；本型号 singular-image 未单测，家族 fast/mini/2.5 观察 400）"
     },
     {
       "id": "kling-v3",
