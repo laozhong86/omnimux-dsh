@@ -7,7 +7,7 @@ const t = (key) => ({
   'composerAdd.fromLibrary': '从资产库添加',
 }[key] || key)
 
-function makeCtx() {
+function makeCtx(capabilities = { clientAction: true }) {
   const registrations = []
   const effects = []
   return {
@@ -16,7 +16,10 @@ function makeCtx() {
     ctx: {
       inject(deps, callback) {
         assert.deepEqual(deps, ['commandUi'])
-        callback({ commandUi: { register(row) { registrations.push(row); return () => { row.stopped = true } } } })
+        callback({ commandUi: {
+          capabilities,
+          register(row) { registrations.push(row); return () => { row.stopped = true } },
+        } })
       },
       effect(factory) { effects.push(factory) },
     },
@@ -48,5 +51,29 @@ describe('registerComposerAddCommands', () => {
     registerComposerAddCommands(ctx, { t, onAddFile() {}, onAddLibrary() {} })
     effects[0]()()
     assert.equal(registrations.every(row => row.stopped), true)
+  })
+
+  it('does not register client actions on a runtime without the explicit capability', () => {
+    const { ctx, registrations, effects } = makeCtx({})
+    const unavailable = []
+    registerComposerAddCommands(ctx, {
+      t,
+      onAddFile() { throw new Error('must not run') },
+      onAddLibrary() { throw new Error('must not run') },
+      onClientActionUnavailable() { unavailable.push('notice') },
+    })
+    assert.deepEqual(registrations, [])
+    assert.deepEqual(effects, [])
+    assert.deepEqual(unavailable, ['notice'])
+  })
+
+  it('registers both direct entries after a capability-bearing runtime reload', () => {
+    const oldRuntime = makeCtx({})
+    registerComposerAddCommands(oldRuntime.ctx, { t, onAddFile() {}, onAddLibrary() {} })
+    assert.equal(oldRuntime.registrations.length, 0)
+
+    const upgradedRuntime = makeCtx({ clientAction: true })
+    registerComposerAddCommands(upgradedRuntime.ctx, { t, onAddFile() {}, onAddLibrary() {} })
+    assert.deepEqual(upgradedRuntime.registrations.map(row => row.name), ['add-file', 'add-from-library'])
   })
 })

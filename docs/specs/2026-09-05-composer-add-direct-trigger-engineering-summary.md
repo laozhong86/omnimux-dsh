@@ -4,16 +4,18 @@
 
 - Replaced the pointer-only `menu-direct` interception with the formal `clientAction` command UI contribution declared by the pinned runtime overlay. The native + command list, command names, descriptions, and fuzzy search remain unchanged.
 - `add-file` consumes the session provided by the command runtime and invokes the existing `kind: 'any'` native picker path. Cancellation and abort skip materialization, attachment writes, and error toasts.
-- `add-from-library` owns its AssetPicker instance through the action session and abort signal. Close, cancel, and scope disposal settle only that action; a successful action restores composer focus only through the provided guarded callback.
+- `add-from-library` owns its AssetPicker instance through the action session and abort signal. Close, cancel, and scope disposal settle only that action; superseding a session settles the prior owner without restoring its focus. A delayed owner cannot write the tray, close a reopened picker, set its error, or clear its busy state.
 - Removed `menu-direct.js` and its MutationObserver/capture/Escape implementation. There is no DOM menu selector, synthetic Escape, Host command execution, or `command/run` / `command/done` invocation in this path.
 - Added `patches/dsh-0.1.2-alpha.3/ui-commands-client-action.patch`, updated overlay apply/reset coverage, and retained the pinned `dd6322d604e00eec1ba5e0c8541159906a21094a` / `0.1.2-alpha.3` values.
+- The plugin registers the two direct actions only when `commandUi.capabilities.clientAction === true`. Older runtimes expose neither entry and receive one origin-deduplicated local update notice; the Host currently exposes no reliable build/version identity. A reloaded upgraded runtime restores both entries.
+- AssetPicker confirmation is owner-guarded: an old delayed request after close/Escape and reopen cannot write the attachment tray or settle the newer action.
+- Each runtime action releases its Cordis effect wrapper on resolve, reject, or abort. `ui-conversation` binds the guarded restore hook to InputBar's existing Lexical focus path, and a later same-session popup invalidates an older action's focus restore.
 
 ## Verification
 
-- `node --test plugins/omnimux/src/client/composer-add/commands.test.js plugins/omnimux/src/client/composer-add/install.test.js plugins/omnimux/src/client/composer-add/kind.test.js plugins/omnimux/src/client/components/asset-picker/picker-model.test.js` passed.
-- `pnpm --filter omnimux test` passed: 954 tests, 0 failed.
-- The isolated pinned upstream worktree ran `./node_modules/.bin/vitest run packages/client/ui-commands/tests/service.client.spec.ts`: 54 tests, 0 failed.
-- An isolated pinned clone completed product `apply-harness-overlay.sh` → repeated apply (already applied) → `reset-harness-overlay.sh`; `git diff --check` and final `git diff --exit-code` passed.
+- Targeted product tests passed: 23 tests across command registration, runtime notice, library ownership, install contract, picker model, and kind inference.
+- An isolated exact-pin clone completed product `apply-harness-overlay.sh` → repeated apply (already applied) → `reset-harness-overlay.sh`; `git diff --check` and final `git diff --exit-code` passed.
+- The isolated upstream `ui-commands` Vitest run is blocked in this workspace because its shared dependency tree cannot resolve `zustand/vanilla`; it is not reported as a passing runtime suite and remains for the assigned test runner.
 
 ## Delivery boundary
 
@@ -21,4 +23,4 @@ The desktop-fork managed runtime-overlay PR is a required dependency. This produ
 
 ## Consistency verdict
 
-**IS_PASS: YES** for source, overlay reversibility, targeted runtime regression coverage, and package tests. It is not a final Electron Dev-App QA approval.
+**IS_PASS: PARTIAL** for source, overlay reversibility, and targeted product regression coverage. Upstream package tests and final Electron Dev-App QA remain outstanding.

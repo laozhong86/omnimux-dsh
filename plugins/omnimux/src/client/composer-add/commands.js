@@ -9,6 +9,7 @@
  *   t: (key: string) => string,
  *   onAddFile: (sessionId: string, signal: AbortSignal, restoreComposerFocus: () => void) => void | Promise<void>,
  *   onAddLibrary: (sessionId: string, signal: AbortSignal, restoreComposerFocus: () => void) => void | Promise<void>,
+ *   onClientActionUnavailable?: () => void,
  * }} actions
  */
 export function registerComposerAddCommands(ctx, actions) {
@@ -16,6 +17,10 @@ export function registerComposerAddCommands(ctx, actions) {
   ctx.inject(['commandUi'], (inner) => {
     const commandUi = inner.commandUi ?? inner.get?.('commandUi')
     if (!commandUi || typeof commandUi.register !== 'function') return
+    if (commandUi.capabilities?.clientAction !== true) {
+      actions.onClientActionUnavailable?.()
+      return
+    }
     const t = actions.t
     const stopFile = commandUi.register({
       name: 'add-file',

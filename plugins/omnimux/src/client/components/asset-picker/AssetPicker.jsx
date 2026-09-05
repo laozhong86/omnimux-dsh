@@ -149,6 +149,12 @@ export function AssetPicker({
   const [selected, setSelected] = useState(() => new Set())
   const [busy, setBusy] = useState(false)
   const requestRevision = useRef(0)
+  const openRevision = useRef(0)
+  const previousOpen = useRef(open)
+  if (previousOpen.current !== open) {
+    previousOpen.current = open
+    openRevision.current += 1
+  }
 
   useEffect(() => { ensureStyles() }, [])
   useEffect(() => {
@@ -198,14 +204,17 @@ export function AssetPicker({
     if (picked.length === 0 || currentQuota.remaining === 0) return
     const accepted = picked.slice(0, currentQuota.remaining)
     if (accepted.length === 0) return
+    const ownerRevision = openRevision.current
     setBusy(true)
     try {
       await onConfirm(accepted)
-      if (closeOnConfirm) onClose()
+      if (closeOnConfirm && open && openRevision.current === ownerRevision) onClose()
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught))
+      if (openRevision.current === ownerRevision) {
+        setError(caught instanceof Error ? caught.message : String(caught))
+      }
     } finally {
-      setBusy(false)
+      if (openRevision.current === ownerRevision) setBusy(false)
     }
   }
 

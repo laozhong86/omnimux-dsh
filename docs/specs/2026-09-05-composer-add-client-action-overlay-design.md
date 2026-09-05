@@ -77,18 +77,30 @@ export interface ClientActionContext {
   /** 仅在本 action 仍为该 session 的当前动作且没有新交互接管时聚焦 composer。 */
   restoreComposerFocus(): void
 }
+
+export interface CommandUiCapabilities {
+  readonly clientAction: true
+}
+
+export interface CommandUiContract {
+  readonly capabilities: CommandUiCapabilities
+  register(contribution: CommandContribution): () => void
+  decorate(decoration: CommandDecoration): () => void
+  bindComposerFocus(sessionId: ClientSessionContext['sessionId'], focus: () => void): () => void
+}
 ```
 
 约束：
 
 - `run()` 接收**当前 pick 的 session projection**，没有全局活动会话查询；composer-add 因此取 `context.session.sessionId`，消除 PR #558 的 `getActiveSessionId()` 竞态。
 - `run()` 可异步。未处理 rejection 被 runtime 捕获并通过既有 `noticeFor(sessionId, 'error', ...)` 通知；不抛到 React 事件循环，不产生 Host command 日志。
-- `signal` 在同 session 新动作取代、会话 scope dispose、runtime dispose 时 abort。动作实现必须把取消视作无副作用路径，不显示错误 toast。
-- runtime 以 `Map<SessionId, ActiveClientAction>` 持有每个 session 的 `{ generation, AbortController, restoring }`。同 session busy 时 `busy:'ignore'` 直接返回 `handled`；统一 controller 已关闭菜单，故不会启动第二个 picker/modal。
-- `restoreComposerFocus()` 只在该 action 仍为 current、未 abort、且尚未调用时生效；若之后的 popup/modal/panel 已接管，调用方不调用它。它不关闭也不重开任何 UI。native picker 的 Promise 在取消/完成后调用；AssetPicker 的 `onClose`/完成回调调用。这样不会把焦点强抢回 composer 覆盖新 modal/系统面板。
+- `signal` 在会话 scope/runtime dispose 时 abort。动作实现必须把取消视作无副作用路径，不显示错误 toast。
+- runtime 以 `Map<SessionId, ActiveClientAction>` 持有每个 session 的 `AbortController`、focus 资格和 Cordis effect disposer。同 session busy 时 `busy:'ignore'` 直接返回 `handled`；统一 controller 已关闭菜单，故不会启动第二个 picker/modal。action resolve/reject/abort 都会结算 disposer，避免 effect wrapper 随操作累积到 session 结束。
+- `restoreComposerFocus()` 只在该 action 仍为 current、未 abort、有 focus 资格且尚未调用时生效。后来的同 session popup 会撤销旧 action 的 focus 资格，因此旧 action 结算后不会抢回焦点。`ui-conversation` 的 `ComposerKeyboard.bindComposerFocus()` 把该 hook 接到 InputBar 已有的 Lexical `getRootElement().focus({ preventScroll: true })` 与 selection reveal 路径；runtime 不猜测 textarea/DOM。native picker 的 Promise 在取消/完成后调用；AssetPicker 的 `onClose`/完成回调调用。
 - token 消费为 runtime 的责任，不是插件 action 的责任：**在开始 `clientAction` 前**按 menu `span` / bare-enter `token` 调用已有 `consumeVia()`。这与 Host bare command 的草稿 token 清除语义一致，并保持 “+” 空 span 安全 no-op。若 CAS miss，仍执行 UI action（命令是菜单中已选定的一项）；不能因陈旧 draft 让用户点按无响应。
 - 菜单关闭仍由 `InputTriggerController.settle()` 在 `onPick()` 返回后统一完成（该逻辑已适用于所有来源）；`clientAction` 不合成 Escape、不派发 outside pointer、不改 DOM。
 - `register()`/`decorate()` 继续返回 fiber disposer；runtime dispose 将 abort 并删除活动 action。旧 `popupSelect`、`decorate`、`leadingInput`、host execute 的决策分支字节语义不变。
+- `capabilities.clientAction === true` 是插件声明这两条 `clientAction` 的唯一准入条件。旧 runtime 缺少该能力时，两条均不注册；绝不声明为 `popupSelect` 或走菜单二级回退。插件仅显示一次本地、非聊天、非模态的运行时更新提示。当前 Host 未暴露可靠 build/version 标识，提示保守地按 origin 去重一次；运行时升级并重新加载后能力重新读取，条目自动恢复注册。
 
 ### 1.3 Runtime dispatch 变化
 
@@ -100,7 +112,7 @@ export interface ClientActionContext {
 4. 同步调用 `spec.run(context)`；通过 `Promise.resolve()` 结算。
 5. resolve 后仅删除同 generation 的 active entry；reject 后若非 abort，走已有 `noticeFor`，再删除；绝不调用 `remote.commands.execute`。
 
-对于 `dispatch()` 的 menu 入口，返回 `handled`，随后 input-trigger controller 关闭菜单。对于 `matchEnter()` 的 bare `/add-file`，同样调用相同 helper，因此**鼠标、Enter、辅助点击（MenuView 的 mousedown）、触摸等不再分叉**。这也改变旧 PRD “Enter popup fallback”的假设：正式 clientAction 上线后 Enter 必须直达；兼容 fallback 是“未加载该 overlay 的旧 Host/旧 runtime 仍使用 popupSelect 声明”，而不是同一二进制的键鼠功能降级。
+对于 `dispatch()` 的 menu 入口，返回 `handled`，随后 input-trigger controller 关闭菜单。对于 `matchEnter()` 的 bare `/add-file`，同样调用相同 helper，因此**鼠标、Enter、辅助点击（MenuView 的 mousedown）、触摸等不再分叉**。旧 Host/旧 runtime 缺少 `capabilities.clientAction` 时，插件不注册两条命令，不能把同一二进制降级为二级选择菜单。
 
 ### 1.4 Composer-add 适配
 
@@ -113,7 +125,7 @@ export interface ClientActionContext {
 
 - `install.js` 导出/注入 session-bound action factory，而不是读取 `currentSessionId(store)`；仅 legacy window custom events 如仍被其他代码使用才保留该查找，且在本 PR 移除前应有引用检索证明。
 - `addLocalPaths` 在 `await requestJson()` 前后读取 `signal.aborted`；取消 picker（`paths=[]`）不 materialize、不 toast、不写 AttachmentStore；abort 不 toast。
-- AssetPicker modal state 必须按 action generation/session 绑定；另一个动作、scope dispose 或 signal abort 时仅关闭**本动作拥有的 modal root**，不影响后来打开的 modal。`onConfirm` busy 保留；重复确认不重复 instantiate。
+- AssetPicker modal state 必须按 action generation/session 绑定；另一个动作、scope dispose 或 signal abort 时仅关闭**本动作拥有的 modal root**，不影响后来打开的 modal。确认请求返回后再次核验 owner；关闭或 Escape 后的延迟响应不得写 AttachmentStore、关闭或 resolve 后来打开的 action。`onConfirm` busy 保留；重复确认不重复 instantiate。
 - `AssetPicker` 共享组件、`picker-model`、assets picker `kind:'any'` 留在 PR #558；它们不是本 Host overlay 的职责。
 
 ### 1.5 真实 overlay 文件、出口与测试位置
@@ -126,7 +138,7 @@ patches/dsh-0.1.2-alpha.3/
   ui-commands-client-action.patch                  # 新增：唯一正式 Host overlay
 scripts/
   apply-harness-overlay.sh                          # 修改：仍按 pin 顺序 apply；输出正确 desktop-fork 提示
-  reset-harness-overlay.sh                          # 修改：恢复 ui-commands 这四个 tracked 文件
+  reset-harness-overlay.sh                          # 修改：恢复 ui-commands 和 conversation focus seam tracked 文件
 plugins/omnimux/src/client/composer-add/
   commands.js                                      # popupSelect -> clientAction
   install.js                                       # session-bound action + abort/focus ownership
@@ -144,16 +156,21 @@ packages/client/ui-commands/src/client/service.ts  # active action registry + di
 packages/client/ui-commands/src/client/index.ts    # 导出新 type
 packages/client/ui-commands/tests/service.client.spec.ts
                                                     # menu/Enter、consume、busy、abort、error、legacy matrix
+packages/client/ui-conversation/src/client/contract/input.ts
+packages/client/ui-conversation/src/client/input/facade.ts
+packages/client/ui-conversation/src/client/input/hub.ts
+packages/client/ui-conversation/src/client/skeleton/InputBar.tsx
+                                                    # formal ComposerKeyboard -> InputBar focus binder
 ```
 
-不改 `ui-input-trigger`：它已在 `settle()` 中统一关闭菜单；不改 `ui-conversation`：它已由 `toggleSource('command')` 打开正式 command source；不改 `dsh-commands`：避免 lifecycle 记录。
+不改 `ui-input-trigger`：它已在 `settle()` 中统一关闭菜单；`ui-conversation` 仅增加 formal focus binder，不改 `toggleSource('command')`；不改 `dsh-commands`：避免 lifecycle 记录。
 
 ### 1.6 Patch 生成、apply/reset 与可复现验证
 
 1. 从干净、精确 pin 的官方 clone 工作；当前默认 clone 已有其它任务的改动和大量未跟踪文件，工程应使用隔离 clone/worktree 或先由拥有者恢复，**不可 reset/clean 别人的现场**。
-2. 在官方 clone 完成四个上列文件的最小改动与 package 定向测试；用 `git diff -- packages/client/ui-commands/... > <产品 worktree>/patches/dsh-0.1.2-alpha.3/ui-commands-client-action.patch` 落盘。patch 不应含 lockfile、构建产物或其它包。
+2. 在官方 clone 完成上列 ui-commands 与 conversation focus seam 的最小改动与 package 定向测试；用精确 pin 基线生成 `patches/dsh-0.1.2-alpha.3/ui-commands-client-action.patch`。patch 不应含 lockfile、构建产物或其它包。
 3. 在干净相同 SHA clone，执行产品仓 `DSH_SRC=<clone> ./scripts/apply-harness-overlay.sh`：必须同时 `git apply --check`、真正 apply 成功；第二次运行应报告 already applied；`git diff --check` 通过。
-4. 运行 `DSH_SRC=<clone> ./scripts/reset-harness-overlay.sh`：必须恢复 quota overlay **和**这四个 ui-commands 路径；再验证 `git diff --exit-code`（忽略受批准的非 overlay 本地文件）与 `git apply --reverse --check` 的预期状态。现有 reset 脚本只列 quota 文件，未覆盖 UI 文件；本任务必须补齐，否则不可逆。
+4. 运行 `DSH_SRC=<clone> ./scripts/reset-harness-overlay.sh`：必须恢复 quota overlay **和**全部 ui-commands/conversation overlay 路径；再验证 `git diff --exit-code`（忽略受批准的非 overlay 本地文件）与 `git apply --reverse --check` 的预期状态。现有 reset 脚本只列 quota 文件，未覆盖 UI 文件；本任务必须补齐，否则不可逆。
 
 ### 1.7 Desktop-fork 到真实 Dev45120 的部署结论
 
@@ -186,9 +203,9 @@ pinned deepseek-harness source
 建议切分为两条明确依赖的 PR（均不自动合）：
 
 1. **Host overlay / desktop runtime PR（R1，先合）**：产品仓 patch、apply/reset 契约和受管 desktop-fork runtime overlay 能力（跨仓部分按其 own PR）；不改变插件 `commands.js` 运行声明。它可被独立测试并不会改变用户功能。
-2. **PR #558 rebased 插件 PR（R1，后合）**：保留 AssetPicker、assets `kind:'any'`、业务 tests；删除 `menu-direct.js`/tests/import；将两项 command UI 改为 `clientAction`；增加 composer session/busy/cancel tests。该 PR 的 `package.json` 兼容前提必须声明 `dsh-client-ui-commands@0.1.2-alpha.3` 的 OmniMux runtime 已带此 patch，防止把新 spec 投递给旧 runtime。
+2. **PR #558 rebased 插件 PR（R1，后合）**：保留 AssetPicker、assets `kind:'any'`、业务 tests；删除 `menu-direct.js`/tests/import；将两项 command UI 改为 `clientAction`；增加 composer session/busy/cancel tests。该 PR 只在 `commandUi.capabilities.clientAction === true` 时注册两条命令，旧 runtime 保持无入口并显示一次本地更新提示。
 
-回滚顺序反向：先把 plugin command declarations 暂时回到原 `popupSelect`（功能退回多一步但可用），再从 desktop runtime manifest/release 中移除 `ui-commands-client-action.patch` 并重建 artifact。禁止在安装包目录手改 `lib/client.js`；只有 git patch + 已构建 artifact 是可审计回滚物。
+回滚顺序反向：先移除插件的 `clientAction` 条目，再从 desktop runtime manifest/release 中移除 `ui-commands-client-action.patch` 并重建 artifact。禁止在安装包目录手改 `lib/client.js`；只有 git patch + 已构建 artifact 是可审计回滚物。
 
 ## 2. 数据结构与接口
 
@@ -301,8 +318,8 @@ sequenceDiagram
 ## 4. 未决事项和假设
 
 1. **需要决策/授权（阻断真实 Dev45120）**：desktop-fork owner 是否授权新增受管 runtime-overlay 命令或扩展 `upstream:prepare-runtime`。没有它，产品 patch 可设计/测试但不能可复现进入 Dev App artifact。
-2. `clientAction` 的 Enter 语义定为和鼠标一致的直达。这比旧 PRD 的 “Enter popup fallback” 更符合键鼠一致；如业务坚持 Enter 保留 popup，必须引入显式 `activation` 策略并接受不一致，**不建议**。
-3. `restoreComposerFocus()` 由 action 拥有者在其 modal/native picker 完整结算后调用；runtime 不做延时自动 focus。若后续需要全局 UI ownership 检测，应单独在官方 UI session/interaction 层设计，不能让 command runtime 以 DOM 猜测。
+2. `clientAction` 的 Enter 语义定为和鼠标一致的直达。旧 runtime 缺能力时不注册入口，因此不存在 Enter 的二级菜单降级路径。
+3. `restoreComposerFocus()` 由 action 拥有者在其 modal/native picker 完整结算后调用；runtime 不做延时自动 focus。InputBar 通过 `ComposerKeyboard` 的正式 binder 接收实际 Lexical focus；不能让 command runtime 以 DOM 猜测。
 4. `clientAction` 首期仅支持 contribution 和 decoration 的 bare 入口；本 Issue 只需 contribution。是否允许 decoration 复用应由 Host overlay PR 在测试矩阵覆盖后决定；默认实现建议两者同样支持，因为 `CommandUiSpec` 已共享，且不会影响 `leadingInput` 分支。
 
 # Part B：工程任务分解
@@ -321,7 +338,7 @@ sequenceDiagram
   - `scripts/reset-harness-overlay.sh`（修改）
   - `docs/specs/2026-09-05-composer-add-client-action-overlay-design.md`（本文）
 - **依赖**：无。
-- **内容**：建立 patch 生成/顺序 apply/幂等 apply/reset 的合同；reset 显式覆盖 ui-commands 四文件；修正脚本遗留的 retired `omnimux-desktop` 提示为 `omnimux-desktop-fork`。
+- **内容**：建立 patch 生成/顺序 apply/幂等 apply/reset 的合同；reset 显式覆盖 ui-commands 与 conversation focus seam；修正脚本遗留的 retired `omnimux-desktop` 提示为 `omnimux-desktop-fork`。
 - **验收**：干净同-SHA clone 上 apply → second apply → reset 的 exit 0；`git diff --check`；pin 不变。
 
 ### T02 — 官方 ui-commands `clientAction` 契约与 runtime（P0）
@@ -331,8 +348,8 @@ sequenceDiagram
   - `packages/client/ui-commands/src/client/index.ts`
   - `packages/client/ui-commands/tests/service.client.spec.ts`
 - **依赖**：T01（最终 patch 落盘）。
-- **内容**：新增判别类型、session-scoped abort/busy/focus API、统一 menu/Enter dispatch；保留 popup/decorate/leadingInput/Host bare command 分支原样。
-- **验收**：官方 ui-commands 定向测试包含 menu、Enter、token consume、busy ignore、scope dispose abort、async error notice、focus guard，以及旧决策表全回归。
+- **内容**：新增判别类型、session-scoped abort/busy/focus API、统一 menu/Enter dispatch；保留 popup/decorate/leadingInput/Host bare command 分支原样。conversation 的最小 binder 把 focus hook 接到 InputBar 现有 Lexical focus。
+- **验收**：官方 ui-commands 定向测试包含 menu、Enter、token consume、busy ignore、scope dispose abort、async error notice、effect disposer、popup 接管 focus guard，以及旧决策表全回归。
 
 ### T03 — Composer 适配与 PR #558 DOM 路线移除（P0）
 - **源文件**：
@@ -361,13 +378,12 @@ sequenceDiagram
 
 ### T05 — 集成、L2/Dev45120 QA 与 PR 交接（P0）
 - **源文件**：
-  - `docs/evidence/issue-554/live-qa-report.json`（QA 产物，现有未跟踪证据目录必须保留）
-  - `docs/evidence/issue-554/ego-browser/*`（QA 截图/DOM 工件）
-  - `docs/evidence/issue-554/verify-live-*.json`（`pnpm verify:live` 证据）
+  - `docs/evidence/live-qa-report.json`（`pnpm verify:live` 默认报告；现有未跟踪 `docs/evidence/issue-554/` 必须保留）
+  - `docs/evidence/issue-554/*`（QA 截图/DOM 工件）
   - `.workbuddy/pr-board.md`（本机不提交，按合同更新）
 - **依赖**：T03；真实 Dev45120 部署另依赖 T04 和已构建/用户手动重启的 Dev App。
 - **内容**：先在未合并 worktree 的 L2 任务环境做浏览器验收；合并后才物化公共 Dev。45120 的 live 检查是交付硬门槛，L2 不替代它。
-- **验收**：以下 QA 矩阵、`pnpm verify:live <stage>`、ego-browser 证据全部齐全；没有任何自动 merge/production sync/restart。
+- **验收**：以下 QA 矩阵、`pnpm verify:live <stage>`、认证的内置浏览器 DOM/截图证据全部齐全；没有任何自动 merge/production sync/restart。
 
 ```mermaid
 graph LR
@@ -384,24 +400,25 @@ graph LR
 - action 绝不使用 `remote.commands.execute`；任何出现 `command/run`/`command/done` 的测试或真机 session log 都是 P0 回归。
 - 官方 controller 自己关闭菜单：禁止菜单 selector、MutationObserver、capture listener、synthetic Escape/outside pointer、`remove()`。
 - 任何 Host/client source patch 只可经 `patches/dsh-0.1.2-alpha.3/ui-commands-client-action.patch` 交付；官方 clone 和 `/Applications/.../app.asar.unpacked` 都不是编辑目标。
-- 当前 `reset-harness-overlay.sh` 的 hard-coded quota 文件清单必须随新增 patch 扩展；否则 “apply/reset” 不是可逆合同。
+- 当前 `reset-harness-overlay.sh` 的 hard-coded quota 文件清单必须随新增 patch 扩展到 ui-commands 与 conversation focus seam；否则 “apply/reset” 不是可逆合同。
 - 客户端 code 改动不等于 45120 可见：产品同步只物化插件；runtime overlay 需要桌面 fork 的 build/pack/vendor 链路并由用户手动重启新 artifact。
-- PR #558 中 `AssetPicker` 与 `kind:'any'` 可保留；唯 `menu-direct` 及其 pointer-only fallback 逻辑必须删除。
+- PR #558 中 `AssetPicker` 与 `kind:'any'` 可保留；唯 `menu-direct` 及其 pointer-only 逻辑必须删除。
 
 ## 8. QA 矩阵（硬门禁）
 
 | 面 | 用例 | 期望证据 |
 |---|---|---|
 | 旧命令 | 普通 contribution popupSelect、decorate host bare、leadingInput、Host bare command | ui-commands unit matrix；旧分支行为无变；Host bare 仍有 lifecycle（作为对照） |
+| 旧 runtime | `capabilities.clientAction` 缺失 | 两条 composer-add 命令均不注册；仅一次本地非聊天、非模态运行时更新提示；无 popupSelect options 异常 |
 | 新鼠标路径 | 「+」→add-file / add-from-library，用鼠标主键、触摸/辅助点击 | 原生菜单立即关闭；目标系统 picker/modal 一次出现；无 popupSelect |
 | 新键盘路径 | 方向键选中两条、Enter；裸 `/add-file` Enter | 与鼠标同一 `clientAction`，无 popup；没有 second code path |
 | 无聊天噪音 | 每个 clientAction 成功、取消、失败 | session/event 与 UI 无 `command/run`、`command/done`、无 flow node |
 | token/焦点 | slash token、+ 空 span、native picker cancel、AssetPicker Esc、随后立即打开另一 modal/panel | token CAS 已消费；仅原 action current 时恢复焦点；不关闭/抢焦新 UI |
 | 取消与异常 | Abort、scope dispose、HTTP/network reject、501 picker unsupported | abort/cancel 零 materialize/instantiate/store；非 abort 一个受控 notice/toast；无 unhandled rejection |
-| busy/重复 | 双击、重复 Enter、mouse+Enter 连续、确认双击 | 每 session/action 只开一个 picker；每确认最多一次 instantiate；busy 清理后才允许下一次 |
+| busy/重复 | 双击、重复 Enter、mouse+Enter 连续、确认双击、确认请求挂起后 Escape→重开→旧响应返回 | 每 session/action 只开一个 picker；每确认最多一次 instantiate；旧响应不写 tray、不关闭或结算新 action；busy 清理后才允许下一次 |
 | 业务回归 | 混选文件+目录，8 配额、alreadyIds、重复指纹、asset 选 1/多选 | `kind:'any'` paths 全部进入现有 materialize；quota/duplicate 汇总和 Picker disabled/busy 正确 |
 | overlay 可逆 | apply / already apply / reset | 临时干净 pin clone exit 0、diff check、无手改安装包 |
-| L2 + 45120 | L2 ego-browser + `pnpm verify:live <stage>`；合并后的 Dev45120 ego-browser + live evidence | L2 是 PR 前验证；**45120 report、DOM/snapshot/screenshot 是最终硬门禁，L2 不替代** |
+| L2 + 45120 | 认证的内置浏览器 + `pnpm verify:live <stage>`；合并后的 Dev45120 browser + live evidence | L2 是 PR 前验证；**45120 report、DOM/snapshot/screenshot 是最终硬门禁，L2 不替代** |
 
 ---
 

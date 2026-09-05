@@ -20,6 +20,10 @@ git -C "$src" checkout -- \
   packages/client/ui-commands/src/client/service.ts \
   packages/client/ui-commands/src/client/index.ts \
   packages/client/ui-commands/tests/service.client.spec.ts \
+  packages/client/ui-conversation/src/client/contract/input.ts \
+  packages/client/ui-conversation/src/client/input/facade.ts \
+  packages/client/ui-conversation/src/client/input/hub.ts \
+  packages/client/ui-conversation/src/client/skeleton/InputBar.tsx \
   packages/client/ui-model-selection/tests/browser-plugin.client.spec.ts \
   packages/client/ui-permission-presets/tests/browser-plugin.client.spec.ts
 

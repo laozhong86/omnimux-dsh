@@ -8,6 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const installSource = readFileSync(join(here, 'install.js'), 'utf8')
 const indexSource = readFileSync(join(here, '../index.js'), 'utf8')
 const commandsSource = readFileSync(join(here, 'commands.js'), 'utf8')
+const pickerSource = readFileSync(join(here, '../components/asset-picker/AssetPicker.jsx'), 'utf8')
 
 describe('composer-add install contract', () => {
   it('keeps the business side: modal, window events, toast, submit capture', () => {
@@ -19,6 +20,8 @@ describe('composer-add install contract', () => {
     assert.match(installSource, /registerComposerAddCommands/)
     assert.match(installSource, /addLocalPaths\(sessionId, 'any', signal\)/)
     assert.match(installSource, /signal\?\.aborted/)
+    assert.match(installSource, /libraryActions\.isCurrent\(action\)/)
+    assert.match(installSource, /closeLibraryAction\(libraryActions\.current\(\)\)/)
     assert.match(installSource, /\/omnimux\/composer\/attachments\/materialize/)
   })
 
@@ -40,7 +43,15 @@ describe('composer-add install contract', () => {
     assert.match(commandsSource, /name: 'add-from-library'/)
     assert.match(commandsSource, /ctx\.inject\(\['commandUi'\]/)
     assert.match(commandsSource, /kind: 'clientAction'/)
+    assert.match(commandsSource, /capabilities\?\.clientAction !== true/)
     assert.match(commandsSource, /session\.sessionId/)
-    assert.doesNotMatch(commandsSource, /[Ff]allback/)
+    assert.doesNotMatch(commandsSource, /popupSelect/)
+  })
+
+  it('guards delayed shared-picker confirmation from closing a later open instance', () => {
+    assert.match(pickerSource, /const ownerRevision = openRevision\.current/)
+    assert.match(pickerSource, /openRevision\.current === ownerRevision/)
+    assert.match(pickerSource, /if \(openRevision\.current === ownerRevision\) \{\n        setError/)
+    assert.match(pickerSource, /if \(openRevision\.current === ownerRevision\) setBusy\(false\)/)
   })
 })

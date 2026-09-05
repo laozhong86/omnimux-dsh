@@ -23,6 +23,7 @@ export function AssetPickerModal({ open, onClose, t, occupied, alreadyIds, onCon
       occupied={occupied}
       alreadyIds={alreadyIds}
       onConfirm={onConfirm}
+      closeOnConfirm={false}
       emptyAction={{
         label: t('composerAdd.goLibrary'),
         onClick: () => {

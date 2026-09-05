@@ -8,7 +8,7 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 const stage = process.argv[2] ?? 'all';
 const targetPort = Number.parseInt(process.env.OMNIMUX_PORT ?? String(DEFAULT_PORT), 10);
 const targetUrl = process.env.OMNIMUX_LIVE_URL ?? `http://127.0.0.1:${targetPort}/`;
-const reportPath = resolve(process.env.OMNIMUX_LIVE_REPORT ?? `docs/evidence/issue-554/verify-live-${stage}.json`);
+const reportPath = resolve(process.env.OMNIMUX_LIVE_REPORT ?? 'docs/evidence/live-qa-report.json');
 const timeoutMs = Number.parseInt(process.env.OMNIMUX_LIVE_TIMEOUT_MS ?? String(DEFAULT_TIMEOUT_MS), 10);
 
 function fail(message) {
@@ -35,7 +35,7 @@ const report = {
     dom: { status: 'not-run' },
   },
   verdict: 'FAIL',
-  nextAction: 'QA must run the real authenticated browser probe and record DOM/runtime evidence.',
+  nextAction: 'QA must run the real authenticated built-in browser probe and record DOM/runtime evidence.',
 };
 
 function writeReport() {
@@ -77,7 +77,7 @@ try {
   };
   report.checks.dom = {
     status: 'blocked',
-    detail: 'No ego-browser/CDP DOM assertion or screenshot artifact was supplied.',
+    detail: 'No authenticated built-in browser DOM assertion or screenshot artifact was supplied.',
   };
 } catch (error) {
   report.checks.host = { status: 'blocked', detail: error instanceof Error ? error.message : String(error) };
@@ -89,5 +89,5 @@ try {
 }
 
 console.error(`[live-qa] FAIL: wrote ${reportPath}`);
-console.error('[live-qa] This fail-closed entrypoint only records host preflight. QA must add real authenticated ego-browser/CDP composer assertions.');
+console.error('[live-qa] This fail-closed entrypoint only records host preflight. QA must add real authenticated built-in browser composer assertions.');
 process.exitCode = 1;

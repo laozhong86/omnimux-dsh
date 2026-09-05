@@ -1,8 +1,8 @@
 diff --git a/packages/client/ui-commands/src/client/contract.ts b/packages/client/ui-commands/src/client/contract.ts
-index 4f4374735b..e17bc67e52 100644
+index 4f43747..66ad891 100644
 --- a/packages/client/ui-commands/src/client/contract.ts
 +++ b/packages/client/ui-commands/src/client/contract.ts
-@@ -31,12 +31,29 @@ export interface SelectOption {
+@@ -31,12 +31,34 @@ export interface SelectOption {
   * The shell component is owned by ui-commands; business never sees it. Both
   * callbacks receive the ClientSessionContext captured at popup open.
   */
@@ -27,14 +27,35 @@ index 4f4374735b..e17bc67e52 100644
 +  run(context: ClientActionContext): void | Promise<void>
 +}
 +
++/** Explicit runtime feature detection for business packages. */
++export interface CommandUiCapabilities {
++  readonly clientAction: true
++}
++
 +/** The client behavior contributed by a command row. */
 +export type CommandUiSpec = PopupSelectSpec | ClientActionSpec
 +
  /**
   * One client-owned command contribution: a slash-menu entry whose behavior
   * lives entirely on the client (no host descriptor). Merged with the host
+@@ -74,6 +96,8 @@ export interface CommandDecoration {
+ 
+ /** The `ctx.commandUi` service face visible to business packages. */
+ export interface CommandUiContract {
++  /** Runtime features this command surface implements. */
++  readonly capabilities: CommandUiCapabilities
+   /**
+    * Register one client command contribution; effect disposer. Duplicate
+    * names throw at registration.
+@@ -86,4 +110,6 @@ export interface CommandUiContract {
+   decorate(decoration: CommandDecoration): () => void
+   /** Resolve the per-session popup controller for one session scope (wiring/overlay layer). */
+   popupFor(actx: ClientContext): unknown
++  /** Bind the real composer for one session; the conversation layer owns the focus implementation. */
++  bindComposerFocus(id: ClientSessionContext['sessionId'], focus: () => void): () => void
+ }
 diff --git a/packages/client/ui-commands/src/client/index.ts b/packages/client/ui-commands/src/client/index.ts
-index 26e8a32e09..18641695b4 100644
+index 26e8a32..68a6881 100644
 --- a/packages/client/ui-commands/src/client/index.ts
 +++ b/packages/client/ui-commands/src/client/index.ts
 @@ -27,7 +27,8 @@ export { filterOptions, PopupSelectController } from './popup.ts'
@@ -42,13 +63,13 @@ index 26e8a32e09..18641695b4 100644
  export type { PopupSelectInjected, PopupSelectViewProps } from './PopupSelectView.tsx'
  export type {
 -  CommandContribution, CommandDecoration, CommandUiContract, CommandUiSpec, SelectConfirmation, SelectOption,
-+  ClientActionContext, ClientActionSpec, CommandContribution, CommandDecoration, CommandUiContract, CommandUiSpec,
++  ClientActionContext, ClientActionSpec, CommandContribution, CommandDecoration, CommandUiCapabilities, CommandUiContract, CommandUiSpec,
 +  PopupSelectSpec, SelectConfirmation, SelectOption,
  } from './contract.ts'
  export type { CommandKey } from './locales.ts'
  
 diff --git a/packages/client/ui-commands/src/client/service.ts b/packages/client/ui-commands/src/client/service.ts
-index 4a606fe607..b176812cbc 100644
+index 4a606fe..b95fd41 100644
 --- a/packages/client/ui-commands/src/client/service.ts
 +++ b/packages/client/ui-commands/src/client/service.ts
 @@ -21,7 +21,9 @@ import type {
@@ -67,9 +88,10 @@ index 4a606fe607..b176812cbc 100644
  
  /** Live mutable state in one holder (service methods run behind the caller-ctx tracker). */
 +interface ActiveClientAction {
-+  readonly generation: number
 +  readonly abort: AbortController
 +  focusRestored: boolean
++  focusEligible: boolean
++  dispose: (() => void) | undefined
 +}
 +
  interface LiveState {
@@ -77,22 +99,22 @@ index 4a606fe607..b176812cbc 100644
    readonly decorations: Map<string, CommandDecoration>
    readonly popups: Map<SessionId, PopupSelectController<ClientSessionContext>>
 +  readonly actions: Map<SessionId, ActiveClientAction>
-+  readonly actionScopes: Map<SessionId, ClientContext>
  }
  
  /** One fuzzy match with its stable source position. */
-@@ -124,7 +134,9 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+@@ -124,7 +134,10 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
    static inject = ['inputTriggers', 'sessions', 'remote', 'remote.commands']
  
    private readonly directory: CommandDirectory
 -  private readonly live: LiveState = { contributions: new Map(), decorations: new Map(), popups: new Map() }
++  readonly capabilities = { clientAction: true } as const
 +  private readonly live: LiveState = {
-+    contributions: new Map(), decorations: new Map(), popups: new Map(), actions: new Map(), actionScopes: new Map(),
++    contributions: new Map(), decorations: new Map(), popups: new Map(), actions: new Map(),
 +  }
    /** `command`-namespace translator (composer refusal notices). */
    private readonly t: TranslateNS<'command'>
  
-@@ -160,6 +172,9 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+@@ -160,6 +173,9 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
      // prewarming so a newly opened menu waits for the replacement catalog.
      ctx.remote.$on('agent-preset/selected', (sessionId) => { this.directory.resetSession(sessionId) })
      ctx.on('connection/reset', () => { this.directory.resetConnected() })
@@ -102,12 +124,11 @@ index 4a606fe607..b176812cbc 100644
    }
  
    /**
-@@ -225,6 +240,8 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+@@ -225,6 +241,7 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
      actx.effect(() => () => {
        controller.dispose()
        popups.delete(id)
 +      this.abortClientAction(id)
-+      this.live.actionScopes.delete(id)
        this.focusHooks.delete(id)
      }, 'command: session popup')
      return controller
@@ -155,7 +176,7 @@ index 4a606fe607..b176812cbc 100644
          return 'handled'
        }
      }
-@@ -366,7 +391,7 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
+@@ -366,15 +391,91 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
    /** Open the session's popup for one contribution or decoration (menu pick / bare enter). */
    private openPopup(
      name: string,
@@ -164,7 +185,9 @@ index 4a606fe607..b176812cbc 100644
      session: ClientSessionContext,
      segment: TokenSegment,
    ): void {
-@@ -375,6 +400,73 @@ export class CommandUiRuntime extends Service implements CommandUiContract {
++    this.invalidateClientActionFocus(session.sessionId)
+     const actx = this.scopeFor(session.sessionId)
+     if (actx === undefined) return
      this.popupFor(actx).open(name, ui, session, segment)
    }
  
@@ -181,18 +204,19 @@ index 4a606fe607..b176812cbc 100644
 +    if (actx === undefined) return
 +    this.consumeVia(id, segment)
 +    const active: ActiveClientAction = {
-+      generation: ++this.actionGeneration,
 +      abort: new AbortController(),
 +      focusRestored: false,
++      focusEligible: true,
++      dispose: undefined,
 +    }
 +    this.live.actions.set(id, active)
-+    this.live.actionScopes.set(id, actx)
-+    actx.effect(() => () => this.clearOrAbortClientAction(id, active), 'command: session client action')
++    const dispose = actx.effect(() => () => this.clearOrAbortClientAction(id, active), 'command: session client action')
++    active.dispose = () => { void dispose() }
 +    const context: ClientActionContext = {
 +      session,
 +      signal: active.abort.signal,
 +      restoreComposerFocus: () => {
-+        if (this.live.actions.get(id) !== active || active.abort.signal.aborted || active.focusRestored) return
++        if (this.live.actions.get(id) !== active || active.abort.signal.aborted || !active.focusEligible || active.focusRestored) return
 +        active.focusRestored = true
 +        this.focusHooks.get(id)?.()
 +      },
@@ -214,20 +238,27 @@ index 4a606fe607..b176812cbc 100644
 +    )
 +  }
 +
-+  /** Monotonic owner token prevents an earlier action from clearing a successor. */
-+  private actionGeneration = 0
-+
 +  private clearClientAction(id: SessionId, active: ActiveClientAction): void {
 +    if (this.live.actions.get(id) !== active) return
 +    this.live.actions.delete(id)
-+    this.live.actionScopes.delete(id)
++    const dispose = active.dispose
++    active.dispose = undefined
++    dispose?.()
 +  }
 +
 +  private clearOrAbortClientAction(id: SessionId, active: ActiveClientAction): void {
 +    if (this.live.actions.get(id) !== active) return
 +    active.abort.abort()
 +    this.live.actions.delete(id)
-+    this.live.actionScopes.delete(id)
++    const dispose = active.dispose
++    active.dispose = undefined
++    dispose?.()
++  }
++
++  /** A newer popup owns the next focus transition; an older action may still settle silently. */
++  private invalidateClientActionFocus(id: SessionId): void {
++    const active = this.live.actions.get(id)
++    if (active !== undefined) active.focusEligible = false
 +  }
 +
 +  private abortClientAction(id: SessionId): void {
@@ -239,7 +270,7 @@ index 4a606fe607..b176812cbc 100644
    private leadingClaim(desc: CommandDescriptor, session: ClientSessionContext): CommandClaim {
      const token = `/${desc.name} `
 diff --git a/packages/client/ui-commands/tests/service.client.spec.ts b/packages/client/ui-commands/tests/service.client.spec.ts
-index ae8ef7a884..990f71403b 100644
+index ae8ef7a..3a35582 100644
 --- a/packages/client/ui-commands/tests/service.client.spec.ts
 +++ b/packages/client/ui-commands/tests/service.client.spec.ts
 @@ -14,7 +14,7 @@ import { createScope, scopeOf } from '@deepseek-ai/dsh-api-session-controller/cl
@@ -276,7 +307,7 @@ index ae8ef7a884..990f71403b 100644
  const req = (query: string, position: 'leading' | 'inline' = 'leading') =>
    ({ query, position, drilled: false, signal: new AbortController().signal })
  
-@@ -390,6 +399,76 @@ describe('dispatch (menu column)', () => {
+@@ -390,6 +399,101 @@ describe('dispatch (menu column)', () => {
    })
  })
  
@@ -284,6 +315,7 @@ index ae8ef7a884..990f71403b 100644
 +  it('uses one client action path for menu and bare Enter, consumes tokens, and never executes a Host command', async () => {
 +    const { command, source, mint, executeCalls } = await bench()
 +    const scope = mint('s1')
++    expect(command.capabilities).toEqual({ clientAction: true })
 +    const consumes: ConsumeTokenRequest[] = []
 +    scope.ctx.on('slash/input-consume-token', (request) => {
 +      consumes.push(request)
@@ -348,13 +380,126 @@ index ae8ef7a884..990f71403b 100644
 +    })
 +    await scope.fiber.dispose()
 +  })
++
++  it('does not let an older action reclaim composer focus after a later popup opens', async () => {
++    const { command, source, mint } = await bench()
++    const scope = mint('s1')
++    const focus = vi.fn()
++    command.bindComposerFocus(sid('s1'), focus)
++    let restoreComposerFocus: (() => void) | undefined
++    let settle: (() => void) | undefined
++    command.register(actionContribution(({ restoreComposerFocus: restore }) => new Promise<void>(resolve => {
++      restoreComposerFocus = restore
++      settle = resolve
++    }), 'act'))
++    command.register(themeContribution())
++
++    expect(menuPick(source, 'act', proj('s1'))).toBe('handled')
++    await vi.waitFor(() => { expect(restoreComposerFocus).toBeTypeOf('function') })
++    expect(menuPick(source, 'theme', proj('s1'))).toBe('handled')
++    restoreComposerFocus?.()
++    expect(focus).not.toHaveBeenCalled()
++
++    settle?.()
++    await Promise.resolve()
++    await scope.fiber.dispose()
++  })
 +})
 +
  describe('matchSpace (space column)', () => {
    it('answers undefined from a not-ready key (no waiting, no RPC)', async () => {
      const { source, listCalls } = await bench()
+diff --git a/packages/client/ui-conversation/src/client/contract/input.ts b/packages/client/ui-conversation/src/client/contract/input.ts
+index d6a0741..3eee336 100644
+--- a/packages/client/ui-conversation/src/client/contract/input.ts
++++ b/packages/client/ui-conversation/src/client/contract/input.ts
+@@ -274,6 +274,8 @@ export interface ComposerKeyboard {
+   space(): boolean
+   /** Dismiss the popupSelect shell (any interaction outside the box). */
+   dismissPopup(): void
++  /** Bind the mounted Lexical composer to command-runtime focus restoration. */
++  bindComposerFocus(focus: () => void): () => void
+ }
+ 
+ /** One independently addressable row projected from the transient queue snapshot. */
+diff --git a/packages/client/ui-conversation/src/client/input/facade.ts b/packages/client/ui-conversation/src/client/input/facade.ts
+index e2fb81f..fd81171 100644
+--- a/packages/client/ui-conversation/src/client/input/facade.ts
++++ b/packages/client/ui-conversation/src/client/input/facade.ts
+@@ -60,6 +60,8 @@ export interface SessionInputDeps {
+    * order (the empty-draft accelerated-Enter gesture); absent = unsupported.
+    */
+   steerQueue?: (() => void) | undefined
++  /** Bind the mounted composer to the command runtime for this session. */
++  bindComposerFocus?: ((focus: () => void) => () => void) | undefined
+   /** The plain-message sink (send choreography / materialize fork — the hub owns it). */
+   defaultSink(
+     text: string,
+@@ -433,6 +435,11 @@ export class SessionInputShell implements SessionInput {
+     this.deps.popup?.()?.dismiss()
+   }
+ 
++  /** Register the real mounted composer focus callback with the command runtime. */
++  bindComposerFocus(focus: () => void): () => void {
++    return this.deps.bindComposerFocus?.(focus) ?? (() => {})
++  }
++
+   /**
+    * The live selection as a detect-coordinate span (menu-launcher synthetic
+    * hits replace it on pick); an absent selection answers a collapsed span at
+diff --git a/packages/client/ui-conversation/src/client/input/hub.ts b/packages/client/ui-conversation/src/client/input/hub.ts
+index 6c71324..99a35b4 100644
+--- a/packages/client/ui-conversation/src/client/input/hub.ts
++++ b/packages/client/ui-conversation/src/client/input/hub.ts
+@@ -25,6 +25,7 @@ import { SessionInputShell } from './facade.ts'
+ /** Structural command face for per-session popup resolution. */
+ interface CommandFace {
+   popupFor(actx: Context): PopupDismissFace
++  bindComposerFocus(id: SessionId, focus: () => void): () => void
+ }
+ 
+ /** Optional input-trigger service resolved without importing its implementation. */
+@@ -90,6 +91,7 @@ export class InputHub implements SessionInputResolver {
+       queue: queueReadFaceOf(session),
+       defaultSink: (text, imageIds, mode, signal) => this.sink(session, text, imageIds, mode, signal),
+       steerQueue: () => { void this.steerQueue(session, shell) },
++      bindComposerFocus: focus => this.bindComposerFocus(id, focus),
+       commandImages: {
+         serialize: ids => this.conversation().serializeDraftImages(ids),
+         // Asymmetric with serialize on purpose: release settles AFTER the
+@@ -217,6 +219,11 @@ export class InputHub implements SessionInputResolver {
+     return command?.popupFor(actx)
+   }
+ 
++  private bindComposerFocus(id: SessionId, focus: () => void): () => void {
++    const command = this.rootCtx.get('commandUi') as CommandFace | undefined
++    return command?.bindComposerFocus(id, focus) ?? (() => {})
++  }
++
+   private sessions(): ISessions {
+     const sessions = this.rootCtx.get('sessions')
+     if (sessions === undefined) throw new Error('conversation.input: sessions service unavailable')
+diff --git a/packages/client/ui-conversation/src/client/skeleton/InputBar.tsx b/packages/client/ui-conversation/src/client/skeleton/InputBar.tsx
+index 6c8c46c..3f0b4d3 100644
+--- a/packages/client/ui-conversation/src/client/skeleton/InputBar.tsx
++++ b/packages/client/ui-conversation/src/client/skeleton/InputBar.tsx
+@@ -166,6 +166,14 @@ export function InputBar({
+     else if (rect.top < box.top) scrollEl.scrollTop -= box.top - rect.top
+   }
+ 
++  useEffect(() => {
++    if (sessionId === undefined || editor === null || keyboard === undefined) return
++    return keyboard.bindComposerFocus(() => {
++      editor.getRootElement()?.focus({ preventScroll: true })
++      editor.focus(() => { revealSelection() })
++    })
++  }, [editor, keyboard, sessionId])
++
+   // Unlock (mount / session switch) returns focus to the box, and owns the
+   // reveal that comes with it. Lexical's focus() suppresses the browser's
+   // scroll walk (preventScroll inside), so the reveal in our own scrollport
 diff --git a/packages/client/ui-model-selection/tests/browser-plugin.client.spec.ts b/packages/client/ui-model-selection/tests/browser-plugin.client.spec.ts
-index 1bf11733b5..c28abe9fc4 100644
+index 1bf1173..c28abe9 100644
 --- a/packages/client/ui-model-selection/tests/browser-plugin.client.spec.ts
 +++ b/packages/client/ui-model-selection/tests/browser-plugin.client.spec.ts
 @@ -20,6 +20,7 @@ import type { CommandContribution, SelectOption } from '@deepseek-ai/dsh-client-
@@ -416,7 +561,7 @@ index 1bf11733b5..c28abe9fc4 100644
        new AbortController().signal,
      )).rejects.toThrow(/unavailable for addressed subagent/)
 diff --git a/packages/client/ui-permission-presets/tests/browser-plugin.client.spec.ts b/packages/client/ui-permission-presets/tests/browser-plugin.client.spec.ts
-index e6f9cd39f8..06dddd1034 100644
+index e6f9cd3..06dddd1 100644
 --- a/packages/client/ui-permission-presets/tests/browser-plugin.client.spec.ts
 +++ b/packages/client/ui-permission-presets/tests/browser-plugin.client.spec.ts
 @@ -22,6 +22,7 @@ import {

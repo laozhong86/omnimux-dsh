@@ -5,6 +5,8 @@ import { getGlobalAttachmentStore } from '../attachments/store.ts'
 import { inferKindFromName } from './kind.js'
 import { installComposerAttachmentSubmitCapture } from './submit-inject.js'
 import { registerComposerAddCommands } from './commands.js'
+import { notifyClientActionRuntimeUpdateOnce } from './client-action-runtime-notice.js'
+import { createLibraryActionController } from './library-action.js'
 
 const HOST_ID = 'omnimux-composer-add-host'
 
@@ -123,37 +125,35 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
   let modalRoot = null
   const state = {
     libraryOpen: false,
-    libraryAction: null,
   }
+  const libraryActions = createLibraryActionController()
 
-  const settleLibraryAction = () => {
-    const action = state.libraryAction
-    state.libraryAction = null
-    action?.resolve()
-    if (!action?.signal.aborted) action?.restoreComposerFocus()
+  const closeLibraryAction = (action) => {
+    if (!libraryActions.settle(action)) return false
+    state.libraryOpen = false
+    renderModal()
+    return true
   }
 
   const renderModal = () => {
-    const sessionId = state.libraryAction?.sessionId || ''
+    const action = libraryActions.current()
+    const sessionId = action?.sessionId || ''
     if (!modalRoot) modalRoot = createRoot(host)
     modalRoot.render(createElement(AssetPickerModal, {
       open: state.libraryOpen,
       onClose: () => {
-        state.libraryOpen = false
-        renderModal()
-        settleLibraryAction()
+        closeLibraryAction(action)
       },
       t,
       occupied: sessionId ? store.getSnapshot(sessionId).length : 0,
       alreadyIds: sessionId ? alreadyEntityIds(store, sessionId) : new Set(),
       onConfirm: async (picked) => {
-        const signal = state.libraryAction?.signal
-        if (!sessionId || signal?.aborted) return
+        if (!action || !sessionId || action.signal.aborted || !libraryActions.isCurrent(action)) return
         const result = await requestJson('/omnimux/composer/attachments/instantiate', {
           sessionId,
           assetIds: picked.map((row) => row.id),
         })
-        if (signal?.aborted) return
+        if (action.signal.aborted || !libraryActions.isCurrent(action)) return
         const rows = Array.isArray(result.body.results) ? result.body.results : []
         applyAddResults(store, sessionId, rows.map((row) => ({
           ...row,
@@ -164,6 +164,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
           toast(message)
           throw new Error(message)
         }
+        closeLibraryAction(action)
       },
     }))
   }
@@ -199,8 +200,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
   const onKey = (event) => {
     if (event.key !== 'Escape') return
     if (state.libraryOpen) {
-      state.libraryOpen = false
-      renderModal()
+      closeLibraryAction(libraryActions.current())
     }
   }
 
@@ -217,27 +217,31 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
       resolve()
       return
     }
-    state.libraryAction = { sessionId, signal, restoreComposerFocus, resolve }
+    libraryActions.start({ sessionId, signal, restoreComposerFocus, resolve })
     state.libraryOpen = true
     renderModal()
     signal.addEventListener('abort', () => {
-      if (state.libraryAction?.signal !== signal) return
-      state.libraryOpen = false
-      state.libraryAction = null
-      renderModal()
-      resolve()
+      const action = libraryActions.current()
+      if (action?.signal === signal) closeLibraryAction(action)
     }, { once: true })
   })
-  registerComposerAddCommands(options.ctx || {}, { t, onAddFile, onAddLibrary })
+  registerComposerAddCommands(options.ctx || {}, {
+    t,
+    onAddFile,
+    onAddLibrary,
+    onClientActionUnavailable: () => {
+      notifyClientActionRuntimeUpdateOnce({
+        storage: () => doc.defaultView?.localStorage,
+        notify: () => toast(tx(t, 'composerAdd.runtimeUpdateRequired')),
+      })
+    },
+  })
   renderModal()
   const stopSubmit = installComposerAttachmentSubmitCapture(doc, { store })
 
   return () => {
     doc.removeEventListener('keydown', onKey)
-    state.libraryOpen = false
-    const action = state.libraryAction
-    state.libraryAction = null
-    action?.resolve()
+    closeLibraryAction(libraryActions.current())
     stopSubmit()
     modalRoot?.unmount()
     host.remove()
