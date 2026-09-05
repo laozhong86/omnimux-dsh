@@ -180,3 +180,23 @@ export function connectTikTokAccount() {
     { capability: 'publish' },
   )()
 }
+
+/**
+ * 断开一个已连接账号。该请求只移除 OmniMux 中的账号连接，不宣称撤销
+ * TikTok 的全局 token；Host 仍负责同源写入保护与上游协议转换。
+ * @param {string} accountId
+ * @returns {Promise<{ ok: boolean, status: number, body: any }>}
+ */
+export function disconnectHubAccount(accountId) {
+  if (typeof accountId !== 'string') {
+    return Promise.resolve({ ok: false, status: 400, body: { error: 'id is required' } })
+  }
+  const id = accountId.trim()
+  if (id === '') {
+    return Promise.resolve({ ok: false, status: 400, body: { error: 'id is required' } })
+  }
+  return quotaGuard(
+    () => publishRequest(`/omnimux/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    { capability: 'publish' },
+  )()
+}

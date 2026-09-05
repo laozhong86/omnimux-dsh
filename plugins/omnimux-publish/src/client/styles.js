@@ -1042,6 +1042,21 @@ th[style*="--pub-min-w"] { min-width: var(--pub-min-w); }
   background: var(--dsw-alias-state-draft-subtle, rgba(100, 116, 139, 0.12));
   color: var(--dsw-alias-label-secondary, #64748b);
 }
+.omnimux-publish-accounts-item-menu {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  margin-left: -4px;
+}
+.omnimux-publish-accounts-item-menu button {
+  width: 28px;
+  height: 28px;
+  color: var(--dsw-alias-label-secondary);
+}
+.omnimux-publish-accounts-item-menu button:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: 2px;
+}
 
 .omnimux-publish-accounts-empty {
   flex: 1;
