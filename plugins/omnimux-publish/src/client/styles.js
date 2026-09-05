@@ -851,6 +851,393 @@ th[style*="--pub-min-w"] { min-width: var(--pub-min-w); }
   font-size: 12px;
   color: var(--dsw-alias-state-error-text, #dc2626);
 }
+
+/* ---- Stage 顶层视图切换（发布 / 账号） ---- */
+.omnimux-publish-stage-switch {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 20px 8px;
+  background: var(--dsw-alias-bg-base, #ffffff);
+}
+.omnimux-publish-stage-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, #64748b);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.omnimux-publish-stage-switch-btn:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, 0.05));
+  color: var(--dsw-alias-label-primary, #0f172a);
+}
+.omnimux-publish-stage-switch-btn.active {
+  background: var(--dsw-alias-interactive-bg-active, rgba(0, 0, 0, 0.09));
+  color: var(--dsw-alias-label-primary, #0f172a);
+  font-weight: 600;
+}
+.omnimux-publish-stage-switch-btn:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* ---- 账号侧栏视图（omnimux-publish-accounts-view 体系） ---- */
+.omnimux-publish-accounts-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+.omnimux-publish-accounts-sidebar {
+  flex: none;
+  width: 336px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+  border-right: 1px solid var(--dsw-alias-border-l1, #e2e8f0);
+  background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.04));
+  overflow: auto;
+}
+.omnimux-publish-accounts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.omnimux-publish-accounts-head-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  color: var(--dsw-alias-label-primary, #0f172a);
+}
+.omnimux-publish-accounts-help {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.omnimux-publish-accounts-help:hover {
+  color: var(--dsw-alias-label-secondary, #64748b);
+}
+.omnimux-publish-accounts-add { width: 100%; }
+
+.omnimux-publish-accounts-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.omnimux-publish-accounts-search-icon {
+  position: absolute;
+  left: 10px;
+  display: inline-flex;
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+  pointer-events: none;
+}
+.omnimux-publish-accounts-search-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px 0 32px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l1, #e2e8f0);
+  background: var(--dsw-alias-bg-base, #ffffff);
+  color: var(--dsw-alias-label-primary, #0f172a);
+  font: inherit;
+  font-size: 13px;
+}
+.omnimux-publish-accounts-search-input::placeholder {
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+}
+.omnimux-publish-accounts-search-input:focus {
+  outline: none;
+  border-color: var(--dsw-alias-brand-primary, #2563eb);
+  box-shadow: 0 0 0 2px var(--dsw-alias-state-business-tertiary, rgba(37, 99, 235, 0.18));
+}
+
+.omnimux-publish-accounts-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+.omnimux-publish-accounts-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, #64748b);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.omnimux-publish-accounts-tab:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, 0.05));
+}
+.omnimux-publish-accounts-tab.active {
+  background: var(--dsw-alias-interactive-bg-active, rgba(0, 0, 0, 0.09));
+  color: var(--dsw-alias-label-primary, #0f172a);
+  font-weight: 600;
+}
+.omnimux-publish-accounts-tab:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary, #2563eb);
+  outline-offset: 2px;
+}
+.omnimux-publish-accounts-tab-count {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+}
+
+.omnimux-publish-accounts-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.omnimux-publish-accounts-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+}
+.omnimux-publish-accounts-item:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(0, 0, 0, 0.05));
+}
+.omnimux-publish-accounts-avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--dsw-alias-platform-tiktok, #2C2C2A);
+  color: var(--dsw-alias-label-inverse, #ffffff);
+  border: 1px solid var(--dsw-alias-border-l1, #e2e8f0);
+}
+.omnimux-publish-accounts-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.omnimux-publish-accounts-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.omnimux-publish-accounts-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--dsw-alias-label-primary, #0f172a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.omnimux-publish-accounts-item-handle {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.omnimux-publish-accounts-item-status {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.omnimux-publish-accounts-item-status.success {
+  background: var(--dsw-alias-state-success-subtle, rgba(16, 185, 129, 0.12));
+  color: var(--dsw-alias-state-success-text, #059669);
+}
+.omnimux-publish-accounts-item-status.warn {
+  background: var(--dsw-alias-state-warn-subtle, rgba(245, 158, 11, 0.12));
+  color: var(--dsw-alias-state-warn-text, #d97706);
+}
+.omnimux-publish-accounts-item-status.error {
+  background: var(--dsw-alias-state-error-subtle, rgba(239, 68, 68, 0.12));
+  color: var(--dsw-alias-state-error-text, #dc2626);
+}
+.omnimux-publish-accounts-item-status.muted {
+  background: var(--dsw-alias-state-draft-subtle, rgba(100, 116, 139, 0.12));
+  color: var(--dsw-alias-label-secondary, #64748b);
+}
+
+.omnimux-publish-accounts-empty {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 16px;
+  text-align: center;
+}
+.omnimux-publish-accounts-empty-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-secondary, #64748b);
+}
+.omnimux-publish-accounts-tutorial {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.omnimux-publish-accounts-tutorial:hover {
+  color: var(--dsw-alias-label-secondary, #64748b);
+}
+.omnimux-publish-accounts-note {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+}
+.omnimux-publish-accounts-error {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-text, #dc2626);
+  background: var(--dsw-alias-state-error-subtle, rgba(239, 68, 68, 0.12));
+  border: 1px solid var(--dsw-alias-state-error, #ef4444);
+}
+
+.omnimux-publish-accounts-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  text-align: center;
+}
+.omnimux-publish-accounts-panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary, #0f172a);
+}
+.omnimux-publish-accounts-panel-body {
+  max-width: 420px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+}
+
+/* ---- 授权确认弹窗（警示横幅 + 等待态） ---- */
+.omnimux-publish-accounts-warn {
+  border: 1px solid var(--dsw-alias-state-warn, #f59e0b);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1, rgba(255, 255, 255, 0.04));
+  overflow: hidden;
+}
+.omnimux-publish-accounts-warn-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.omnimux-publish-accounts-warn-icon {
+  flex: none;
+  display: inline-flex;
+  color: var(--dsw-alias-state-warn, #f59e0b);
+}
+.omnimux-publish-accounts-warn-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary, #0f172a);
+}
+.omnimux-publish-accounts-warn-chevron {
+  flex: none;
+  display: inline-flex;
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+  transition: transform 0.15s ease;
+}
+.omnimux-publish-accounts-warn-detail {
+  padding: 0 12px 12px 36px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary, #64748b);
+}
+.omnimux-publish-accounts-modal-note {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary, #0f172a);
+}
+.omnimux-publish-accounts-modal-hint {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary, #94a3b8);
+}
+.omnimux-publish-accounts-modal-error {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-text, #dc2626);
+  background: var(--dsw-alias-state-error-subtle, rgba(239, 68, 68, 0.12));
+  border: 1px solid var(--dsw-alias-state-error, #ef4444);
+}
 `
 
 export function ensureCss() {

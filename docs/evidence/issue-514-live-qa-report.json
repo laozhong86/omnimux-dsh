@@ -1,0 +1,59 @@
+{
+  "task": "omnimux-accounts-overseas-platforms-only",
+  "timestamp": "2026-09-05T01:29:00+08:00",
+  "issue": 514,
+  "pull_request": 515,
+  "commit": "628bc1aa05d57950d3d983f69c2b13e5dff4a344",
+  "environment": {
+    "url": "http://127.0.0.1:45120/",
+    "profile": "omnimux-dev",
+    "profile_root": "~/.omnimux-dev",
+    "port": 45120,
+    "task_space_id": 454,
+    "page_title": "/3d-animation-short-generator 这个怎 — OmniMux",
+    "source_tree": "/Users/x/Desktop/Project/dsh-plugin/product/omnimux-dsh"
+  },
+  "flow_verified": [
+    "Open the Accounts workbench tab",
+    "Open the Connect Account dialog",
+    "Confirm supported platforms are TikTok, Instagram, and YouTube",
+    "Confirm coming-soon platforms are X and Facebook",
+    "Confirm Xiaohongshu, Douyin, and WeChat Channels are absent in Chinese and English"
+  ],
+  "dom_assertion": {
+    "dialog_visible": true,
+    "present": [
+      "TikTok",
+      "Instagram",
+      "YouTube",
+      "X",
+      "Facebook"
+    ],
+    "absent": [
+      "小红书",
+      "抖音",
+      "视频号",
+      "Xiaohongshu",
+      "Douyin",
+      "WeChat Channels"
+    ]
+  },
+  "evidence": {
+    "gif": "https://github.com/omnimux-ai/omnimux-dsh/blob/overseas-platforms-515-assets/accounts-overseas-platforms-515.gif?raw=true",
+    "asset_branch": "overseas-platforms-515-assets",
+    "asset_sha": "54c1fd251ac459a237c316b2f2bcb475aa0ed510",
+    "asset_bytes": 163690
+  },
+  "notes": [
+    "The merged main build was materialized to the development profile before browser verification.",
+    "The browser reused the existing authenticated development state; no mock transport or model round was used.",
+    "The legacy verify:live script defaults to port 44120 and returns a hollow success on connection refusal, so the authoritative UI evidence for this task is the ego-browser DOM assertion and GIF above."
+  ],
+  "cleanup": {
+    "task_space_closed": true,
+    "feature_worktree_removed": true,
+    "feature_local_branch_removed": true,
+    "feature_remote_branch_removed": true
+  },
+  "result": "PASS"
+}
