@@ -6,6 +6,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
@@ -54,6 +55,7 @@ const prelude = \`const __mockConfig = \${JSON.stringify(config)}
 const __mockFs = await import('node:fs')
 globalThis.useOrCreateTaskSpace = async (name) => ({ id: 'task:' + name })
 globalThis.openOrReuseTab = async () => {
+  if (__mockConfig.mode === 'browser-hard-exit-after-task') process.exit(23)
   if (__mockConfig.mode === 'browser-failure') throw new Error('mock browser open failed')
   return { id: 'mock-tab' }
 }
@@ -66,6 +68,7 @@ globalThis.captureScreenshot = async () => {
   return { path: __mockConfig.screenshotSource }
 }
 globalThis.completeTaskSpace = async (id, options) => {
+  if (__mockConfig.mode === 'cleanup-exit-zero') process.exit(0)
   if (__mockConfig.mode === 'cleanup-failure') throw new Error('mock cleanup failed')
   if (__mockConfig.mode === 'cleanup-skipped') return { done: false, skipped: 'user-owned' }
   __mockFs.appendFileSync(__mockConfig.tracePath, JSON.stringify({ id, keep: options.keep }) + '\\\\n')
@@ -96,11 +99,14 @@ function runCollector({
   taskName = 'qa task',
   evidenceName = 'evidence',
   staleEvidence = false,
+  root: suppliedRoot,
+  evidenceDir: suppliedEvidenceDir,
+  runId = `run-${mode}`,
 } = {}) {
-  const root = mkdtempSync(join(tmpdir(), 'omnimux-ego-qa-'))
-  temporaryRoots.push(root)
+  const root = suppliedRoot || mkdtempSync(join(tmpdir(), 'omnimux-ego-qa-'))
+  if (!suppliedRoot) temporaryRoots.push(root)
   const binDir = join(root, 'bin')
-  const evidenceDir = join(root, evidenceName)
+  const evidenceDir = suppliedEvidenceDir || join(root, evidenceName)
   const tracePath = join(root, 'cleanup.jsonl')
   const screenshotSource = join(root, 'source screenshot.png')
   mkdirSync(binDir, { recursive: true })
@@ -122,7 +128,7 @@ function runCollector({
       EGO_GIT_SHA: expectedSha,
       EGO_ISSUE_ID: '508',
       EGO_PLUGIN: 'cross',
-      EGO_RUN_ID: `run-${mode}`,
+      EGO_RUN_ID: runId,
       EGO_TASK_SPACE_NAME: taskName,
       MOCK_EGO_MODE: mode,
       MOCK_EGO_SNAPSHOT: snapshot,
@@ -252,4 +258,67 @@ test('a skipped cleanup cannot be reported as completed', () => {
   assert.equal(run.report.cleanup.state, 'failed')
   assert.equal(run.report.cleanup.success, false)
   assert.equal(run.report.cleanup.keep, false)
+})
+
+test('invalid URL records the intended preflight failure instead of an unset-variable error', () => {
+  const run = runCollector({ url: 'invalid-url' })
+
+  assert.equal(run.status, 2, run.stderr)
+  assert.equal(run.report.phase, 'preflight')
+  assert.match(run.report.errors.join('\n'), /URL 必须是 http\(s\): invalid-url/)
+  assert.doesNotMatch(run.stderr, /unbound variable/)
+})
+
+test('a hard browser exit after task creation persists the task id and retains it', () => {
+  const run = runCollector({ mode: 'browser-hard-exit-after-task' })
+
+  assert.equal(run.status, 23, run.stderr)
+  assert.equal(run.report.pass, false)
+  assert.equal(run.report.taskSpaceId, 'task:qa task')
+  assert.equal(run.report.cleanup.state, 'retained')
+  assert.equal(run.report.cleanup.keep, true)
+  assert.deepEqual(run.trace, [{ id: 'task:qa task', keep: true }])
+})
+
+test('a cleanup child that exits successfully without writing a result is recorded as failed', () => {
+  const run = runCollector({ mode: 'cleanup-exit-zero' })
+
+  assert.equal(run.status, 1, run.stderr)
+  assert.equal(run.report.pass, false)
+  assert.equal(run.report.cleanup.state, 'failed')
+  assert.equal(run.report.cleanup.success, false)
+  assert.match(run.report.errors.join('\n'), /清理子进程没有写入结果/)
+})
+
+test('a concurrent collector cannot overwrite the active run evidence', () => {
+  const root = mkdtempSync(join(tmpdir(), 'omnimux-ego-qa-lock-'))
+  temporaryRoots.push(root)
+  const evidenceDir = join(root, 'evidence')
+  const lockDir = join(evidenceDir, '.ego-browser-qa.lock')
+  const activeReport = {
+    pass: true,
+    runId: 'active-run',
+    taskSpaceId: 'active-task',
+    requestedUrl: 'http://127.0.0.1:44201/',
+  }
+  mkdirSync(lockDir, { recursive: true })
+  writeFileSync(join(lockDir, 'owner.json'), `${JSON.stringify({ pid: process.pid })}\n`)
+  writeFileSync(join(evidenceDir, 'ego-browser-report.json'), `${JSON.stringify(activeReport)}\n`)
+  writeFileSync(join(evidenceDir, 'ego-browser.png'), 'active screenshot')
+
+  const run = runCollector({
+    root,
+    evidenceDir,
+    runId: 'run-lock-contention',
+  })
+
+  assert.equal(run.status, 75, `${run.stderr}\n${run.stdout}\n${JSON.stringify(run.report)}`)
+  assert.deepEqual(run.report, activeReport)
+  const rejectedReportNames = readdirSync(evidenceDir)
+    .filter((name) => name.startsWith('ego-browser-report-rejected-'))
+  assert.equal(rejectedReportNames.length, 1)
+  const rejected = JSON.parse(readFileSync(join(evidenceDir, rejectedReportNames[0]), 'utf8'))
+  assert.equal(rejected.runId, 'run-lock-contention')
+  assert.equal(rejected.exitCode, 75)
+  assert.match(rejected.errors.join('\n'), /证据目录正在被另一个/)
 })
