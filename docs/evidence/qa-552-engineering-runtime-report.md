@@ -2,12 +2,36 @@
 title: "#552 engineering runtime and draft-protection evidence"
 id: "qa-552-engineering-runtime"
 type: "engineering-evidence"
-status: "partial-live-baseline; CTA-fixture-blocked"
+status: "engineering-fixed; builtin-browser-qa-blocked"
 date: "2026-09-05"
 subsystem: "omnimux-inspiration"
 ---
 
 # #552 engineering runtime and draft-protection evidence
+
+## 2026-09-05 continuation: mounted composer wake-up
+
+- Frozen implementation commit: `ceae587` (`fix(inspiration): wake mounted composer for replicate prefill (#552)`).
+- Deterministic pre-fix repro: an already-mounted target consumer first observed no intent, then `queueSessionPrefill()` queued the prompt without changing any React dependency. The queued promise expired as `{ ok: false, error: "composer-missing" }`; `inputActions.setDraft` received zero writes.
+- Root cause: `queueSessionPrefill()` mutated module state without notifying the already-mounted `SessionPrefillConsumer`. Because the CTA queues only after the official target session resolves, the target composer could have completed its effect before the intent existed and would not rerun until the six-second timeout.
+- Repair: `session-prefill.js` now exposes an external-store subscription, emits on queue and finish, and clears replaced-intent timers through the same completion path. `SessionPrefillConsumer` uses `useSyncExternalStore` so the target session slot rerenders for a newly queued intent, while target mismatch, non-empty draft, stale intent, and timeout remain fail-closed.
+- Regression guards: mounted-consumer wiring and notification, delayed old-composer rejection, zero-timeout release, and post-timeout stale-target rejection.
+- L2 fixture lower-layer check: the normal local Host endpoint returned HTTP 200 with exactly one task-owned item, `qa552-live-fixture`; missing test data is no longer the blocker.
+
+### Updated engineering checks
+
+| Check | Result |
+|---|---|
+| Focused session/composer/CTA test set | PASS — 53 passed, 0 failed |
+| `pnpm --filter omnimux-inspiration test` | PASS — 190 passed, 0 failed, 2 skipped |
+| `pnpm --filter omnimux-inspiration build` | PASS — `lib/client.js` 230250 bytes |
+| `pnpm verify:slots` | PASS — 1497 files, 0 violations |
+| `pnpm verify:stages` | PASS — 10 Stage components and 8 StageStores |
+| `git diff --check` | PASS |
+
+### Built-in browser boundary
+
+The authorized L2 Host is running at `127.0.0.1:44202` with the inspiration plugin linked to this worktree. Codex's in-app browser refuses cleartext localhost navigation with `ERR_BLOCKED_BY_CLIENT`; HTTPS reaches the browser network stack, but this L2 Host is HTTP-only and the machine has no existing trusted localhost certificate/proxy tool. No certificate was installed, no browser safety page was bypassed, no public relay was created, and no desktop foreground capture was used. Therefore scenarios A/B/C are still **not** claimed as live UI passes. Final CTA acceptance must be rerun by the source flagship task on a Codex built-in browser surface that can reach this isolated Host.
 
 ## Environment and provenance
 
