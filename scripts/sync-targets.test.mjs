@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -216,6 +216,7 @@ describe('OmniMux Profile Target Selection Matrix', () => {
     const migrationHome = join(tmpdir(), 'test-managed-materialization-' + Date.now())
     const profile = join(migrationHome, '.omnimux-dev', 'profiles', 'omnimux')
     mkdirSync(profile, { recursive: true })
+    writeFileSync(join(profile, 'pnpm-workspace.yaml'), 'packages:\n  - .\nnodeLinker: hoisted\n')
     writeFileSync(join(profile, 'package.json'), JSON.stringify({
       name: 'managed-materialization-profile',
       private: true,
@@ -275,7 +276,9 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       assert.equal(requireFromProfile('omnimux-video').revision, 'first')
       assert.equal(requireFromProfile('omnimux-assets').revision, 'assets')
 
-      writeFixturePlugin('omnimux-video', '1.0.1', 'second')
+      const nextVideoEntry = join(fixturePlugins, 'omnimux-video', 'index.js.next')
+      writeFileSync(nextVideoEntry, "module.exports = { name: 'omnimux-video', revision: 'second' }\n")
+      renameSync(nextVideoEntry, join(fixturePlugins, 'omnimux-video', 'index.js'))
       const second = spawnSync('bash', [syncStableScript, 'omnimux-video'], {
         cwd: root,
         env: syncEnv({ HOME: migrationHome }),
@@ -285,10 +288,190 @@ describe('OmniMux Profile Target Selection Matrix', () => {
       delete requireFromProfile.cache[requireFromProfile.resolve('omnimux-video')]
       assert.equal(requireFromProfile('omnimux-video').revision, 'second')
       assert.equal(requireFromProfile('omnimux-assets').revision, 'assets')
-      assert.match(second.stdout, /已核验 omnimux-video@1\.0\.1 index\.js \+ \d+ 个打包文件/)
+      assert.match(second.stdout, /刷新本轮受管 file: 入口 \(omnimux-video\)/)
+      assert.match(second.stdout, /已核验 omnimux-video@1\.0\.0 index\.js \+ \d+ 个打包文件/)
       assert.match(second.stdout, /已核验 omnimux-assets@1\.0\.0 index\.js \+ \d+ 个打包文件/)
     } finally {
       rmSync(migrationHome, { recursive: true, force: true })
+    }
+  })
+
+  it('refreshes the managed kit on full sync when its same-version source changes', () => {
+    const fullHome = join(tmpdir(), 'test-managed-full-kit-refresh-' + Date.now())
+    const profile = join(fullHome, '.omnimux-dev', 'profiles', 'omnimux')
+    const snapshotPlugins = join(profile, '.materialize-snapshots', 'plugins')
+    const kit = join(snapshotPlugins, 'dsh-ui-kit')
+    const installedKit = join(profile, 'node_modules', 'dsh-ui-kit', 'index.js')
+    mkdirSync(kit, { recursive: true })
+    writeFileSync(join(profile, 'pnpm-workspace.yaml'), 'packages:\n  - .\nnodeLinker: hoisted\n')
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'managed-full-kit-refresh', private: true,
+      dependencies: Object.fromEntries([
+        ...['omnimux', 'omnimux-accounts', 'omnimux-assets', 'omnimux-products', 'omnimux-workflow', 'omnimux-market', 'omnimux-inspiration', 'omnimux-clip', 'omnimux-video', 'omnimux-analytics', 'omnimux-publish'],
+        'dsh-ui-kit',
+      ].map(name => [name, `file:.materialize-snapshots/plugins/${name}`])),
+      dsh: { profile: { bundles: [] } },
+    }, null, 2) + '\n')
+    for (const name of ['omnimux', 'omnimux-accounts', 'omnimux-assets', 'omnimux-products', 'omnimux-workflow', 'omnimux-market', 'omnimux-inspiration', 'omnimux-clip', 'omnimux-video', 'omnimux-analytics', 'omnimux-publish', 'dsh-ui-kit']) {
+      cpSync(join(fixturePlugins, name), join(snapshotPlugins, name), { recursive: true })
+    }
+    const assetManifestPath = join(snapshotPlugins, 'omnimux-assets', 'package.json')
+    const assetManifest = JSON.parse(readFileSync(assetManifestPath, 'utf8'))
+    assetManifest.dependencies = { 'dsh-ui-kit': 'file:../dsh-ui-kit' }
+    writeFileSync(assetManifestPath, JSON.stringify(assetManifest, null, 2) + '\n')
+    writeFileSync(join(kit, 'index.js'), "module.exports = { revision: 'before' }\n")
+
+    try {
+      const initial = spawnSync('corepack', ['pnpm', 'install'], { cwd: profile, env: syncEnv({ HOME: fullHome }), encoding: 'utf8' })
+      assert.equal(initial.status, 0, `${initial.stdout}\n${initial.stderr}`)
+      assert.match(readFileSync(installedKit, 'utf8'), /before/)
+      const nextKitEntry = join(kit, 'index.js.next')
+      writeFileSync(nextKitEntry, "module.exports = { revision: 'after' }\n")
+      renameSync(nextKitEntry, join(kit, 'index.js'))
+
+      const result = spawnSync('bash', [syncStableScript], { cwd: root, env: syncEnv({ HOME: fullHome }), encoding: 'utf8' })
+      assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
+      assert.match(result.stdout, /刷新本轮受管 file: 入口 .*dsh-ui-kit/)
+      assert.match(readFileSync(installedKit, 'utf8'), /after/)
+    } finally {
+      rmSync(fullHome, { recursive: true, force: true })
+    }
+  })
+
+  it('restores a selected managed file package when its pnpm install fails', () => {
+    const failureHome = join(tmpdir(), 'test-managed-file-refresh-restore-' + Date.now())
+    const profile = join(failureHome, '.omnimux-dev', 'profiles', 'omnimux')
+    const bin = join(failureHome, 'bin')
+    const plugin = join(fixturePlugins, 'omnimux-refresh-restore')
+    const installedEntry = join(profile, 'node_modules', 'omnimux-refresh-restore', 'index.js')
+    mkdirSync(profile, { recursive: true })
+    mkdirSync(bin, { recursive: true })
+    writeFileSync(join(profile, 'pnpm-workspace.yaml'), 'packages:\n  - .\nnodeLinker: hoisted\n')
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({ name: 'managed-file-refresh-restore', private: true, dependencies: {}, dsh: { profile: { bundles: [] } } }, null, 2) + '\n')
+    writeFixturePlugin('omnimux-refresh-restore', '1.0.0', 'before')
+
+    try {
+      const initial = spawnSync('bash', [syncStableScript, 'omnimux-refresh-restore'], { cwd: root, env: syncEnv({ HOME: failureHome }), encoding: 'utf8' })
+      assert.equal(initial.status, 0, initial.stderr)
+      assert.match(readFileSync(installedEntry, 'utf8'), /before/)
+      const nextEntry = join(plugin, 'index.js.next')
+      writeFileSync(nextEntry, "module.exports = { name: 'omnimux-refresh-restore', revision: 'after' }\n")
+      renameSync(nextEntry, join(plugin, 'index.js'))
+      const failLog = join(failureHome, 'pnpm.log')
+      const realCorepack = join(dirname(process.execPath), 'corepack')
+      const fakeCorepack = join(bin, 'corepack')
+      writeFileSync(fakeCorepack, `#!/bin/bash\nprintf '%s\\n' "$*" >> ${JSON.stringify(failLog)}\nif [ "$1" = pnpm ] && [ "$2" = install ]; then exit 79; fi\n${JSON.stringify(realCorepack)} "$@"\n`)
+      chmodSync(fakeCorepack, 0o755)
+
+      const failed = spawnSync('bash', [syncStableScript, 'omnimux-refresh-restore'], {
+        cwd: root,
+        env: syncEnv({ HOME: failureHome, PATH: `${bin}:${process.env.PATH}` }),
+        encoding: 'utf8',
+      })
+      assert.equal(failed.status, 1, `${failed.stdout}\n${failed.stderr}`)
+      assert.match(failed.stderr, /已恢复本轮暂存的 file: 安装入口/)
+      assert.match(readFileSync(installedEntry, 'utf8'), /before/)
+      assert.match(readFileSync(failLog, 'utf8'), /^pnpm install$/m)
+      assert.equal(readdirSync(profile).filter(name => name.startsWith('.pnpm-file-refresh.')).length, 0)
+    } finally {
+      rmSync(failureHome, { recursive: true, force: true })
+    }
+  })
+
+  it('restores a selected managed file package when post-install fingerprint verification fails', () => {
+    const failureHome = join(tmpdir(), 'test-managed-file-refresh-fingerprint-restore-' + Date.now())
+    const profile = join(failureHome, '.omnimux-dev', 'profiles', 'omnimux')
+    const bin = join(failureHome, 'bin')
+    const plugin = join(fixturePlugins, 'omnimux-fingerprint-restore')
+    const installedEntry = join(profile, 'node_modules', 'omnimux-fingerprint-restore', 'index.js')
+    mkdirSync(profile, { recursive: true })
+    mkdirSync(bin, { recursive: true })
+    writeFileSync(join(profile, 'pnpm-workspace.yaml'), 'packages:\n  - .\nnodeLinker: hoisted\n')
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({ name: 'managed-file-refresh-fingerprint-restore', private: true, dependencies: {}, dsh: { profile: { bundles: [] } } }, null, 2) + '\n')
+    writeFixturePlugin('omnimux-fingerprint-restore', '1.0.0', 'before')
+
+    try {
+      const initial = spawnSync('bash', [syncStableScript, 'omnimux-fingerprint-restore'], { cwd: root, env: syncEnv({ HOME: failureHome }), encoding: 'utf8' })
+      assert.equal(initial.status, 0, initial.stderr)
+      const nextEntry = join(plugin, 'index.js.next')
+      writeFileSync(nextEntry, "module.exports = { name: 'omnimux-fingerprint-restore', revision: 'after' }\n")
+      renameSync(nextEntry, join(plugin, 'index.js'))
+      const realCorepack = join(dirname(process.execPath), 'corepack')
+      const fakeCorepack = join(bin, 'corepack')
+      writeFileSync(fakeCorepack, `#!/bin/bash\n${JSON.stringify(realCorepack)} "$@"\nresult=$?\nif [ "$result" -eq 0 ] && [ "$1" = pnpm ] && [ "$2" = install ]; then rm -f ${JSON.stringify(installedEntry)}; fi\nexit "$result"\n`)
+      chmodSync(fakeCorepack, 0o755)
+
+      const failed = spawnSync('bash', [syncStableScript, 'omnimux-fingerprint-restore'], {
+        cwd: root,
+        env: syncEnv({ HOME: failureHome, PATH: `${bin}:${process.env.PATH}` }),
+        encoding: 'utf8',
+      })
+      assert.equal(failed.status, 1, `${failed.stdout}\n${failed.stderr}`)
+      assert.match(failed.stderr, /已安装包入口缺失: omnimux-fingerprint-restore → index\.js/)
+      assert.match(failed.stderr, /物化核验失败；已恢复本轮暂存的 file: 安装入口/)
+      assert.match(readFileSync(installedEntry, 'utf8'), /before/)
+      assert.equal(readdirSync(profile).filter(name => name.startsWith('.pnpm-file-refresh.')).length, 0)
+    } finally {
+      rmSync(failureHome, { recursive: true, force: true })
+    }
+  })
+
+  it('keeps the one current-worktree L2 plugin link while refreshing another managed package', () => {
+    const testHome = join(tmpdir(), 'test-l2-in-progress-link-' + Date.now())
+    const l2Home = join(testHome, '.dsh-dev', 'tasks', 'refresh-hub')
+    const profile = join(l2Home, 'profiles', 'omnimux-dev-refresh-hub')
+    const snapshots = join(profile, '.materialize-snapshots', 'plugins')
+    const linkedWorkflow = join(profile, 'node_modules', 'omnimux-workflow')
+    mkdirSync(snapshots, { recursive: true })
+    writeFileSync(join(profile, 'pnpm-workspace.yaml'), 'packages:\n  - .\nnodeLinker: hoisted\n')
+    writeFileSync(join(profile, 'package.json'), JSON.stringify({
+      name: 'l2-in-progress-link-profile',
+      private: true,
+      dependencies: {
+        omnimux: 'file:.materialize-snapshots/plugins/omnimux',
+        'omnimux-workflow': 'file:.materialize-snapshots/plugins/omnimux-workflow',
+      },
+      dsh: { profile: { bundles: [] } },
+    }, null, 2) + '\n')
+    cpSync(join(fixturePlugins, 'omnimux'), join(snapshots, 'omnimux'), { recursive: true })
+    cpSync(join(fixturePlugins, 'omnimux-workflow'), join(snapshots, 'omnimux-workflow'), { recursive: true })
+
+    try {
+      const initial = spawnSync('corepack', ['pnpm', 'install'], { cwd: profile, env: syncEnv({ HOME: testHome }), encoding: 'utf8' })
+      assert.equal(initial.status, 0, `${initial.stdout}\n${initial.stderr}`)
+      const workflowSource = join(fixturePlugins, 'omnimux-workflow')
+      const linkedDependency = join(fixturePlugins, 'fixture-link-dependency')
+      mkdirSync(linkedDependency, { recursive: true })
+      writeFileSync(join(linkedDependency, 'package.json'), JSON.stringify({ name: 'fixture-link-dependency', version: '1.0.0', main: 'index.js' }) + '\n')
+      writeFileSync(join(linkedDependency, 'index.js'), 'module.exports = {}\n')
+      const workflowManifestPath = join(workflowSource, 'package.json')
+      const workflowManifest = JSON.parse(readFileSync(workflowManifestPath, 'utf8'))
+      workflowManifest.dependencies = { 'fixture-link-dependency': 'file:../fixture-link-dependency' }
+      writeFileSync(workflowManifestPath, JSON.stringify(workflowManifest, null, 2) + '\n')
+      rmSync(linkedWorkflow, { recursive: true, force: true })
+      symlinkSync(workflowSource, linkedWorkflow)
+
+      const result = spawnSync('bash', [syncStableScript, `--target=${l2Home}`, 'omnimux'], {
+        cwd: root,
+        env: syncEnv({ HOME: testHome }),
+        encoding: 'utf8',
+      })
+      assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`)
+      assert.ok(lstatSync(linkedWorkflow).isSymbolicLink())
+      assert.match(result.stdout, /保留 L2 在研 link: omnimux-workflow/)
+      assert.equal(existsSync(join(workflowSource, 'node_modules')), false)
+
+      rmSync(linkedWorkflow, { recursive: true, force: true })
+      symlinkSync(join(fixturePlugins, 'omnimux'), linkedWorkflow)
+      const blocked = spawnSync('bash', [syncStableScript, `--target=${l2Home}`, 'omnimux'], {
+        cwd: root,
+        env: syncEnv({ HOME: testHome }),
+        encoding: 'utf8',
+      })
+      assert.equal(blocked.status, 1, `${blocked.stdout}\n${blocked.stderr}`)
+      assert.match(blocked.stderr, /已安装包解析到 profile 外部: omnimux-workflow/)
+    } finally {
+      rmSync(testHome, { recursive: true, force: true })
     }
   })
 
