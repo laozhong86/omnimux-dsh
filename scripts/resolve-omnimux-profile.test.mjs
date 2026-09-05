@@ -30,6 +30,34 @@ function resolve(home, target) {
 }
 
 describe('resolve_omnimux_profile_dir', () => {
+  it('only normalizes symbolic aliases and preserves case-sensitive absolute paths with spaces', () => {
+    const home = fixture()
+    const target = join(home, 'Case Sensitive Target', 'L2 Profile')
+    const result = spawnSync('bash', ['-c', [
+      'source "$1"',
+      'normalize_omnimux_sync_target "$2"',
+      'expand_omnimux_sync_target_home "$2"',
+      'normalize_omnimux_sync_target "DEV"',
+    ].join('\n'), 'resolver', resolver, target], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home },
+    })
+
+    assert.equal(result.status, 0, result.stderr)
+    assert.deepEqual(result.stdout.trim().split('\n'), [target, target, 'dev'])
+  })
+
+  it('expands only a leading ~/ without eval', () => {
+    const home = fixture()
+    const result = spawnSync('bash', ['-c', 'source "$1"; expand_omnimux_sync_target_home "~/Case Sensitive Target"', 'resolver', resolver], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: home },
+    })
+
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(result.stdout.trim(), join(home, 'Case Sensitive Target'))
+  })
+
   it('uses the conventional profile for regular target homes', () => {
     const home = fixture()
     const target = join(home, '.omnimux-dev')

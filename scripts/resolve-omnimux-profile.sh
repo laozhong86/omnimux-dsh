@@ -3,6 +3,37 @@
 # L2 task roots use the exact dev-env.sh convention:
 # ~/.dsh-dev/tasks/<task>/profiles/omnimux-dev-<task>.
 
+normalize_omnimux_sync_target() {
+  local target="$1"
+  case "$target" in
+    /*|~|~/*)
+      printf '%s\n' "$target"
+      ;;
+    *)
+      printf '%s\n' "$target" | tr '[:upper:]' '[:lower:]' | xargs
+      ;;
+  esac
+}
+
+expand_omnimux_sync_target_home() {
+  local target="$1"
+  case "$target" in
+    '~')
+      printf '%s\n' "$HOME"
+      ;;
+    '~/'*)
+      printf '%s/%s\n' "$HOME" "${target:2}"
+      ;;
+    /*)
+      printf '%s\n' "$target"
+      ;;
+    *)
+      echo "❌ sync target [$target] 必须是绝对路径或 ~/ 开头。" >&2
+      return 1
+      ;;
+  esac
+}
+
 resolve_omnimux_profile_dir() {
   local home_dir="$1"
   local tasks_prefix="$HOME/.dsh-dev/tasks"
