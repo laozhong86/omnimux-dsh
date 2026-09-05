@@ -368,6 +368,60 @@ describe('mapOmnimuxInput video branch (#429)', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('end_frame only-last maps image_tail without inventing image (#567 M1/M2/M3)', () => {
+    const input = mapOmnimuxInput('video', {
+      prompt: 'end-frame only',
+      model: 'minimax-h3-endframe',
+      references: [
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
+      ],
+    })
+    assert.equal(input.image_tail, 'https://example.com/end-only.png')
+    assert.equal('image' in input, false, 'must not invent first/image for end-only')
+    assert.equal('reference_images' in input, false)
+    assert.equal('images' in input, false)
+    assert.equal('references' in input, false)
+    assert.notEqual(input.image_tail, input.image)
+  })
+
+  it('executeOmnimuxVideo posts the complete end-frame model and image_tail only (#567 M7)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'omnimux-endframe-'))
+    const dest = join(dir, 'out.mp4')
+    let posted
+    const result = await executeOmnimuxVideo({
+      prompt: 'end frame only',
+      dest,
+      model: 'minimax-h3-endframe',
+      references: [
+        { role: 'last_frame', type: 'image', pathOrUrl: 'https://example.com/end-only.png' },
+      ],
+      env: { OMNIMUX_API_KEY: 'sk-test' },
+      fetcher: async (url, init) => {
+        if (init?.method === 'POST') {
+          posted = { url: String(url), body: JSON.parse(init.body) }
+          return {
+            ok: true,
+            status: 200,
+            headers: { get() { return undefined } },
+            text: async () => JSON.stringify({ video_url: 'https://cdn.example/end.mp4' }),
+            json: async () => ({ video_url: 'https://cdn.example/end.mp4' }),
+          }
+        }
+        assert.equal(String(url), 'https://cdn.example/end.mp4')
+        return { ok: true, arrayBuffer: async () => Buffer.from('mp4-end') }
+      },
+    })
+    assert.equal(result.mode, 'live')
+    assert.equal(posted.url, 'https://api.omnimux.ai/v1/video/generations')
+    assert.equal(posted.body.model, 'minimax-h3-endframe')
+    assert.equal(posted.body.image_tail, 'https://example.com/end-only.png')
+    assert.equal('image' in posted.body, false)
+    assert.equal('reference_images' in posted.body, false)
+    assert.equal('images' in posted.body, false)
+    assert.equal(readFileSync(dest, 'utf8'), 'mp4-end')
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   it('falls back to request.image when there are no usable references', () => {
     const input = mapOmnimuxInput('video', {
       prompt: 'talk',

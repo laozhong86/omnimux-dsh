@@ -38,13 +38,13 @@ test('MCC 契约门禁: 视频模型能力声明文件完备性（contract loade
   assert.ok(!seedanceOps.includes('first_last_frame'), 'Seedance 严禁包含首尾帧模式');
 });
 
-test('H2: 处置表 43 行 + listed 集合与处置一致', () => {
+test('H2: 处置表 44 行 + listed 集合与处置一致', () => {
   resetContractCache();
   const index = loadAll(DEFAULT_SPECS_DIR, { useCache: false });
   assert.equal(index.schemaVersion, '1.1');
 
   const doc = loadDispositions();
-  assert.equal(doc.dispositions.length, 43);
+  assert.equal(doc.dispositions.length, 44);
   const byId = new Map(doc.dispositions.map((r) => [r.id, r]));
   const forbidden = forbiddenListedIds(doc);
 
@@ -98,13 +98,15 @@ test('H2: 处置表 43 行 + listed 集合与处置一致', () => {
   assert.ok(!index.listedOperations.some((key) => key.startsWith('suno#')));
   assert.ok(!index.listedOperations.some((key) => key.startsWith('whisper-1#')));
   assert.ok(!index.listedOperations.some((key) => key.startsWith('kling-avatar#')));
+  assert.ok(!index.listedOperations.includes('minimax-h3-endframe#end_frame'));
+  assert.ok(!index.listedOperations.some((key) => key.startsWith('minimax-h3-endframe#')));
 
   const report = verifyContracts({ strict: true });
   assert.equal(report.ok, true, JSON.stringify(report.issues.filter((i) => i.level === 'error'), null, 2));
   assert.equal(report.schemaVersion, '1.1');
   assert.equal(Object.prototype.hasOwnProperty.call(report, 'version'), false);
   assert.ok(report.listedOperations.length > 0);
-  assert.equal(report.dispositions.total, 43);
+  assert.equal(report.dispositions.total, 44);
   assert.deepEqual(report.dispositions.unresolvedDispositions, []);
 });
 

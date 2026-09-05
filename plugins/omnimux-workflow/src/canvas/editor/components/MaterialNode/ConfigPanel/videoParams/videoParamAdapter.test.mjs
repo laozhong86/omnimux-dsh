@@ -188,7 +188,6 @@ describe('videoParamAdapter - resolveEffectiveVideoParams 有效参数解析', (
     assert.equal(result.generationMode, 'first_last_frame');
   });
 });
-
 describe('videoParamAdapter - validateAndFallbackVideoParams 模型切换降级', () => {
   it('场景 3: Kling V3 态参数切换到 Veo 型模型 -> generationMode 回退 reference、resolution 重置、sound 字段删除', () => {
     const klingState = {
@@ -226,5 +225,54 @@ describe('videoParamAdapter - validateAndFallbackVideoParams 模型切换降级'
     assert.equal(next.model, 'legacy');
     assert.equal(next.generationMode, 'first_last_frame');
     assert.equal(next.aspectRatio, '9:16');
+  });
+});
+
+describe('videoParamAdapter - end_frame-only must not coerce to first_last_frame (#567 A3)', () => {
+  const endOnlyModel = {
+    id: 'minimax-h3-endframe',
+    label: 'MiniMax H3 End-frame',
+    inputCapability: {
+      referenceImages: {
+        min: 1,
+        max: 1,
+        supportedRoles: ['last_frame'],
+      },
+    },
+    parameters: {
+      aspectRatio: {
+        options: [
+          { value: '16:9', label: '16:9' },
+        ],
+        defaultValue: '16:9',
+      },
+      duration: {
+        options: [
+          { value: 5, label: '5s' },
+        ],
+        defaultValue: 5,
+      },
+    },
+  };
+
+  it('resolveEffectiveVideoParams: last_frame-only stays default mode, not first_last_frame', () => {
+    const result = resolveEffectiveVideoParams(
+      { model: 'minimax-h3-endframe', generationMode: 'first_last_frame' },
+      endOnlyModel.parameters,
+      endOnlyModel,
+    );
+    assert.equal(result.model, 'minimax-h3-endframe');
+    assert.notEqual(result.generationMode, 'first_last_frame');
+    assert.equal(result.generationMode, 'reference');
+  });
+
+  it('validateAndFallbackVideoParams: last_frame-only does not open FLF mode', () => {
+    const next = validateAndFallbackVideoParams(
+      { generationMode: 'first_last_frame', aspectRatio: '16:9', duration: 5 },
+      endOnlyModel,
+    );
+    assert.equal(next.model, 'minimax-h3-endframe');
+    assert.notEqual(next.generationMode, 'first_last_frame');
+    assert.equal(next.generationMode, 'reference');
   });
 });

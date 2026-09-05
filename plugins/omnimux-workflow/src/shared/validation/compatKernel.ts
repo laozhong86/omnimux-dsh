@@ -18,9 +18,9 @@
  * Fail-closed: unknown models, a missing catalog and zero candidates never
  * fall back to a permissive "available".
  *
- * Operation ids are open strings + metadata — the MCC 17-entry union is NOT
- * copied here (cross-package iron rule). Historical GenerationMode strings
- * are translated at read time via LEGACY_OPERATION_MAP.
+ * Operation ids are open strings + metadata — the registry-owned open string
+ * is NOT copied here as an N-entry union (cross-package iron rule). Historical
+ * GenerationMode strings are translated at read time via LEGACY_OPERATION_MAP.
  */
 
 import type {
@@ -78,6 +78,9 @@ export const LEGACY_OPERATION_MAP: Readonly<Record<string, string>> = Object.fre
   reference: 'video_multi_ref',
   first_last_frame: 'first_last_frame',
   first_frame: 'first_frame',
+  end_frame: 'end_frame',
+  endframe: 'end_frame',
+  'end-frame': 'end_frame',
   text_to_video: 'text_to_video',
   i2v: 'first_frame',
   t2v: 'text_to_video',

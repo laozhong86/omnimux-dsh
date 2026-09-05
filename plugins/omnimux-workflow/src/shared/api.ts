@@ -140,7 +140,7 @@ export type { ModelInputCapability };
 //
 // The hub (`omnimux`) owns the contract SSOT; workflow NEVER imports it.
 // These shapes mirror the seam / HTTP DTO only. Operation ids are plain
-// `string` + metadata — workflow must NOT copy the MCC 17-entry union.
+// `string` + metadata — workflow must NOT copy the registry N-entry union.
 
 /** One operation input slot (contract v1.1). */
 export interface InputSlotDto {

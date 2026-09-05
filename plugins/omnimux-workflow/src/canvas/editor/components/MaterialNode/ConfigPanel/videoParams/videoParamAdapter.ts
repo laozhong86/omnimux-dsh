@@ -47,11 +47,19 @@ export function resolveEffectiveVideoParams(
 
   if (Array.isArray(roles) && roles.length > 0) {
     const hasReference = roles.includes('reference');
-    const hasFrameRoles = roles.includes('first_frame') || roles.includes('last_frame');
+    const hasFirstFrame = roles.includes('first_frame');
+    const hasLastFrame = roles.includes('last_frame');
+    const hasFrameRoles = hasFirstFrame || hasLastFrame;
+    // FLF UI mode requires first+last capability. last_frame-only (end_frame op, #567)
+    // must NOT be coerced into first_last_frame — GenerationMode has no end_frame yet.
+    const isFirstLastCapable = hasFirstFrame && hasLastFrame;
 
-    if (!hasReference && hasFrameRoles) {
+    if (!hasReference && isFirstLastCapable) {
       // 若 roles 存在且不包含 reference（例如可灵系列仅支持 first_frame, last_frame），强制回退或默认采用 'first_last_frame'
       generationMode = 'first_last_frame';
+    } else if (!hasReference && hasLastFrame && !hasFirstFrame) {
+      // end_frame-only capability: keep default UI mode; do not open FLF or invent end UI (#567 A3)
+      generationMode = DEFAULT_GENERATION_MODE;
     } else if (hasReference && !hasFrameRoles) {
       // 若 roles 存在且不包含 first_frame 与 last_frame（例如谷歌 Veo 仅支持 reference），强制回退或默认采用 'reference'
       generationMode = 'reference';
@@ -180,10 +188,16 @@ export function validateAndFallbackVideoParams(
   // 1. 校验并修正 generationMode
   if (Array.isArray(roles) && roles.length > 0) {
     const hasReference = roles.includes('reference');
-    const hasFrameRoles = roles.includes('first_frame') || roles.includes('last_frame');
+    const hasFirstFrame = roles.includes('first_frame');
+    const hasLastFrame = roles.includes('last_frame');
+    const hasFrameRoles = hasFirstFrame || hasLastFrame;
+    const isFirstLastCapable = hasFirstFrame && hasLastFrame;
 
-    if (!hasReference && hasFrameRoles) {
+    if (!hasReference && isFirstLastCapable) {
       nextParams['generationMode'] = 'first_last_frame';
+    } else if (!hasReference && hasLastFrame && !hasFirstFrame) {
+      // end_frame-only: do not map to first_last_frame (#567 A3)
+      nextParams['generationMode'] = DEFAULT_GENERATION_MODE;
     } else if (hasReference && !hasFrameRoles) {
       nextParams['generationMode'] = 'reference';
     } else {

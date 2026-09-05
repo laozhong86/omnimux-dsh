@@ -21,9 +21,9 @@
       "id": "videoGenerate",
       "seam": "videoGenerate",
       "status": "live",
-      "operations": ["text_to_video", "first_frame", "first_last_frame", "video_multi_ref", "video_edit"],
+      "operations": ["text_to_video", "first_frame", "first_last_frame", "end_frame", "video_multi_ref", "video_edit"],
       "outputTypes": ["video"],
-      "notes": "不含 digital_human；Avatar 需专用 profile 或显式扩表+证据"
+      "notes": "不含 digital_human；含 end_frame（#567）；Avatar 仍走 videoDigitalHuman"
     },
     {
       "id": "audioGenerate",

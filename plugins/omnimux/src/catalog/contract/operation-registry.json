@@ -75,6 +75,14 @@
       "promptPolicy": "required"
     },
     {
+      "id": "end_frame",
+      "label": "尾帧参考",
+      "group": "video",
+      "defaultOutputType": "video",
+      "promptPolicy": "required",
+      "notes": "仅尾帧锚点；禁止映射为 first_frame；slot=end_frame role=last_frame；wire 候选 image_tail（#566 间接 / #567）"
+    },
+    {
       "id": "video_multi_ref",
       "label": "多图风格/主体参考",
       "group": "video",

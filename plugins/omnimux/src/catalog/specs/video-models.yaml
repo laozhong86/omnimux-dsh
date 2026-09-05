@@ -207,7 +207,6 @@ models:
       status: "stub"
       profileId: "videoGenerate"
       seam: "videoGenerate"
-
   - id: "seedance-2-0"
     label: "Seedance 2.0"
     family: "bytedance"
@@ -1166,3 +1165,65 @@ models:
     execution:
       status: "none"
       notes: "quarantine：无执行证据，不挂 profile"
+
+  # MiniMax H3 end-frame-only SKU (#567): draft expressibility only; not listed.
+  # Wire candidate image_tail is H1 via #566 FLF last_frame role — end-only live unproven.
+  - id: "minimax-h3-endframe"
+    label: "MiniMax H3 End Frame"
+    family: "minimax"
+    badge: "H3 尾帧"
+    subtitle: "End-frame reference I2V · draft"
+    operations:
+      - id: "end_frame"
+        label: "尾帧参考"
+        output:
+          type: "video"
+        inputs:
+          - slot: "prompt"
+            type: "text"
+            role: "prompt"
+            source: "node_field"
+            min: 1
+            max: 1
+          - slot: "end_frame"
+            type: "image"
+            role: "last_frame"
+            source: "upstream_edge"
+            min: 1
+            max: 1
+            allowedMimes: ["image/png", "image/jpeg", "image/webp"]
+            maxSizeMb: 20
+            limitSource:
+              kind: "policy_conservative"
+              note: "#567 draft; MIME/size conservative until dated end-only wire evidence"
+        research:
+          status: "draft"
+          notes: "#567 registry end_frame expressibility; wire H1=image_tail unproven for end-only; not listed"
+        execution:
+          status: "stub"
+          profileId: "videoGenerate"
+          seam: "videoGenerate"
+    parameters:
+      aspectRatio:
+        options:
+          - { value: "16:9", label: "16:9" }
+          - { value: "9:16", label: "9:16" }
+          - { value: "1:1", label: "1:1" }
+        defaultValue: "16:9"
+      duration:
+        options:
+          - { value: 5, label: "5s" }
+          - { value: 6, label: "6s" }
+        defaultValue: 5
+        unit: "s"
+      resolution:
+        options:
+          - { value: "720P", label: "720P" }
+        defaultValue: "720P"
+    research:
+      status: "draft"
+      notes: "#567 model draft row; end_frame only; zero listed until #530 C3"
+    execution:
+      status: "stub"
+      profileId: "videoGenerate"
+      seam: "videoGenerate"
