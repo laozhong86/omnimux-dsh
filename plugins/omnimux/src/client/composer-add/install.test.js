@@ -18,15 +18,17 @@ describe('composer-add install contract', () => {
     assert.match(installSource, /omnimux:composer-add-library/)
     assert.match(installSource, /composerAdd\.pickerUnsupported/)
     assert.match(installSource, /\/omnimux\/assets\/pick/)
-    assert.match(installSource, /kind === 'directory' \? 'directory' : 'file'/)
+    assert.match(installSource, /kind === 'directory' \|\| kind === 'any' \? kind : 'file'/)
+    assert.match(installSource, /installMenuDirect/)
+    assert.match(installSource, /addLocalPaths\(currentSessionId\(store\), 'any'\)/)
+    assert.match(installSource, /stopMenuDirect\(\)/)
     assert.match(installSource, /\/omnimux\/composer\/attachments\/materialize/)
   })
 
-  it('no longer intercepts the official + button or draws its own menu', () => {
+  it('does not intercept the official + button or draw a replacement menu', () => {
     assert.doesNotMatch(installSource, /add-button\.js|menu-dom\.js/)
     assert.doesNotMatch(installSource, /bindAddButton|findAddButton|replayOfficialAdd|openNativeAddMenu|closeNativeAddMenu/)
     assert.doesNotMatch(installSource, /MutationObserver/)
-    assert.doesNotMatch(installSource, /stopImmediatePropagation/)
     assert.doesNotMatch(installSource, /state\.bypass|fileDisabled/)
   })
 

@@ -4,6 +4,7 @@ import { AssetPickerModal } from './AssetPickerModal.jsx'
 import { getGlobalAttachmentStore } from '../attachments/store.ts'
 import { inferKindFromName } from './kind.js'
 import { installComposerAttachmentSubmitCapture } from './submit-inject.js'
+import { installMenuDirect } from './menu-direct.js'
 
 const HOST_ID = 'omnimux-composer-add-host'
 
@@ -150,24 +151,24 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
           entityId: row.entityId || row.sourcePath,
         })), t)
         if (!result.ok && rows.length === 0) {
-          toast(result.body.message || tx(t, 'composerAdd.toast.failed', { n: 1 }))
+          const message = result.body.message || tx(t, 'composerAdd.toast.failed', { n: 1 })
+          toast(message)
+          throw new Error(message)
         }
-        state.libraryOpen = false
-        renderModal()
       },
     }))
   }
 
   /**
    * @param {string} sessionId
-   * @param {'file' | 'directory'} kind
+   * @param {'file' | 'directory' | 'any'} kind
    */
   async function addLocalPaths(sessionId, kind = 'file') {
     if (!sessionId) {
       toast(tx(t, 'composerAdd.needSession'))
       return
     }
-    const pickKind = kind === 'directory' ? 'directory' : 'file'
+    const pickKind = kind === 'directory' || kind === 'any' ? kind : 'file'
     const picked = await requestJson('/omnimux/assets/pick', { kind: pickKind })
     if (picked.status === 501) {
       toast(tx(t, 'composerAdd.pickerUnsupported'))
@@ -199,6 +200,10 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
   const onCmdFile = () => { void addLocalPaths(currentSessionId(store), 'file') }
   const onCmdFolder = () => { void addLocalPaths(currentSessionId(store), 'directory') }
   const onCmdLibrary = () => { state.libraryOpen = true; renderModal() }
+  const stopMenuDirect = installMenuDirect(doc, {
+    onAddFileFolder: () => { void addLocalPaths(currentSessionId(store), 'any') },
+    onAddLibrary: onCmdLibrary,
+  })
   const win = doc.defaultView || (typeof window !== 'undefined' ? window : null)
   win?.addEventListener?.('omnimux:composer-add-file', onCmdFile)
   win?.addEventListener?.('omnimux:composer-add-folder', onCmdFolder)
@@ -211,6 +216,7 @@ export function installComposerAddCapture(doc = (typeof document !== 'undefined'
     win?.removeEventListener?.('omnimux:composer-add-file', onCmdFile)
     win?.removeEventListener?.('omnimux:composer-add-folder', onCmdFolder)
     win?.removeEventListener?.('omnimux:composer-add-library', onCmdLibrary)
+    stopMenuDirect()
     stopSubmit()
     modalRoot?.unmount()
     host.remove()
