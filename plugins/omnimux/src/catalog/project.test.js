@@ -127,9 +127,22 @@ test('real specs: buckets derive only from output.type of listed ops', () => {
   assert.deepEqual(dto.image.map((r) => r.id).sort(), ['gpt-image-2', 'grok-imagine-image']);
   assert.deepEqual(dto.video.map((r) => r.id), ['seedance-2-0-fast']);
   assert.deepEqual(dto.audio, []);
-  // Batch A lock: all chat/vision_chat ops are draft/stub → text bucket empty
-  assert.deepEqual(dto.text, []);
+  // #530 PR-A: text bucket carries 11 models with verified+live chat/vision_chat
+  assert.deepEqual(dto.text.map((r) => r.id), [
+    'claude-opus-4-6',
+    'claude-opus-5',
+    'deepseek-v4-flash-vision-exp',
+    'deepseek-v4-pro',
+    'gemini-3.1-pro-preview',
+    'gemini-3.7-flash',
+    'glm-5.3',
+    'gpt-5.5',
+    'gpt-5.6-sol',
+    'grok-4.6',
+    'kimi-k3',
+  ]);
   assert.equal(dto.defaultsByOperation.text_to_video, 'seedance-2-0-fast');
+  assert.equal(dto.defaultsByOperation.chat, 'gemini-3.7-flash');
 });
 
 test('mergeInputCapability: union roles, min floor, max ceiling, mimes union', () => {

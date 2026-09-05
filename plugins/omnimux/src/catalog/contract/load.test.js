@@ -34,10 +34,29 @@ test('loadAll real specs: 4 files merge without parse errors', () => {
   assert.ok(index.get('whisper-1'));
   assert.ok(index.contentFingerprint);
   assert.equal(index.contentFingerprint.length, 16);
-  // H2: Batch A 锁定——listed 恰好为 3 条 dated 证据媒体 op；chat/vision_chat 一律不 listed
+  // #530 PR-A: Batch A 三媒体键 + text 19 op live listed
   assert.deepEqual(index.listedOperations, [
+    'claude-opus-4-6#chat',
+    'claude-opus-4-6#vision_chat',
+    'claude-opus-5#chat',
+    'deepseek-v4-flash-vision-exp#chat',
+    'deepseek-v4-flash-vision-exp#vision_chat',
+    'deepseek-v4-pro#chat',
+    'gemini-3.1-pro-preview#chat',
+    'gemini-3.1-pro-preview#vision_chat',
+    'gemini-3.7-flash#chat',
+    'gemini-3.7-flash#vision_chat',
+    'glm-5.3#chat',
+    'gpt-5.5#chat',
+    'gpt-5.5#vision_chat',
+    'gpt-5.6-sol#chat',
+    'gpt-5.6-sol#vision_chat',
     'gpt-image-2#text_to_image',
+    'grok-4.6#chat',
+    'grok-4.6#vision_chat',
     'grok-imagine-image#text_to_image',
+    'kimi-k3#chat',
+    'kimi-k3#vision_chat',
     'seedance-2-0-fast#text_to_video',
   ]);
   // formal specs must not produce schemaVersion admission errors
