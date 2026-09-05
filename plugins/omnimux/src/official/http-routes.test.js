@@ -6,6 +6,7 @@ import { describe, it } from 'node:test'
 import { OmnimuxError } from '../media/errors.js'
 import { avatarIdFromPath, createOfficialDispatcher, registerOfficialRoutes } from './http-routes.js'
 import { createAccountMetaStore } from './account-meta.js'
+import { createOfficialClient } from './client.js'
 
 function clientWith(handler) {
   return {
@@ -175,7 +176,7 @@ describe('official accounts dispatcher', () => {
       client: clientWith(async (path, init) => {
         seen.push(`${init.method || 'GET'} ${path}`)
         if (path === '/api/social/v1/connect') return { auth_url: 'https://omnimux.ai/cli/connect' }
-        return { ok: true }
+        return { success: true }
       }),
     })
     const connected = await dispatcher.dispatch({
@@ -341,7 +342,7 @@ describe('official accounts overlay', () => {
     const meta = fakeMetaStore({ 'acc-1': { group: 'ops' } })
     const dispatcher = createOfficialDispatcher({
       official: { mount: true },
-      client: clientWith(async () => accountFixture()),
+      client: clientWith(async (_path, init) => (init.method === 'DELETE' ? { success: true } : accountFixture())),
       metaStore: meta,
     })
     const refused = await dispatcher.dispatch({
@@ -362,13 +363,86 @@ describe('official accounts overlay', () => {
     assert.equal('acc-1' in meta.read(), false)
   })
 
+  it('keeps local account metadata and avatars when the official disconnect does not explicitly succeed', async () => {
+    const cases = [
+      { body: { success: false, message: '  synthetic upstream rejection  ' }, message: 'synthetic upstream rejection' },
+      { body: {}, message: 'official disconnect failed' },
+      { body: { success: 'true' }, message: 'official disconnect failed' },
+      { body: null, message: 'official disconnect failed' },
+      { body: { message: 'upstream unavailable' }, ok: false, status: 500, message: 'upstream unavailable' },
+    ]
+    for (const fixture of cases) {
+      const meta = fakeMetaStore({ 'acc-1': { group: 'ops' } })
+      const avatars = fakeAvatarStore({ hits: { 'acc-1': true } })
+      const client = createOfficialClient({
+        siteBaseUrl: 'https://omnimux.ai',
+        resolveApiKey: () => 'sk-x',
+        resolveAccess: async () => ({ token: 'pat-x', userId: 'user-1' }),
+        fetcher: async () => ({
+          ok: fixture.ok ?? true,
+          status: fixture.status ?? 200,
+          json: async () => fixture.body,
+        }),
+      })
+      const dispatcher = createOfficialDispatcher({
+        official: { mount: true },
+        client,
+        metaStore: meta,
+        avatarStore: avatars,
+      })
+
+      const result = await dispatcher.dispatch({
+        method: 'DELETE',
+        url: '/omnimux/accounts/acc-1',
+        origin: LOCAL_ORIGIN,
+      })
+
+      assert.equal(result.status, 502)
+      assert.equal(result.body.error, fixture.message)
+      assert.deepEqual(meta.calls, [])
+      assert.deepEqual(avatars.calls, [])
+      assert.deepEqual(meta.read(), { 'acc-1': { group: 'ops' } })
+      assert.equal(avatars.has('acc-1'), true)
+    }
+  })
+
+  it('clears only the disconnected account metadata and avatar after an explicit official success', async () => {
+    const meta = fakeMetaStore({ 'acc-1': { group: 'ops' }, keep: { group: 'ads' } })
+    const avatars = fakeAvatarStore({ hits: { 'acc-1': true, keep: true } })
+    const client = createOfficialClient({
+      siteBaseUrl: 'https://omnimux.ai',
+      resolveApiKey: () => 'sk-x',
+      resolveAccess: async () => ({ token: 'pat-x', userId: 'user-1' }),
+      fetcher: async () => ({ ok: true, status: 200, json: async () => ({ success: true }) }),
+    })
+    const dispatcher = createOfficialDispatcher({
+      official: { mount: true },
+      client,
+      metaStore: meta,
+      avatarStore: avatars,
+    })
+
+    const result = await dispatcher.dispatch({
+      method: 'DELETE',
+      url: '/omnimux/accounts/acc-1',
+      origin: LOCAL_ORIGIN,
+    })
+
+    assert.deepEqual(result, { status: 200, body: { ok: true } })
+    assert.deepEqual(meta.calls, [{ op: 'remove', id: 'acc-1' }])
+    assert.deepEqual(avatars.calls, [{ op: 'remove', id: 'acc-1' }])
+    assert.deepEqual(meta.read(), { keep: { group: 'ads' } })
+    assert.equal(avatars.has('acc-1'), false)
+    assert.equal(avatars.has('keep'), true)
+  })
+
   it('works against the real file-backed store end to end', async () => {
     const home = mkdtempSync(join(tmpdir(), 'omnimux-acct-routes-'))
     try {
       const metaStore = createAccountMetaStore({ home, now: () => '2026-08-20T10:00:00Z' })
       const dispatcher = createOfficialDispatcher({
         official: { mount: true },
-        client: clientWith(async () => accountFixture()),
+        client: clientWith(async (_path, init) => (init.method === 'DELETE' ? { success: true } : accountFixture())),
         metaStore,
       })
       const patched = await dispatcher.dispatch({
@@ -548,7 +622,7 @@ describe('official account avatars', () => {
     })
     const dispatcher = createOfficialDispatcher({
       official: { mount: true },
-      client: clientWith(async () => accountFixture()),
+      client: clientWith(async (_path, init) => (init.method === 'DELETE' ? { success: true } : accountFixture())),
       avatarStore: avatars,
     })
     const removed = await dispatcher.dispatch({

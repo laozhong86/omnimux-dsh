@@ -25,7 +25,7 @@ describe('official social ops', () => {
     const seen = []
     const client = mockClient(async (url, init) => {
       seen.push({ url: String(url), method: init.method || 'GET', headers: init.headers, body: init.body })
-      return { ok: true, status: 200, json: async () => ({ ok: true }) }
+      return { ok: true, status: 200, json: async () => ({ success: true }) }
     })
     await listAccounts(client)
     await connectAccount(client, { platform: 'tiktok', redirect_url: 'https://app/cb' })
