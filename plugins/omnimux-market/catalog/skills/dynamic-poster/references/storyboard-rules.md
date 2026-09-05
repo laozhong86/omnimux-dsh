@@ -58,14 +58,12 @@
 
 ---
 
-## 人脸规避规则（Seedance 安全）
+## 人物与身份规则
 
-Seedance 2.0 对正面人脸极度敏感，会直接拒绝生成。所有分镜图必须遵守：
-- **禁止正面人脸**：不出现可辨识的五官（眼睛、鼻子、嘴巴）
-- 需要人物时，使用：背影（`seen from behind`）、侧影剪影（`silhouette`）、局部肢体（`hands only`, `feet walking`）、远景小人（`tiny figure in the distance`）
-- 用物体代替人物传达故事：鞋子自己转向、杯子自己移动、衣服悬浮——比人物行为更容易控制
-- 产品特写和环境全景天然安全，优先使用
-- Prompt 中主动写入 `no visible face, no facial features, seen from behind` 等排除词
+- 人物只在创意确实需要且身份使用有依据时加入。
+- 用户提供人物参考时，保持外观、服装与身份一致；没有依据时不生成可识别真实人物。
+- 背影、剪影、局部肢体和远景人物是可选叙事手段，不是规避审核的默认手段。
+- 若所选模型或平台拒绝请求，停止并按政策调整创意；不得通过裁切五官、拼图或换模型来绕过。
 
 ---
 
@@ -75,4 +73,4 @@ Seedance 2.0 对正面人脸极度敏感，会直接拒绝生成。所有分镜�
 - 在 prompt 中描述文字的位置和样式，例如 `the text "BRAND NAME" in clean white sans-serif appears at the bottom center of the frame`
 - 如有用户提供的 slogan，也在最后一帧中呈现
 - 中间 Beat 的 prompt 中禁止包含任何文字
-- Payoff 帧优先使用擅长文字渲染的模型生成（`qwen_image_generation` 或 `nano_banana_image_generation`）
+- Payoff 帧需要文字时，从运行时已发现的兼容图像能力中选择，并先确认其文字渲染和参考图约束。

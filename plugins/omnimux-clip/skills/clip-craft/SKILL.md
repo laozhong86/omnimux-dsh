@@ -1,6 +1,6 @@
 ---
 name: clip-craft
-description: OmniMux Clip 专业剪辑判断层。节奏、转场克制、花字安全区、黑场检查、自动切片。当用户要剪视频、修时间轴、加字幕花字、去黑场或导出成片时使用。
+description: "OmniMux Clip 专业剪辑判断层。用于剪视频、修时间轴、加字幕花字、去黑场、自动切片和导出成片。时间轴写入与导出按用户已授权范围执行；不发明未发现的工具。"
 ---
 
 # Clip Craft — 剪辑判断层
@@ -13,12 +13,12 @@ description: OmniMux Clip 专业剪辑判断层。节奏、转场克制、花字
 
 1. `clip_get`（`view=summary`，必要时 `tracks` / `clips` / `full`）摸清轨道与时长。
 2. 把一次意图收成**一条** `clip_edit`（一个 Undo 步）。`description` 写人话，如「切掉片头 1.2s 静音」。
-3. 大改前 `validateOnly: true` 预演；确认后再落盘。
+3. 大改前 `validateOnly: true` 预演；预演通过后，用户已明确授权的精确操作直接落盘，不重复确认。预演暴露新范围或高风险影响时才追问。
 4. 改完立刻 `clip_diagnostics`。有 `timeline_gap` / `clip_overlap` / `media_missing` 就修，不要先导出。
 5. 编辑器已打开时 `clip_snapshot` 抽 2–3 帧做视觉自检（字幕是否出安全区、花字是否挡脸、切点是否跳）。
 6. 用户要成片再 `clip_export`。不要把预览当交付。
 
-`clip_view` / `clip_snapshot` 在 overlay 未挂载时会抛 `PREVIEW_NOT_READY`。提示用户打开「AI 剪辑工坊」，不要重试空转，也不要返回 `{ ok: false }`。
+`clip_view` / `clip_snapshot` 在 overlay 未挂载时会抛 `PREVIEW_NOT_READY`。先发现并尝试当前运行时可用的官方入口/挂载能力；只有 Agent 无可用入口时才请用户打开「AI 剪辑工坊」。不要重试空转，也不要把 `{ ok: false }` 当成功。
 
 ## 时间轴感知
 
