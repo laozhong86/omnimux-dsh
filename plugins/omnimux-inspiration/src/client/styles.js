@@ -1440,8 +1440,8 @@ export const INSPIRATION_CSS = `
 }
 .omnimux-inspiration-modal-heading {
   min-width: 0;
-  max-width: min(680px, calc(100% - 40px));
-  flex: 0 1 680px;
+  max-width: min(520px, calc(100% - 40px));
+  flex: 0 1 520px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1670,34 +1670,6 @@ export const INSPIRATION_CSS = `
   transition: transform 120ms ease;
 }
 .omnimux-inspiration-modal-chevron.is-collapsed { transform: rotate(-90deg); }
-.omnimux-inspiration-modal-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-.omnimux-inspiration-modal-footer-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
-}
-.omnimux-inspiration-modal-footer-stats {
-  display: inline-flex;
-  align-items: center;
-}
-.omnimux-inspiration-modal-footer-stats > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
 .omnimux-inspiration-modal-dimensions pre {
   margin: 0;
   font-family: ui-monospace, monospace;
@@ -1725,9 +1697,31 @@ export const INSPIRATION_CSS = `
   flex: 0 0 56px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 0 16px;
   border-top: 1px solid var(--dsw-alias-border-l2);
+}
+.omnimux-inspiration-modal-footer .omnimux-inspiration-modal-replicate {
+  width: auto;
+  min-width: 112px;
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.omnimux-inspiration-modal-footer .omnimux-inspiration-modal-replicate .dshUk-Button-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  white-space: nowrap;
+}
+.omnimux-inspiration-modal-footer .omnimux-inspiration-modal-replicate svg {
+  flex: 0 0 14px;
 }
 @media (max-width: 860px) {
   .omnimux-inspiration-modal-backdrop { padding: 12px; }

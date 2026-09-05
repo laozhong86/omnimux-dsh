@@ -1,0 +1,42 @@
+{
+  "stage": "omnimux-inspiration:library",
+  "topic": "modal-footer-title-tune",
+  "result": "PASS",
+  "l2": {
+    "port": 44202
+  },
+  "desktop": {
+    "footerText": "Replicate only",
+    "footerMeta": false,
+    "replicate": {
+      "width": 112,
+      "height": 32,
+      "labelDisplay": "flex-row",
+      "nowrap": true
+    },
+    "title": {
+      "maxWidth": 520,
+      "longTitleEllipsizes": true
+    }
+  },
+  "mobile": {
+    "width": 375,
+    "footerNoOverflow": true,
+    "replicate": {
+      "width": 112,
+      "height": 32,
+      "visible": true,
+      "oneLine": true
+    },
+    "header": {
+      "height": 60,
+      "noOverflow": true
+    }
+  },
+  "tests": {
+    "pass": 167,
+    "fail": 0,
+    "skipped": 2
+  },
+  "timestamp": "2026-09-05T03:07:13.034Z"
+}
