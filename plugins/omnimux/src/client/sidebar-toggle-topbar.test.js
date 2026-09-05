@@ -9,6 +9,7 @@ import {
   SIDEBAR_TOGGLE_TOPBAR_ATTR,
   SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR,
   TOPBAR_NEW_SESSION_ATTR,
+  TOPBAR_MACOS_INSET_PX,
   TOPBAR_TOGGLE_GAP_PX,
   TOPBAR_TOGGLE_LEFT_PX,
   TOPBAR_TOGGLE_RIGHT_MARGIN_PX,
@@ -26,6 +27,7 @@ import {
   isLeftSidebarCollapsed,
   setExplicitLeftCollapseIntent,
   syncLeftCollapsedHtmlAttr,
+  syncTopbarTabClearance,
 } from './sidebar-toggle-topbar.js'
 import { PRODUCT_STAGE_CHROME } from './conversation-box.js'
 
@@ -340,10 +342,107 @@ describe('computeChromeLayout tab pad (overlap, not collapsed boolean)', () => {
   })
 })
 
+describe('topbar host layout', () => {
+  for (const { name, mode, platform, inset } of [
+    { name: 'ordinary browser', inset: 8 },
+    { name: 'macOS desktop', mode: 'extended', platform: 'darwin', inset: 84 },
+    { name: 'Windows desktop', mode: 'extended', platform: 'win32', inset: 8 },
+    { name: 'platform without desktop host', platform: 'darwin', inset: 8 },
+  ]) {
+    it(`${name} reserves its gutter and only overlaps the full-width workbench`, () => {
+      const doc = setup()
+      if (mode) doc.body.setAttribute('data-dsh-desktop-mode', mode)
+      if (platform) doc.body.setAttribute('data-dsh-desktop-platform', platform)
+      const panel = doc.createElement('div')
+      panel.className = 'test_panel'
+      doc.querySelector('[data-dsh-better-sidebar]').append(panel)
+      let panelLeft = 0
+      panel.getBoundingClientRect = () => ({ left: panelLeft, width: 768 - panelLeft, height: 600 })
+      assert.equal(computeChromeLayout(doc).toggleLeft, inset)
+      assert.equal(computeChromeLayout(doc).tabPadLeft, inset + 80)
+      panelLeft = 400
+      assert.equal(computeChromeLayout(doc).tabPadLeft, 0)
+
+      doc.querySelector('[data-sidebar-collapsed]').removeAttribute('data-sidebar-collapsed')
+      Object.defineProperty(doc.querySelector('[class*="sidebarCol"]'), 'offsetWidth', { value: 280 })
+      assert.equal(computeChromeLayout(doc).toggleLeft, 240)
+      assert.equal(computeChromeLayout(doc).newSessionLeft, null)
+    })
+  }
+
+  it('updates an installed layout when desktop host markers arrive or disappear', async () => {
+    const doc = setup()
+    const cleanup = installSidebarToggleTopbar(doc)
+    const inset = () => doc.documentElement.style.getPropertyValue('--omnimux-topbar-toggle-left')
+    assert.equal(inset(), '8px')
+    doc.body.setAttribute('data-dsh-desktop-mode', 'extended')
+    doc.body.setAttribute('data-dsh-desktop-platform', 'darwin')
+    await new Promise(resolve => setTimeout(resolve, 0))
+    assert.equal(inset(), `${TOPBAR_MACOS_INSET_PX}px`)
+    doc.body.removeAttribute('data-dsh-desktop-mode')
+    await new Promise(resolve => setTimeout(resolve, 0))
+    assert.equal(inset(), '8px')
+    cleanup()
+  })
+})
+
+describe('right topbar tab clearance', () => {
+  it('tracks the visible control cluster without padding other split panes', () => {
+    const doc = setup(`<!doctype html><html><body>
+      <div data-dsh-better-sidebar>
+        <div class="test_toggleCluster"></div>
+        <div class="test_panel">
+          <div><div id="left" class="test_tabBar"></div></div>
+          <div><div id="right" class="test_tabBar"></div></div>
+          <div><div id="lower" class="test_tabBar"></div></div>
+        </div>
+        <div class="test_bottomPanel"><div id="bottom" class="test_tabBar"></div></div>
+      </div>
+    </body></html>`)
+    const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height })
+    doc.querySelector('.test_panel').getBoundingClientRect = () => rect(0, 0, 981, 900)
+    let controls = rect(901, 4, 72, 32)
+    const cluster = doc.querySelector('.test_toggleCluster')
+    cluster.getBoundingClientRect = () => controls
+    doc.getElementById('left').getBoundingClientRect = () => rect(0, 0, 490, 41)
+    doc.getElementById('right').getBoundingClientRect = () => rect(491, 0, 490, 41)
+    doc.getElementById('lower').getBoundingClientRect = () => rect(0, 450, 981, 41)
+    for (const id of ['left', 'right', 'lower']) {
+      const bar = doc.getElementById(id)
+      bar.parentElement.getBoundingClientRect = bar.getBoundingClientRect
+    }
+    const padding = id => doc.getElementById(id).style.getPropertyValue('--omnimux-tabbar-pad-right')
+
+    syncTopbarTabClearance(doc)
+    assert.equal(padding('right'), '88px')
+    assert.equal(padding('left'), '0px')
+    assert.equal(padding('lower'), '0px')
+    assert.equal(padding('bottom'), '')
+    controls = rect(861, 4, 112, 32)
+    syncTopbarTabClearance(doc)
+    assert.equal(padding('right'), '128px', 'the conditional conversation control must also clear the tab strip')
+    controls = rect(901, 4, 72, 32)
+    syncTopbarTabClearance(doc)
+    assert.equal(padding('right'), '88px', 'hidden controls must not leave an empty slot')
+    doc.getElementById('right').parentElement.getBoundingClientRect = () => rect(940, 0, 41, 400)
+    doc.getElementById('right').getBoundingClientRect = () => rect(940, 0, 150, 41)
+    syncTopbarTabClearance(doc)
+    syncTopbarTabClearance(doc)
+    assert.equal(padding('right'), '41px', 'tab overflow must not feed back into the next overlap calculation')
+    cluster.remove()
+    syncTopbarTabClearance(doc)
+    assert.equal(padding('right'), '0px')
+  })
+})
+
 describe('installSidebarToggleTopbar', () => {
   it('cleanup removes markers and vars', () => {
     const doc = setup()
     const cleanup = installSidebarToggleTopbar(doc)
+    const tabBar = doc.createElement('div')
+    tabBar.className = 'test_tabBar'
+    tabBar.style.setProperty('--omnimux-tabbar-pad-right', '88px')
+    doc.querySelector('[data-dsh-better-sidebar]').append(tabBar)
     assert.equal(doc.documentElement.hasAttribute(SIDEBAR_TOGGLE_TOPBAR_HTML_ATTR), true)
     assert.ok(doc.querySelector(`[${TOPBAR_NEW_SESSION_ATTR}="1"]`))
     cleanup()
@@ -351,6 +450,7 @@ describe('installSidebarToggleTopbar', () => {
     assert.equal(doc.documentElement.hasAttribute(LEFT_COLLAPSED_HTML_ATTR), false)
     assert.equal(doc.querySelector(`[${SIDEBAR_TOGGLE_TOPBAR_ATTR}="1"]`), null)
     assert.equal(doc.querySelector(`[${TOPBAR_NEW_SESSION_ATTR}="1"]`), null)
+    assert.equal(tabBar.style.getPropertyValue('--omnimux-tabbar-pad-right'), '')
   })
 })
 

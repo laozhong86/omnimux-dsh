@@ -28,10 +28,9 @@ export const SIDEBAR_ORIGINAL_TOGGLE_ATTR = 'data-omnimux-original-sidebar-toggl
 /** Injected topbar "new session" control (collapsed rail only). */
 export const TOPBAR_NEW_SESSION_ATTR = 'data-omnimux-topbar-new-session'
 
-/** Traffic-light safe width (darwin titlebar inset) + small gap before toggle
- *  while the rail is collapsed. When the rail expands, the toggle moves to the
- *  sidebar's top-right corner (measured width minus the toggle size/margin). */
-export const TOPBAR_TOGGLE_LEFT_PX = 84
+/** Web gutter; the macOS desktop marker reserves its native window controls. */
+export const TOPBAR_TOGGLE_LEFT_PX = 8
+export const TOPBAR_MACOS_INSET_PX = 84
 export const TOPBAR_TOGGLE_SIZE_PX = 32
 export const TOPBAR_TOGGLE_GAP_PX = 8
 export const TOPBAR_TOGGLE_RIGHT_MARGIN_PX = 8
@@ -266,9 +265,12 @@ export function computeChromeLayout(doc) {
       }
     }
   }
+  const leftInset = doc?.body?.matches?.('[data-dsh-desktop-mode][data-dsh-desktop-platform="darwin"]')
+    ? TOPBAR_MACOS_INSET_PX
+    : TOPBAR_TOGGLE_LEFT_PX
   const toggleLeft = collapsed
-    ? TOPBAR_TOGGLE_LEFT_PX
-    : Math.max(TOPBAR_TOGGLE_LEFT_PX, Math.round(leftRailW - TOPBAR_TOGGLE_SIZE_PX - TOPBAR_TOGGLE_RIGHT_MARGIN_PX))
+    ? leftInset
+    : Math.max(leftInset, Math.round(leftRailW - TOPBAR_TOGGLE_SIZE_PX - TOPBAR_TOGGLE_RIGHT_MARGIN_PX))
   // Cluster end clears toggle alone when expanded; when collapsed it also
   // clears the new-session control sitting to the toggle's right (same size + gap).
   const clusterExtra = collapsed ? TOPBAR_TOGGLE_SIZE_PX + TOPBAR_TOGGLE_GAP_PX : 0
@@ -321,6 +323,31 @@ export function findSidebarColumn(doc) {
 }
 
 /**
+ * Reserve only the part of each tab strip covered by the visible right controls.
+ * @param {Document | null | undefined} doc
+ */
+export function syncTopbarTabClearance(doc) {
+  const cluster = doc?.querySelector?.('[data-dsh-toggle-cluster], [class*="toggleCluster"]')
+  const controls = cluster?.getBoundingClientRect?.()
+  const panel = findVisibleWorkbenchPanel(doc)
+  if (!panel) return
+  for (const bar of panel.querySelectorAll('[class*="tabBar"]:not([class*="Plus"])')) {
+    const box = bar.getBoundingClientRect()
+    const pane = bar.parentElement.getBoundingClientRect()
+    const overlaps = controls && controls.width > 0 && controls.height > 0
+      && box.top < controls.bottom && box.bottom > controls.top
+      && pane.left < controls.right && pane.right > controls.left
+    const padding = overlaps
+      ? Math.min(pane.width, Math.max(0, pane.right - controls.left) + TOPBAR_TOGGLE_GAP_PX)
+      : 0
+    const value = `${Math.ceil(padding)}px`
+    if (bar.style.getPropertyValue('--omnimux-tabbar-pad-right') !== value) {
+      bar.style.setProperty('--omnimux-tabbar-pad-right', value)
+    }
+  }
+}
+
+/**
  * Write geometry CSS variables used by tabBar padding and the fixed toggle.
  * @param {Document | null | undefined} doc
  * @param {{ left?: number, size?: number, gap?: number, top?: number }} [geom]
@@ -354,6 +381,7 @@ export function applyTopbarToggleCssVars(doc, geom = {}) {
   root.style.setProperty('--omnimux-topbar-toggle-top', `${top}px`)
   root.style.setProperty('--omnimux-topbar-toggle-end', `${end}px`)
   root.style.setProperty('--omnimux-tabbar-pad-left', `${Math.max(0, Math.round(tabPad))}px`)
+  syncTopbarTabClearance(doc)
   if (typeof newSessionLeft === 'number') {
     root.style.setProperty('--omnimux-topbar-new-session-left', `${newSessionLeft}px`)
   } else {
@@ -532,29 +560,28 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
   /** @type {((this: Window, ev: UIEvent) => void) | null} */
   let resizeListener = null
 
-  // Track the CURRENT sidebar column AND the visible workbench panel.
-  // React re-creates both on state flips; a stale ResizeObserver never fires,
-  // which used to leave tabs parked at the window's right edge until some
-  // unrelated mutation. Tab pad is overlap(toggleEnd, panel.left), recomputed
-  // every resize frame.
+  // Track mounted controls and leaf panes so split dragging updates overlap.
   const syncGeometry = () => {
     try { applyTopbarToggleCssVars(doc) } catch { /* ignore */ }
   }
-  let observedCol = null
-  let observedPanel = null
-  const retarget = (next, prev) => {
-    if (typeof ResizeObserver === 'undefined') return prev
-    if (!next || next === prev) return prev || next
-    if (widthObserver && prev) {
-      try { widthObserver.unobserve(prev) } catch { /* ignore */ }
-    }
-    if (!widthObserver) widthObserver = new ResizeObserver(syncGeometry)
-    try { widthObserver.observe(next) } catch { /* ignore */ }
-    return next
-  }
+  /** @type {Set<Element>} */
+  let observedTargets = new Set()
   const ensureObserveTargets = () => {
-    observedCol = retarget(findSidebarColumn(doc), observedCol)
-    observedPanel = retarget(findVisibleWorkbenchPanel(doc), observedPanel)
+    if (typeof ResizeObserver === 'undefined') return
+    if (!widthObserver) widthObserver = new ResizeObserver(syncGeometry)
+    const panel = findVisibleWorkbenchPanel(doc)
+    const bars = panel?.querySelectorAll('[class*="tabBar"]:not([class*="Plus"])') || []
+    /** @type {(Element | null)[]} */
+    const candidates = [
+      findSidebarColumn(doc), panel,
+      doc.querySelector('[data-dsh-toggle-cluster], [class*="toggleCluster"]'),
+      ...Array.from(bars, bar => bar.parentElement),
+    ]
+    /** @type {Set<Element>} */
+    const targets = new Set(candidates.filter(target => target !== null))
+    for (const target of observedTargets) if (!targets.has(target)) widthObserver.unobserve(target)
+    for (const target of targets) if (!observedTargets.has(target)) widthObserver.observe(target)
+    observedTargets = targets
   }
 
   if (typeof MutationObserver !== 'undefined') {
@@ -568,7 +595,7 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['data-sidebar-collapsed', 'aria-label', 'class'],
+        attributeFilter: ['data-sidebar-collapsed', 'aria-label', 'class', 'data-dsh-desktop-mode', 'data-dsh-desktop-platform'],
       })
     }
   }
@@ -610,6 +637,9 @@ export function installSidebarToggleTopbar(doc = typeof document !== 'undefined'
       ]) {
         try { root.style.removeProperty(k) } catch { /* ignore */ }
       }
+    }
+    for (const bar of doc.querySelectorAll('[data-dsh-better-sidebar] [class*="tabBar"]:not([class*="Plus"])')) {
+      bar.style.removeProperty('--omnimux-tabbar-pad-right')
     }
     const injected = doc.querySelector?.(`[${SIDEBAR_TOGGLE_TOPBAR_ATTR}="1"]`)
     if (injected instanceof HTMLElement) {
